@@ -37,6 +37,11 @@ def generate_launch_description():
             choices=['true','false'],
             description='Delete previous map and restart'
         ),
+        DeclareLaunchArgument(
+            name='database_path',
+            default_value='~/.ros/rtabmap.db',
+            description='RTAB-Map database file to use for localization'
+        ),
         
         DeclareLaunchArgument(
             name='log_level',
@@ -115,6 +120,8 @@ def generate_launch_description():
                 ('publish_static_tf', 'false'),
                 ('localize_only', LaunchConfiguration('localize_only')),
                 ('restart_map', LaunchConfiguration('restart_map')),
+                ('database_path', LaunchConfiguration('database_path')),
+                ('use_rtabmapviz', 'false'),
             ],
         ),
 
