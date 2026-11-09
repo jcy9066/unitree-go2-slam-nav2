@@ -141,6 +141,14 @@ For comprehensive explanations and insights into each project component, please 
 
 ---
 
+## Visual validation record / 실검증 HTML
+
+Open the [Go2 Navigation 변경 내역·실검증 HTML](docs/go2_navigation_validation.html) for a structured change history, Mapping/Localization mode comparison, all commands, PASS/STOP criteria, and post-test updates.
+
+- Source of truth: `docs/go2_navigation_validation.html` (keep the **same file** for later revisions).
+- Read the current Draft PR #1 and its individual commits together with the HTML.
+- Note: GitHub may show the HTML source instead of a rendered page. Download the file and open it in a web browser to see its layout.
+
 ## One-command Go2 mapping / localization / Nav2 (fork PR #1)
 
 > **Environment:** ROS 2 Humble, Nav2, RTAB-Map, Unitree ROS 2 SDK, RoboSense LiDAR SDK, and a built colcon workspace. Scripts use the **LiDAR-only** pipeline; Intel RealSense RGB-D is not automatically started. Do not send a Nav2 goal until localization is verified.
