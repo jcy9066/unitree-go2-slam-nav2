@@ -74,26 +74,6 @@ def generate_launch_description():
             }]
         ),
         
-        Node(
-	    package='nav2_lifecycle_manager',
-	    executable='lifecycle_manager',
-	    name='lifecycle_manager_navigation',
-	    output='screen',
-	    parameters=[{
-		'use_sim_time': True,
-		'autostart': True,
-		'node_names': [
-		    'controller_server',
-		    'planner_server',
-		    'recoveries_server',
-		    'bt_navigator',
-		    'local_costmap',
-		    'global_costmap',
-		    'waypoint_follower'
-		]
-	    }]
-	),
-
       #  IncludeLaunchDescription(
        #     PythonLaunchDescriptionSource(
         #        PathJoinSubstitution([
