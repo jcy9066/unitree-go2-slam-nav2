@@ -1,9 +1,4 @@
 repositories:
-  unitree_go2_slam_nav2:
-    type: git
-    url: https://github.com/h-naderi/unitree-go2-slam-nav2
-    version: main
-
   unitree_sdk:
     type: git
     url: https://github.com/unitreerobotics/unitree_ros2
