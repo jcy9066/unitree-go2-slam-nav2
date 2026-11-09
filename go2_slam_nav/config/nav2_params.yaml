@@ -169,7 +169,7 @@ local_costmap:
       rolling_window: true
       width: 3
       height: 3
-      resolution: 0.05
+      resolution: 0.02
       footprint: "[ [0.410, 0.350], [0.410, -0.350], [-0.410, -0.350], [-0.410, 0.350] ]"
       plugins: ["voxel_layer", "inflation_layer"]
       inflation_layer:
