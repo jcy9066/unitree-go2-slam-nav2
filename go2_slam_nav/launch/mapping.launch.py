@@ -27,6 +27,17 @@ def generate_launch_description():
             choices=['true', 'false'],
             description='Delete previous map and restart'
         ),
+        DeclareLaunchArgument(
+            name='database_path',
+            default_value='~/.ros/rtabmap.db',
+            description='RTAB-Map database file for mapping or localization'
+        ),
+        DeclareLaunchArgument(
+            name='use_rtabmapviz',
+            default_value='true',
+            choices=['true', 'false'],
+            description='Show RTAB-Map visualization window'
+        ),
 
         # Include rslidar_sdk start.py
         IncludeLaunchDescription(
@@ -52,6 +63,8 @@ def generate_launch_description():
                 ('use_rviz', LaunchConfiguration('use_rviz')),
                 ('localize_only', LaunchConfiguration('localize_only')),
                 ('restart_map', LaunchConfiguration('restart_map')),
+                ('database_path', LaunchConfiguration('database_path')),
+                ('use_rtabmapviz', LaunchConfiguration('use_rtabmapviz')),
             ],
         ),
     ])
