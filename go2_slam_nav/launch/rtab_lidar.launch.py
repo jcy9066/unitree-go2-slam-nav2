@@ -33,6 +33,11 @@ def generate_launch_description():
             description='Delete previous map/database and restart'
         ),
         DeclareLaunchArgument(
+            name='database_path',
+            default_value='~/.ros/rtabmap.db',
+            description='Explicit RTAB-Map database file to save or load'
+        ),
+        DeclareLaunchArgument(
             name='use_rtabmapviz',
             default_value='true',
             choices=['true','false'],
@@ -116,6 +121,7 @@ def generate_launch_description():
                 'subscribe_depth': False,
                 'subscribe_rgb': False,
                 'subscribe_scan_cloud': True,
+                'database_path': LaunchConfiguration('database_path'),
                 'approx_sync': True,
                 'wait_for_transform': 0.3,
                 'use_sim_time': LaunchConfiguration('use_sim_time'),
@@ -187,6 +193,7 @@ def generate_launch_description():
                 'subscribe_depth': False,
                 'subscribe_rgb': False,
                 'subscribe_scan_cloud': True,
+                'database_path': LaunchConfiguration('database_path'),
                 'approx_sync': True,
                 'wait_for_transform': 0.3,
                 'use_sim_time': LaunchConfiguration('use_sim_time'),
