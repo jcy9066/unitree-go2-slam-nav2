@@ -15,7 +15,7 @@ if [[ "$DB" != *.db ]]; then
     echo 'ERROR: database output path must end with .db' >&2
     exit 2
 fi
-if [[ -e "$DB" ]]; then
+if [[ -e "$DB" || -L "$DB" ]]; then
     printf 'ERROR: map database already exists; refusing overwrite: %s\n' "$DB" >&2
     exit 1
 fi
@@ -25,15 +25,20 @@ mkdir -p -- "$(dirname -- "$DB")"
 source "$SCRIPT_DIR/_env.sh"
 
 remember_map() {
-    if [[ -s "$DB" ]]; then
-        printf '%s\n' "$DB" > "$MAP_DIR/.last_map"
+    local launch_status="$1"
+    if (( launch_status != 0 && launch_status != 130 )); then
+        printf '\n[go2] Launch failed (exit %s); partial DB retained, latest map unchanged: %s\n' "$launch_status" "$DB" >&2
+    elif python3 "$SCRIPT_DIR/mapping_preflight.py" validate-db "$DB"; then
+        printf '%s\n' "$DB" > "$MAP_DIR/.last_map.$$.tmp"
+        mv -- "$MAP_DIR/.last_map.$$.tmp" "$MAP_DIR/.last_map"
         printf '\n[go2] Saved map DB: %s\n' "$DB"
         echo '[go2] Next: bash scripts/run_nav.sh  (or pass the DB file explicitly)'
     else
-        printf '\n[go2] No populated DB detected at %s; latest map unchanged.\n' "$DB" >&2
+        printf '\n[go2] DB validation failed at %s; partial file preserved, latest map unchanged.\n' "$DB" >&2
+        if (( launch_status == 0 )); then exit 1; fi
     fi
 }
-trap remember_map EXIT
+trap 'remember_map "$?"' EXIT
 
 printf '[go2] Mapping new DB: %s\n' "$DB"
 echo '[go2] L1 + RGB-D mapping (start the camera on Go2 first); stop with Ctrl+C to flush the database.'
