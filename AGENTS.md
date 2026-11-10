@@ -3,7 +3,7 @@
 Scope: this repository, its Codex agents, and all subagents. Read this file first. Read only the relevant skill for the task. Check the current Git branch and latest remote head before editing.
 
 ## Goal and baseline
-- Platform: Unitree Go2, ROS 2 Humble, RoboSense LiDAR, RTAB-Map, Nav2 (NavFn + DWB).
+- Platform: Unitree Go2, ROS 2 Humble laptop, internal L1 + D435i, native Go2 odometry, RTAB-Map, Nav2 (NavFn + DWB). Legacy RoboSense launches are not the default pipeline.
 - Target test: a 90 cm doorway. Preserve the original RTAB-Map database.
 - Reference PR: #1, branch `fix/nav2-narrow-passage`, base `main`.
 - Canonical validation record: `docs/go2_navigation_validation.html`.
@@ -22,7 +22,7 @@ Scope: this repository, its Codex agents, and all subagents. Read this file firs
 - Do not initiate physical robot motion, `NavigateToPose` goals, `/cmd_vel` publication or Unitree Sport motion commands. The operator must perform live movement and safety checks.
 - Do not claim physical validation from static analysis, compile checks, simulated data, or RViz screenshots alone.
 - Do not use `restart_map:=true`, `--delete_db_on_start`, or overwrite/delete an existing .db. Navigation must use a copy of the original DB.
-- Current 70×40 cm walking Footprint and 42 cm Inflation Radius are **unverified experimental assumptions**. They are not a proven collision boundary.
+- Current 80×42 cm configured Footprint and 45 cm Inflation Radius match the previous laptop baseline and remain **unverified for the dynamic walking envelope**. The earlier 70×40 cm / 42 cm PR settings are historical experiments. They are not a proven collision boundary.
 - Treat initial localization separately from door-passage path planning; verify `map → odom → base_link` before navigation.
 - Inspect sensor TF, time synchronization and Costmaps before modifying algorithms. No Planner/Controller/Critic replacement without a reproducible reason and comparison.
 - Do not make uncontrolled changes to robot firmware, safety settings, command timeouts or network configuration.

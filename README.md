@@ -1,207 +1,114 @@
-# Unitree-Go2 Robot: SLAM and Nav2 Demos
+# Unitree Go2 L1 + D435i: RTAB-Map / Nav2
 
-*By: Hossein Naderi*
+This fork adapts Hossein Naderi's Go2 SLAM/Nav2 demo to the **current laptop + stock Go2** experiment: ROS 2 Humble on the laptop, Go2 native odometry, internal L1 LiDAR, and the head-mounted D435i. The original RoboSense launch files remain as legacy references; the default Mapping/Navigation scripts do not start RoboSense or ICP odometry.
 
-Welcome to the **Unitree-Go2 Robot SLAM and Nav2** repository! This project demonstrates the integration of SLAM (Simultaneous Localization and Mapping) and autonomous navigation using Nav2 on the Unitree-Go2 robot. The repository includes demonstration videos, source code, and comprehensive documentation to assist in replicating and building upon the showcased capabilities.&#8203;:contentReference[oaicite:0]{index=0}
+## Current data and control routes
 
----
+- `/utlidar/cloud_base` → camera-clock alignment → `/cloud_base_synced` → 1 s motion-compensated `/assembled_cloud`.
+- `/utlidar/robot_odom` → latest RGB stamp → `/robot_odom_fixed` and `odom → base_link`. Set `odom_bridge:=false` only if the existing equivalent bridge is already running.
+- `/camera/color/image_raw`, `/camera/color/camera_info`, `/camera/aligned_depth_to_color/image_raw` → RTAB-Map visual registration (`Reg/Strategy=0`). Navigation localizes in a saved database with `Mem/IncrementalMemory=false`, `Mem/LocalizationReadOnly=true`, `map_always_update=false`.
+- Sensor restamping follows the previous experiment's approximate latest-camera-stamp convention. It is **not hardware synchronization**. Stale camera input stops synchronized output; cached odometry is not reused beyond 0.5 s.
+- `base_link → camera_link = (0.20, 0, 0.09)m` preserves the existing saved-map camera model. RealSense publishes its internal camera frames. The included 2026-11-10 calibration affects only the Nav2 depth-scan frame; it does not rewrite saved keyframes. Disable it for another mount with `nav_camera_calibration:=''` when launching directly.
+- DWB → `/go2_nav/cmd_vel_raw` → velocity smoother → `/go2_nav/cmd_vel` → optional `sport_ctrl` → `/api/sport/request`.
+- All translation routes enforce `x >= 0`, `y = 0`. Turning is allowed. Negative/lateral commands are clipped again at the Sport encoder; non-finite input sends StopMove. Backup recovery is absent from both behavior trees and the behavior server. This policy covers this Nav2 bridge; a separately running teleoperation or SDK process has its own control path.
 
-## Table of Contents
+## Laptop setup
 
-1. [Overview](#overview)
-2. [Demo Videos](#demo-videos)
-3. [Project Structure](#project-structure)
-4. [Workspace Setup](#workspace-setup)
-5. [Launch Files](#launch-files)
-6. [Detailed Project Explanations](#detailed-project-explanations)
-
----
-
-## Overview
-
-- **Robot Platform**: [Unitree-Go2](https://www.unitree.com/products/go2)
-- **SLAM**: ROS 2 RTAB-Map
-- **Navigation**: ROS 2 Nav2
-
-### Key Features
-
-- **Real-time mapping** in indoor and outdoor environments
-- **Obstacle avoidance** using Nav2 and sensor data
-- **Sensor fusion** combining RGB Depth Camera with LiDAR point cloud
-- **Autonomous path planning** to specified goals
-- **Facial recognition** capabilities for identifying individuals during navigation
-
----
-
-## Demo Videos
-
-1. **SLAM Demo Video**  
-   *Demonstration of integrated SLAM with Unitree-Go2 using RTAB-Map in ROS2.*
-
-   [![SLAM Demo Video](https://github.com/user-attachments/assets/99b8062b-3fb6-4a19-bc97-b03568393300)](https://github.com/user-attachments/assets/99b8062b-3fb6-4a19-bc97-b03568393300)
-
-2. **Autonomous Navigation Demo Video**  
-   *Demonstration of integrated Autonomous Navigation with Unitree-Go2 using Nav2 Stack in ROS2.*
-
-   [![Autonomous Navigation Demo Video](https://github.com/user-attachments/assets/3f4abc8c-d612-4665-a894-e6b635843b2e)](https://github.com/user-attachments/assets/3f4abc8c-d612-4665-a894-e6b635843b2e)
-
-
-
-## Dependencies
-
-
-
-- **Unitree SDK**: [https://github.com/unitreerobotics/unitree_ros2](https://github.com/unitreerobotics/unitree_ros2)
-- **LiDAR SDK**: [https://github.com/RoboSense-LiDAR/rslidar_sdk](https://github.com/RoboSense-LiDAR/rslidar_sdk)
-- **LiDAR Messages**: [https://github.com/RoboSense-LiDAR/rslidar_msg](https://github.com/RoboSense-LiDAR/rslidar_msg)
-
-
----
-
-## Workspace Setup
-
-
-
-1. **Create your workspace:**
-   ```bash
-   mkdir -p ~/ws/src
-   cd ~/ws/src
-   ```
-
-2. **Clone this repository:**
-   ```bash
-   git clone --branch fix/nav2-narrow-passage https://github.com/jcy9066/unitree-go2-slam-nav2.git
-
-   ```
-3. **Navigate to the repository:**
-
-   ```bash
-   cd ~/ws/src
-   ```
-
-4. **Import dependencies using `vcs`:**
-
-   ```bash
-   vcs import < unitree-go2-slam-nav2/dependencies.repo
-   ```   
-5. **Install dependencies and build the workspace:**
-
-   ```bash
-   cd ~/ws
-   rosdep install --from-paths src --ignore-src -r -y
-   colcon build
-   ```
-
-6. **Source the workspace:**
-
-   ```bash
-   source ~/ws/install/setup.bash
-   ```
-
----
-
-## Launch Files
-
-1. **Launch the Intel RealSense camera node:**
-    ```sh
-    ros2 launch realsense2_camera rs_launch.py enable_gyro:=true enable_accel:=true unite_imu_method:=1 enable_infra1:=true enable_infra2:=true enable_sync:=true
-    ```
-
-2. **Launch everything on the robot for mapping with the LiDAR only:**
-    ```sh
-    ros2 launch go2_slam_nav mapping.launch.py
-    ```
-
-3. **Launch the robot with the RealSense camera and the LiDAR:**
-    ```sh
-    ros2 launch go2_slam_nav mapping_camera.launch.py
-    ```
-4. **Launch the navigation:**
-    ```sh
-    ros2 launch go2_slam_nav nav.launch.py
-    ```
-
-5. **Launch the exploration node only:**
-    ```sh
-    ros2 launch frontier frontier_update.launch.xml
-    ```
-
-
-
-Feel free to reach out if you have any questions or need further assistance with setting up the project.
-
-## Detailed Project Explanations
-
-For comprehensive explanations and insights into each project component, please refer to my portfolio:
-
-- **SLAM Project**: [SLAM Project](https://h-naderi.github.io/projects/1-slam)
-- **Autonomous Navigation**: [Navigation Project](https://h-naderi.github.io/projects/3-auto-nav-and-exploration)
-
-
-
----
-
-## Codex collaboration — GitHub MCP / Hooks / Skills
-
-- Agent policy: [AGENTS.md](AGENTS.md)
-- Codex MCP and Merge authorization guide: [docs/codex_github_access.md](docs/codex_github_access.md)
-- GitHub MCP configuration: [.codex/config.toml](.codex/config.toml)
-- Hook events and policy: [.codex/hooks.json](.codex/hooks.json), [.codex/hooks/policy.py](.codex/hooks/policy.py)
-- Six role-specific verification Skills: [.agents/skills/](.agents/skills/)
-- **Latest validation HTML:** [docs/go2_navigation_validation.html](docs/go2_navigation_validation.html) (see the HTML header for the current revision; keep this one file current)
-
-The GitHub MCP configuration exposes branch/file push/Draft PR/review tools **without a Merge tool**. This is not a server-side permission boundary. A local Codex credential and trusted hooks are **not yet configured by this repository change**; only the user can complete local authentication. Protect `main` with a GitHub Ruleset and a separate Codex App identity to enforce No-Merge at the GitHub server.
-
-## Visual validation record / 실검증 HTML
-
-Open the [Go2 Navigation 변경 내역·실검증 HTML](docs/go2_navigation_validation.html) for a structured change history, Mapping/Localization mode comparison, all commands, PASS/STOP criteria, and post-test updates.
-
-- Source of truth: `docs/go2_navigation_validation.html` (keep the **same file** for later revisions).
-- Read the current Draft PR #1 and its individual commits together with the HTML.
-- Note: GitHub may show the HTML source instead of a rendered page. Download the file and open it in a web browser to see its layout.
-
-## One-command Go2 mapping / localization / Nav2 (fork PR #1)
-
-> **Environment:** ROS 2 Humble, Nav2, RTAB-Map, Unitree ROS 2 SDK, RoboSense LiDAR SDK, and a built colcon workspace. Scripts use the **LiDAR-only** pipeline; Intel RealSense RGB-D is not automatically started. Do not send a Nav2 goal until localization is verified.
-
-The `run_*.sh` scripts assume the repository is at `~/ws/src/unitree-go2-slam-nav2`. Set `GO2_WS_ROOT=/path/to/ws` if your workspace is elsewhere. They source ROS 2 and your workspace automatically and run `colcon build --packages-select go2_slam_nav go2_cmd_processor` each time so installed launch/config changes are current. Set `GO2_SKIP_BUILD=1` to skip rebuilding an already built workspace.
-
-**Mapping: make a new database (existing files never overwritten)**
+Do not mix the previous Go2 SLAM/navigation overlays into this workspace. The existing Unitree message workspace is reused; no second RoboSense SDK is needed.
 
 ```bash
-cd ~/ws/src/unitree-go2-slam-nav2
+source /opt/ros/humble/setup.bash
+source "$HOME/unitree_ros2/cyclonedds_ws/install/setup.bash"
+export GO2_WS_ROOT="$HOME/GH/unitree_go2_pr1_ws"
+mkdir -p "$GO2_WS_ROOT/src"
+# On this laptop this symlink already exists. For a new checkout, create it once:
+# ln -s /absolute/path/unitree-go2-slam-nav2 "$GO2_WS_ROOT/src/unitree-go2-slam-nav2"
+cd "$GO2_WS_ROOT"
+colcon build --packages-select go2_cmd_processor go2_slam_nav
+source install/setup.bash
+```
+
+Required installed ROS packages: RTAB-Map (`rtabmap_slam`, `rtabmap_util`, `rtabmap_viz`), Nav2, `depthimage_to_laserscan`, CycloneDDS, and `unitree_api`. Scripts source the existing Unitree setup at `~/unitree_ros2/cyclonedds_ws/install/setup.bash`; override its location with `GO2_UNITREE_SETUP`.
+
+## Operator: start the camera on Go2
+
+On the laptop, open **terminal 1** and connect to the powered robot:
+
+```bash
+ssh unitree@192.168.123.18
+```
+
+At `ros:foxy(1) ...`, choose `1`. Then run **on Go2**:
+
+```bash
+source ~/ros2_realsense_456_ws/activate.bash
+ros2 launch realsense2_camera rs_launch.py \
+  camera_namespace:=/ camera_name:=camera \
+  depth_module.depth_profile:=640x480x30 rgb_camera.color_profile:=640x480x15 \
+  enable_color:=true enable_depth:=true enable_infra1:=false enable_infra2:=false \
+  enable_sync:=false align_depth.enable:=true pointcloud.enable:=false \
+  enable_accel:=false enable_gyro:=false \
+  depth_module.emitter_enabled:=1 depth_module.emitter_on_off:=false
+```
+
+## Operator: existing-map navigation, initially without motion
+
+On the **laptop, terminal 2**:
+
+```bash
+cd ~/GH/unitree-go2-slam-nav2
+export GO2_WS_ROOT="$HOME/GH/unitree_go2_pr1_ws"
+export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+export ROS_DOMAIN_ID=0
+export ROS_LOCALHOST_ONLY=0
+export CYCLONEDDS_URI='<CycloneDDS><Domain><General><Interfaces><NetworkInterface name="eno1"/></Interfaces></General></Domain></CycloneDDS>'
+bash scripts/run_nav.sh "$HOME/GH/go2_l1_nav2_ws/analysis/saved_map_fix_20261109/navigation_map.db"
+```
+
+`eno1`, domain 0, and the DB above are the current laptop's experiment settings. The Ethernet link and camera must be active. The command copies the original DB into `~/go2_maps/nav_sessions/`; it does not modify the original. To inspect the separate 2026-11-10 left-door map candidate, explicitly supply `~/GH/go2_l1_nav2_ws/analysis/left_door_repair_20261110/navigation_map.db` instead. That candidate has not passed a physical door traversal.
+
+The default has **no Sport bridge**. Verify `map → odom → base_link`, initial position/yaw, the actual doorway, both Costmaps, and the real moving leg envelope. A loaded map or a successful build does not establish localization or collision safety.
+
+Only the **operator**, after completing these checks, may stop that session with Ctrl+C and opt in to the motion bridge:
+
+```bash
+GO2_ENABLE_MOTION=true bash scripts/run_nav.sh \
+  "$HOME/GH/go2_l1_nav2_ws/analysis/saved_map_fix_20261109/navigation_map.db"
+```
+
+The operator sends any RViz2 navigation goal and controls the supervised test. Maximum translation remains the PR's `0.15m/s`; maximum turn rate is `0.6rad/s`. The Sport timeout remains `0.25s`; zero/invalid/stale commands use StopMove (`1003`). No stand-up, dance, or other motion services are exposed by this navigation bridge.
+
+## Optional: mapping into a new DB
+
+With the same camera/network/workspace environment and Navigation stopped:
+
+```bash
 bash scripts/run_mapping.sh
-# or: bash scripts/run_mapping.sh "$HOME/go2_maps/lab_test.db"
-# Ctrl+C at the end to allow RTAB-Map to save.
+# Or choose a new, nonexistent filename:
+bash scripts/run_mapping.sh "$HOME/go2_maps/lab_new.db"
 ```
 
-- Sets `localize_only:=false`, `restart_map:=false`.
-- Starts the RoboSense LiDAR SDK, ICP odometry, RTAB-Map SLAM, and RTAB-Map visualization in one terminal.
-- Uses a unique `~/go2_maps/go2_YYYYMMDD_HHMMSS.db` by default and records a completed DB path in `~/go2_maps/.last_map`.
+Mapping refuses an existing DB path. Stop with Ctrl+C to flush it. Navigation uses Localization only; only Nav2 Costmaps update with current obstacles.
 
-**Navigation: load an existing database**
+## Current geometry and verification
+
+| Setting | Current |
+|---|---|
+| Global / Local resolution | 0.05 / 0.02 m |
+| Footprint | 0.80 × 0.42 m, matching the previous laptop configuration |
+| Global / Local padding | 0.01 / 0.02 m |
+| Both inflation radii / scaling | 0.45 m / 4.0 |
+| Planner / Controller | NavFn Dijkstra / DWB, retained from PR #1 |
+| Forward / lateral velocity | 0…0.15 m/s / 0 |
+
+The footprint is a configuration baseline, **not a measured dynamic leg boundary**. The previous PR's 70×40cm and 0.42m inflation remain historical experiments in the same validation record. Current DWB still uses its existing critics, including center-cost `BaseObstacle`; no full-body collision guarantee is made. Initial localization and the 90cm second-door traversal remain NOT TESTED with this port because Go2 is powered off.
+
+Local checks:
 
 ```bash
-cd ~/ws/src/unitree-go2-slam-nav2
-bash scripts/run_nav.sh "$HOME/.ros/rtabmap.db"  # replace with the real DB path
-# or, after using run_mapping.sh:
-bash scripts/run_nav.sh
+bash -n scripts/_env.sh scripts/run_mapping.sh scripts/run_nav.sh
+# After sourcing the built workspace:
+python3 -m pytest -q tests
 ```
 
-- Validates that the DB file exists; **copies** it into a new `~/go2_maps/nav_sessions/` session directory to protect the original.
-- Starts the RoboSense LiDAR SDK, ICP odometry, RTAB-Map **localization only**, Nav2 controller/planner/behavior/velocity smoother, Unitree sport command bridge, and **one Nav2 RViz2** instance.
-- Does not regenerate the SLAM map or modify the original DB. Nav2 activation **does not prove** that the correct initial pose has been recovered.
-
-**Environment / required checks**
-
-```bash
-echo "$ROS_DOMAIN_ID"                 # must agree with the Go2/ROS 2 DDS network
-ros2 topic info /rslidar_points      # LiDAR data must be available
-ros2 topic info /api/sport/request   # confirm Unitree command bridge/network
-```
-
-Also verify the robot's `base_link → base_laser` transform against the actual sensor mount; the upstream launch uses a fixed +0.20m Z offset. Before commanding movement, compare RViz2 robot pose with the real Go2 and inspect both Costmaps. If your existing workspace already contains a second original clone created by the old `dependencies.repo`, resolve duplicate ROS package directories before building.
-
-**PR #1 experimental geometry:** local resolution `0.05→0.02m`, footprint `82×70→70×40cm` (unverified walking envelope), footprint padding explicitly `0.01m`, inflation `0.55→0.42m` (global and local). The Go2 walking footprint is **an assumption, not a measured safety boundary**. Do collision and no-motion checks before supervised, low-speed testing at the 90cm doorway. Do not assume a valid global plan proves collision safety.
-
-**If tests still fail:** first inspect the map vs. Global/Local Costmap obstacle and inflation cells; then DWB rejected trajectories and `cmd_vel_nav → cmd_vel → /api/sport/request` timing, Progress Checker and default Behavior Tree periodic replanning. Investigate initial localization/`map→odom` separately. Change algorithms or Critics only with evidence and in separate commits. No GitHub Actions or automatic merge.
+See the single [validation record](docs/go2_navigation_validation.html) for R5 results, T00–T10, exact limits, and commit history. Follow [AGENTS.md](AGENTS.md). No GitHub Actions or automatic merge.
