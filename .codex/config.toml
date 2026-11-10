@@ -1,0 +1,25 @@
+# Codex project-scoped GitHub MCP. Codex must trust this repository first.
+# Requires Docker, a local GITHUB_PERSONAL_ACCESS_TOKEN environment variable,
+# and an explicit user-approved GitHub fine-grained credential restricted to
+# jcy9066/unitree-go2-slam-nav2. NEVER store the token in this file.
+#
+# GitHub MCP exposes selected tools only. "git switch", local "git commit",
+# and local "git push" remain terminal operations, protected only by hooks,
+# agent instructions, and real GitHub branch rules (not this MCP allowlist).
+#
+# DO NOT add toolsets: doing so can register merge/actions/admin tools.
+# The explicit deny is defense in depth; neither is an API permission boundary.
+
+[mcp_servers.github_go2]
+command = "docker"
+args = [
+  "run", "-i", "--rm",
+  "-e", "GITHUB_PERSONAL_ACCESS_TOKEN",
+  "ghcr.io/github/github-mcp-server",
+  "stdio",
+  "--tools=get_file_contents,get_commit,list_branches,list_commits,create_branch,create_or_update_file,push_files,create_pull_request,update_pull_request,list_pull_requests,pull_request_read,pull_request_review_write,search_pull_requests",
+  "--exclude-tools=merge_pull_request"
+]
+env_vars = ["GITHUB_PERSONAL_ACCESS_TOKEN"]
+startup_timeout_sec = 30
+tool_timeout_sec = 60
