@@ -1,0 +1,5 @@
+<library path="go2_nav2_critics">
+  <class type="go2_nav2_critics::WalkingSpeedCritic" base_class_type="dwb_core::TrajectoryCritic">
+    <description>Reject nonzero translation below the configured threshold; allow zero-translation turns.</description>
+  </class>
+</library>
