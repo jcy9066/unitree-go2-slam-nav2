@@ -1,0 +1,60 @@
+{
+  "new_translation": [
+    0.2648185801802527,
+    0.03058381532909738,
+    0.09583560710599628
+  ],
+  "new_rotation": [
+    [
+      0.03765798124726346,
+      -0.04070931436816927,
+      0.9984611300256282
+    ],
+    [
+      -0.9989972243133528,
+      -0.02574689713222906,
+      0.03662844662662127
+    ],
+    [
+      0.02421615705675827,
+      -0.9988392508365579,
+      -0.041638068226881396
+    ]
+  ],
+  "normal_frame_translation": [
+    0.2648185801802527,
+    0.03058381532909738,
+    0.09583560710599628
+  ],
+  "normal_frame_quaternion_xyzw": [
+    -0.012496548280601868,
+    0.020596379846752156,
+    0.018580207867357847,
+    0.9995370935057311
+  ],
+  "parent_frame": "base_link",
+  "child_frame": "go2_nav_camera_color_frame",
+  "note": "Navigation depth scan only; legacy RTAB-Map camera model is retained for saved keyframes.",
+  "fit_diagnostics": [
+    {
+      "view": "go2_open_alignment_20261110",
+      "points": 1200,
+      "before_median": 0.059660326121924026,
+      "after_median": 0.04389623620189004,
+      "before_p90": 0.1505360763603613,
+      "after_p90": 0.10716458134547194,
+      "heldout_before_mean": 0.07144190277501887,
+      "heldout_after_mean": 0.05187363651500137
+    },
+    {
+      "view": "go2_facing_door2_20261110",
+      "points": 1191,
+      "before_median": 0.055820073745402446,
+      "after_median": 0.027460988970473665,
+      "before_p90": 0.10646553728271836,
+      "after_p90": 0.06898040892938576,
+      "heldout_before_mean": 0.05900976937268467,
+      "heldout_after_mean": 0.03562195091206006
+    }
+  ]
+}

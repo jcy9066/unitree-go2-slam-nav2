@@ -36,11 +36,13 @@ printf '%s\n' "$DB" > "$SESSION_DIR/source_db_path.txt"
 
 printf '[go2] Original map (unchanged): %s\n' "$DB"
 printf '[go2] Nav session map copy:    %s\n' "$SESSION_DB"
-echo '[go2] Starting LiDAR + RTAB-Map localization + Nav2 + RViz2.'
+echo '[go2] Starting L1 + RGB-D localization + Nav2 + RViz2.'
+echo '[go2] Motion bridge is disabled unless GO2_ENABLE_MOTION=true is explicitly set.'
 echo '[go2] Confirm localized robot pose and costmaps in RViz2 BEFORE sending any goal.'
 ros2 launch go2_slam_nav nav.launch.py \
     database_path:="$SESSION_DB" \
     localize_only:=true \
     restart_map:=false \
     use_rviz:=false \
-    use_nav2_rviz:=true
+    use_nav2_rviz:=true \
+    enable_motion:="${GO2_ENABLE_MOTION:-false}"
