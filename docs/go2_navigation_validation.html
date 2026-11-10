@@ -20,15 +20,27 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;line-height:1.7;c
 </head>
 <body>
 <div class="shell">
-<aside class="side" aria-label="문서 목차"><div class="logo">GO2 / NAV2</div><div class="sub">ENGINEERING FIELD RECORD · R11</div><nav>
-<a href="#corner-stall">R11. 코너 정체 진단</a><a href="#turn-cap">R10. 회전 상한 1.8</a><a href="#forward-cap">R9. 전진 상한 0.3</a><a href="#rviz-map-display">R8. 지도 표시 수정</a><a href="#build-discovery">R7. 중복 패키지 수정</a><a href="#laptop-ready">R6. 노트북 실제 설치</a><a href="#l1-port">R5. L1 전환 및 검증</a><a href="#overview">00. 문서 상태</a><a href="#mode">01. Mapping 여부</a><a href="#baseline">02. 적용 설정</a><a href="#history">03. 전체 변경 이력</a><a href="#startup">04. 단일 명령 실행</a><a href="#sequence">05. 실검증 순서</a><a href="#faults">06. 실패 진단표</a><a href="#record">07. 기록 양식</a><a href="#maintenance">08. 갱신 규칙</a><a href="#codex">09. Codex MCP / Hooks</a>
+<aside class="side" aria-label="문서 목차"><div class="logo">GO2 / NAV2</div><div class="sub">ENGINEERING FIELD RECORD · R12</div><nav>
+<a href="#corner-timeline">R12. 실패 시간대 분석</a><a href="#corner-stall">R11. 코너 정체 진단</a><a href="#turn-cap">R10. 회전 상한 1.8</a><a href="#forward-cap">R9. 전진 상한 0.3</a><a href="#rviz-map-display">R8. 지도 표시 수정</a><a href="#build-discovery">R7. 중복 패키지 수정</a><a href="#laptop-ready">R6. 노트북 실제 설치</a><a href="#l1-port">R5. L1 전환 및 검증</a><a href="#overview">00. 문서 상태</a><a href="#mode">01. Mapping 여부</a><a href="#baseline">02. 적용 설정</a><a href="#history">03. 전체 변경 이력</a><a href="#startup">04. 단일 명령 실행</a><a href="#sequence">05. 실검증 순서</a><a href="#faults">06. 실패 진단표</a><a href="#record">07. 기록 양식</a><a href="#maintenance">08. 갱신 규칙</a><a href="#codex">09. Codex MCP / Hooks</a>
 </nav><small>Repository: jcy9066/unitree-go2-slam-nav2<br>Task branch: fix/l1-rgbd-forward-only<br>Base: PR #1 · Draft<br>검토일: 2026-11-10 KST</small></aside>
 <main>
-<header class="hero" id="overview"><div class="eyebrow">ENGINEERING / VALIDATION RECORD</div><h1>Go2 Navigation<br>변경 내역 및 실검증 절차</h1><p>90 cm 문 통과 실험 · RTAB-Map DB 재사용 · Nav2 Costmap 설정 · 단일 명령 실행</p><div class="meta"><span class="pill">PR #1 · Draft</span><span class="pill warn">실기기 미검증</span><span class="pill good">GitHub 코드 확인</span><span class="pill">2026-11-10 KST · R11</span></div></header>
+<header class="hero" id="overview"><div class="eyebrow">ENGINEERING / VALIDATION RECORD</div><h1>Go2 Navigation<br>변경 내역 및 실검증 절차</h1><p>90 cm 문 통과 실험 · RTAB-Map DB 재사용 · Nav2 Costmap 설정 · 단일 명령 실행</p><div class="meta"><span class="pill">PR #1 · Draft</span><span class="pill warn">실기기 미검증</span><span class="pill good">GitHub 코드 확인</span><span class="pill">2026-11-10 KST · R12</span></div></header>
 <div class="summary"><div class="metric"><strong>33</strong><span>R4 작성 전 Branch 변경 Commit (이후 계속 증가)</span></div><div class="metric"><strong>2 cm</strong><span>Local Costmap 셀 해상도</span></div><div class="metric"><strong>80 × 42 cm</strong><span>기존 설정 Footprint · 동적 범위 미검증</span></div></div>
 <div class="panel attention"><strong>중요 / Safety</strong><p>이 문서는 실행 코드를 검토한 결과입니다. Go2 실주행 성공을 증명하지 않습니다. 80 × 42 cm는 기존 설정값이며 발과 다리의 실제 이동 범위를 검증한 값이 아닙니다. 충돌 위험이 있으면 Goal을 보내지 마십시오.</p></div>
 <p class="intro">표현 원칙: 짧은 문장을 사용합니다. 한 단계에 한 가지 목표를 둡니다. 명령과 통과 기준을 분리합니다. ASD-STE100의 단순 명료한 기술문서 작성 원칙을 참고했습니다. 한국어 문서이므로 ASD-STE100 준수 인증을 뜻하지 않습니다.</p>
 
+<section id="corner-timeline"><h2>R12 · 코너 실패 판정의 시간대·코드 경로 분석 / 2026-11-10 KST</h2>
+<p><strong>확정한 실패 트리거:</strong> ControllerServer의 computeAndPublishVelocity에서 robot pose를 얻은 뒤 ProgressChecker가 false를 반환해 Failed to make progress 예외가 발생했습니다. 이 분기는 해당 제어 주기의 DWB 속도 계산보다 먼저 실행됩니다. 현재 local_costmap 기준 frame은 odom이고, SimpleProgressChecker는 XY 거리 0.5m / 10초만 검사합니다. 실패 로그는 정체 조건 만료를 뜻하며 정상 회전을 잘못 판단했다고 증명하지는 않습니다.</p>
+<table><thead><tr><th>한국 시간</th><th>사건</th><th>관측</th></tr></thead><tbody>
+<tr><td>13:38:53.279 → 13:39:03.280</td><td>FollowPath 재시도 → 진행 실패</td><td>10.001초</td></tr>
+<tr><td>13:39:03.300 → 13:39:13.477</td><td>다음 재시도 → 진행 실패</td><td>10.177초, 이어 5초 Wait</td></tr>
+<tr><td>13:39:39.838</td><td>새 복도 Goal 수신 시 현재 위치</td><td>map 추정 (-7.74, -5.95)</td></tr>
+<tr><td>13:40:07.498</td><td>연구실 방향 Goal로 변경 시 현재 위치</td><td>map 추정 (-7.72, -5.94)</td></tr>
+</tbody></table>
+<p>27.660초 사이 두 지도상 추정 위치의 순변위는 약 0.022m입니다. 이는 연속 odometry 또는 실제 바닥 이동 거리가 아닙니다. 그 사이 13:39:49.280 / 13:39:59.477에도 진행 실패가 기록됐습니다. 새 Path는 약 1초마다 controller에 계속 전달됐습니다.</p>
+<p><strong>구분:</strong> 코너 구간의 No valid trajectories / Failed to obtain robot pose 오류는 확인되지 않았습니다. Planner의 plan 생성 오류는 13:40:29.256의 별도 연구실 복귀 Goal 구간이며, 앞선 코너 실패와 같은 사건으로 묶을 수 없습니다. RTAB-Map은 코너 관측 구간에서 약 1초마다 처리됐고 delay 0.2675–0.3946s였으며 WARN/ERROR는 없었습니다. 이것만으로 Localization 정확성을 입증하지는 않습니다.</p>
+<p><strong>미확정:</strong> 당시 cmd_vel·Sport·DWB evaluation·연속 odometry·해당 순간 Costmap 기록이 없어, 미세 제어 명령/로봇 응답/실제 장애물·위치 오정합 중 무엇이 정체를 만들었는지는 역으로 확정할 수 없습니다. 사후 Global Costmap에서 해당 좌표는 free이고 최근접 lethal 셀 중심은 약 0.95m였지만 당시 장애물 상태를 대신하지 않습니다. 현재 확인만으로 inflation 또는 progress checker 교체를 해결책으로 확정하지 않습니다.</p>
+<p>근거: <code>/tmp/go2_corner_failure_timeline.json</code>, 해당 controller/BT/planner/RTAB-Map 로그, <a href="https://github.com/ros-navigation/navigation2/blob/humble/nav2_controller/src/controller_server.cpp">공식 ControllerServer 소스</a>. 이번 작업은 분석과 기록만 수행했습니다. 파라미터 변경·Goal·속도·Sport 명령 발행 없음. GitHub 원격 반영은 기존 integration 403으로 대기 중입니다.</p></section>
 <section id="corner-stall"><h2>R11 · 코너 앞 꿈틀거림 진단 / 2026-11-10 KST</h2>
 <p><strong>관측:</strong> 운영자가 코너 벽 모서리 앞 정체를 보고했습니다. controller_server_1473226 로그에 Failed to make progress가 반복되며 local/global Costmap clear, 5초 Wait, 재시도 후 최종 Goal failed가 기록됐습니다. 해당 구간에서 No valid trajectories 오류는 확인하지 못했습니다.</p>
 <p><strong>확인된 설정 문제:</strong> 현재 SimpleProgressChecker는 10초 내 위치 변화 0.5m를 요구하고 회전 각도는 진행으로 세지 않습니다. 기존 실험 구성의 PoseProgressChecker(거리 0.15m, 각도 0.3rad, 15초)와 다릅니다. 공식 Humble 소스에서도 Simple은 XY 거리만, Pose는 거리 또는 각도를 검사합니다.</p>
@@ -195,5 +207,5 @@ python3 -m pytest -q tests
 <p>T15 · 로컬 <code>PreToolUse</code>의 저장소 인자 별칭 호환 및 main/master/금지 도구 차단 검사 16개 PASS. 허용·금지 도구 목록은 유지했습니다. Docker 기반 MCP 연결 자체는 NOT TESTED이며 현재 연결된 GitHub MCP는 쓰기 403입니다.</p>
 </div>
 </section>
-<footer class="footer">GO2 / NAV2 · Technical field record · Draft PR #1 · Revision R11 · 2026-11-10 KST<br>본 HTML은 ASD-STE100의 명료한 기술문장 원칙을 참고한 한국어 문서입니다. ASD-STE100 규격 적합성 인증을 의미하지 않습니다.</footer>
+<footer class="footer">GO2 / NAV2 · Technical field record · Draft PR #1 · Revision R12 · 2026-11-10 KST<br>본 HTML은 ASD-STE100의 명료한 기술문장 원칙을 참고한 한국어 문서입니다. ASD-STE100 규격 적합성 인증을 의미하지 않습니다.</footer>
 </main></div></body></html>
