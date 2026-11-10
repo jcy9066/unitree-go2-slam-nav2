@@ -57,13 +57,19 @@ def risk_reason(tool, args, cwd):
         if name in ALLOWED_MCP_WRITES:
             owner = arg.get("owner")
             repo = arg.get("repo")
+            full_name = arg.get("repository_full_name")
+            if full_name is not None:
+                if (owner is not None or repo is not None) and full_name != f"{owner}/{repo}":
+                    return "Conflicting GitHub repository identifiers."
+                if owner is None and repo is None:
+                    owner, _, repo = str(full_name).partition("/")
             if (owner, repo) != ("jcy9066", "unitree-go2-slam-nav2"):
                 return "GitHub writes are limited to jcy9066/unitree-go2-slam-nav2."
             if name in {"push_files", "create_or_update_file"}:
                 target = str(arg.get("branch", "")).removeprefix("refs/heads/")
                 if not target or target in {"main", "master"}:
                     return "Do not write directly to main/master or an unspecified branch."
-            if name == "create_branch" and arg.get("branch") in {"main", "master"}:
+            if name == "create_branch" and str(arg.get("branch") or arg.get("branch_name", "")).removeprefix("refs/heads/") in {"main", "master", ""}:
                 return "Creating or replacing main/master is prohibited."
             if name == "create_pull_request":
                 if arg.get("draft") is not True:
