@@ -38,7 +38,7 @@ if [[ "${GO2_SKIP_BUILD:-0}" != "1" ]]; then
     echo "[go2] Building changed launch/config packages in $GO2_WS_ROOT"
     # Only discover source packages; workspace backups may contain package.xml.
     (cd -- "$GO2_WS_ROOT" && colcon build --base-paths "$GO2_WS_ROOT/src" \
-        --packages-select go2_slam_nav go2_cmd_processor)
+        --packages-select go2_nav2_critics go2_slam_nav go2_cmd_processor)
 fi
 
 if [[ ! -f "$GO2_WS_ROOT/install/setup.bash" ]]; then
@@ -50,7 +50,7 @@ set +u
 source "$GO2_WS_ROOT/install/setup.bash"
 set -u
 
-for pkg in go2_slam_nav go2_cmd_processor rtabmap_slam rtabmap_util nav2_bringup depthimage_to_laserscan unitree_api; do
+for pkg in go2_slam_nav go2_nav2_critics go2_cmd_processor rtabmap_slam rtabmap_util nav2_bringup depthimage_to_laserscan unitree_api; do
     if ! ros2 pkg prefix "$pkg" >/dev/null 2>&1; then
         printf 'ERROR: required ROS package %s missing; import/build dependencies first.\n' "$pkg" >&2
         exit 1
