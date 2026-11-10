@@ -88,7 +88,7 @@ GO2_ENABLE_MOTION=true bash scripts/run_nav.sh \
   "$HOME/GH/go2_l1_nav2_ws/analysis/saved_map_fix_20261109/navigation_map.db"
 ```
 
-The operator sends any RViz2 navigation goal and controls the supervised test. Maximum translation remains the PR's `0.15m/s`; maximum turn rate is `0.6rad/s`. The Sport timeout remains `0.25s`; zero/invalid/stale commands use StopMove (`1003`). No stand-up, dance, or other motion services are exposed by this navigation bridge.
+The operator sends any RViz2 navigation goal and controls the supervised test. Maximum translation is `0.30m/s` (updated at the operator’s request); maximum turn rate is `0.6rad/s`. The Sport timeout remains `0.25s`; zero/invalid/stale commands use StopMove (`1003`). No stand-up, dance, or other motion services are exposed by this navigation bridge.
 
 ## Optional: mapping into a new DB
 
@@ -111,7 +111,7 @@ Mapping refuses an existing DB path. Stop with Ctrl+C to flush it. Navigation us
 | Global / Local padding | 0.01 / 0.02 m |
 | Both inflation radii / scaling | 0.45 m / 4.0 |
 | Planner / Controller | NavFn Dijkstra / DWB, retained from PR #1 |
-| Forward / lateral velocity | 0…0.15 m/s / 0 |
+| Forward / lateral velocity | 0…0.30 m/s / 0 |
 
 The footprint is a configuration baseline, **not a measured dynamic leg boundary**. The previous PR's 70×40cm and 0.42m inflation remain historical experiments in the same validation record. Current DWB still uses its existing critics, including center-cost `BaseObstacle`; no full-body collision guarantee is made. Initial localization and the 90cm second-door traversal remain NOT TESTED with this port because Go2 is powered off.
 
