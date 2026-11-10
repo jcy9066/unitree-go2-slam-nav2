@@ -36,7 +36,9 @@ if [[ "${GO2_SKIP_BUILD:-0}" != "1" ]]; then
         exit 1
     fi
     echo "[go2] Building changed launch/config packages in $GO2_WS_ROOT"
-    (cd -- "$GO2_WS_ROOT" && colcon build --packages-select go2_slam_nav go2_cmd_processor)
+    # Only discover source packages; workspace backups may contain package.xml.
+    (cd -- "$GO2_WS_ROOT" && colcon build --base-paths "$GO2_WS_ROOT/src" \
+        --packages-select go2_slam_nav go2_cmd_processor)
 fi
 
 if [[ ! -f "$GO2_WS_ROOT/install/setup.bash" ]]; then
