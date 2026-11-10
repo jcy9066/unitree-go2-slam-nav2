@@ -1,0 +1,47 @@
+# Go2 SLAM / Nav2 — Agent Rules
+
+Scope: this repository, its Codex agents, and all subagents. Read this file first. Read only the relevant skill for the task. Check the current Git branch and latest remote head before editing.
+
+## Goal and baseline
+- Platform: Unitree Go2, ROS 2 Humble, RoboSense LiDAR, RTAB-Map, Nav2 (NavFn + DWB).
+- Target test: a 90 cm doorway. Preserve the original RTAB-Map database.
+- Reference PR: #1, branch `fix/nav2-narrow-passage`, base `main`.
+- Canonical validation record: `docs/go2_navigation_validation.html`.
+- Nav mode: `localize_only=true`, `Mem/IncrementalMemory=false`. RTAB-Map localizes while Nav2 updates its Costmaps. Do not describe this as continuous map extension.
+
+## Git and parallel Codex workflow
+1. Never commit to `main`. Do not merge or enable auto-merge without explicit user authorization.
+2. Do not create, edit, view, trigger, or use GitHub Actions. Use local checks only.
+3. For concurrent agents, allocate a separate task branch and Git worktree to each writer. Do not let two agents edit the same file concurrently. Share changes through review or separate PRs; assign one integrator to PR #1.
+4. Before editing, check `git status --short`, `git branch --show-current`, current PR/branch head and unmerged work. Do not overwrite another agent's changes.
+5. Keep independent code/config changes in separate commits. Use a short Korean/English commit subject with explicit before → after values. Put rationale, expected effects, limitations and verification evidence in commit body and Draft PR.
+6. Do not force-push, rewrite shared history, or delete branches by default.
+7. After changing code, configuration, scripts or validation evidence, update the **same** HTML file and its revision notes in a separate docs commit. Never create a second competing validation HTML.
+
+## Safety and non-destructive operation
+- Do not initiate physical robot motion, `NavigateToPose` goals, `/cmd_vel` publication or Unitree Sport motion commands. The operator must perform live movement and safety checks.
+- Do not claim physical validation from static analysis, compile checks, simulated data, or RViz screenshots alone.
+- Do not use `restart_map:=true`, `--delete_db_on_start`, or overwrite/delete an existing .db. Navigation must use a copy of the original DB.
+- Current 70×40 cm walking Footprint and 42 cm Inflation Radius are **unverified experimental assumptions**. They are not a proven collision boundary.
+- Treat initial localization separately from door-passage path planning; verify `map → odom → base_link` before navigation.
+- Inspect sensor TF, time synchronization and Costmaps before modifying algorithms. No Planner/Controller/Critic replacement without a reproducible reason and comparison.
+- Do not make uncontrolled changes to robot firmware, safety settings, command timeouts or network configuration.
+
+## Verification
+- Evidence statuses: `PASS`, `FAIL`, `BLOCKED`, `NOT TESTED`. Never report `PASS` without the command/log/observation proving it.
+- First perform read-only inspection, static checks, and no-motion tests. Only the user/operator runs supervised, low-speed motion tests.
+- Run `bash -n` on shell scripts; `python3 -m ast` or `ast.parse` on Python; build via `colcon` only when the local ROS environment is installed.
+- Follow `T00–T10` in `docs/go2_navigation_validation.html`; record failed steps and reason without silently skipping.
+- Keep evidence separated by environment: GitHub source inspection, static checks, ROS 2 runtime, RViz evaluation, physical Go2 movement.
+- No GitHub Actions for verification.
+
+## Skills
+Use the most specific skill under `.agents/skills/`:
+- `go2-config-audit`: parameters, TF, Footprint, Costmaps.
+- `go2-mapping-verify`: RTAB-Map Mapping and database integrity.
+- `go2-localization-verify`: existing DB, ICP, initial Pose.
+- `go2-navigation-verify`: NavFn, DWB, velocity and real-time Costmaps.
+- `go2-failure-analysis`: evidence-based fault isolation.
+- `go2-validation-report`: update the canonical HTML and PR.
+
+Hooks are a convenience guardrail, not a complete security boundary. Consult `.codex/hooks.json` and trust the project hooks through `/hooks` after review.
