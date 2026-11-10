@@ -36,7 +36,7 @@ remember_map() {
 trap remember_map EXIT
 
 printf '[go2] Mapping new DB: %s\n' "$DB"
-echo '[go2] LiDAR-only mapping; stop with Ctrl+C to flush the database.'
+echo '[go2] L1 + RGB-D mapping (start the camera on Go2 first); stop with Ctrl+C to flush the database.'
 ros2 launch go2_slam_nav mapping.launch.py \
     database_path:="$DB" \
     localize_only:=false \

@@ -20,6 +20,10 @@ fi
 set +u
 # shellcheck disable=SC1090
 source "$GO2_ROS_SETUP"
+GO2_UNITREE_SETUP="${GO2_UNITREE_SETUP:-$HOME/unitree_ros2/cyclonedds_ws/install/setup.bash}"
+if [[ -f "$GO2_UNITREE_SETUP" ]]; then
+    source "$GO2_UNITREE_SETUP"
+fi
 if [[ -f "$GO2_WS_ROOT/install/setup.bash" ]]; then
     # shellcheck disable=SC1090
     source "$GO2_WS_ROOT/install/setup.bash"
@@ -44,7 +48,7 @@ set +u
 source "$GO2_WS_ROOT/install/setup.bash"
 set -u
 
-for pkg in go2_slam_nav rtabmap_slam rslidar_sdk; do
+for pkg in go2_slam_nav go2_cmd_processor rtabmap_slam rtabmap_util nav2_bringup depthimage_to_laserscan unitree_api; do
     if ! ros2 pkg prefix "$pkg" >/dev/null 2>&1; then
         printf 'ERROR: required ROS package %s missing; import/build dependencies first.\n' "$pkg" >&2
         exit 1
