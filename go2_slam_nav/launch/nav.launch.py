@@ -99,7 +99,7 @@ def launch_setup(context):
         actions.append(Node(
             package='go2_slam_nav', executable='navigation_recorder', name='navigation_recorder',
             parameters=[{'output_dir': directory, 'config_file': params, 'map_database': database,
-                         'evaluation_hz': 2.0}], output='screen',
+                         'evaluation_hz': 2.0}], output='screen', respawn=True, respawn_delay=2.0,
         ))
 
     # The bridge is absent during planning-only checks. Its output policy also

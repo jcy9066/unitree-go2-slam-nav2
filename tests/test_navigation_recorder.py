@@ -4,7 +4,9 @@ import json
 from types import SimpleNamespace
 from dwb_msgs.msg import LocalPlanEvaluation, TrajectoryScore, CriticScore
 from geometry_msgs.msg import Pose2D
-from go2_slam_nav.navigation_recorder import evaluation_record, TraceWriter
+from go2_slam_nav.navigation_recorder import evaluation_record, TraceWriter, NavigationRecorder
+from unitree_api.msg import Request
+from unittest.mock import Mock
 
 
 def test_evaluation_preserves_invalid_reason_and_selected_trajectory():
@@ -55,3 +57,16 @@ def test_overload_is_counted_instead_of_blocking_or_losing_trace_integrity(tmp_p
     assert not summary['evaluations_present']
     with gzip.open(writer.directory/'events.jsonl.gz', 'rt') as f:
         assert f.read() == ''
+
+
+def test_request_callback_accepts_humble_message_only_delivery():
+    sink = SimpleNamespace(simple=Mock())
+    request = Request(); request.header.identity.api_id = 99999
+    NavigationRecorder.request(sink, request)
+    sink.simple.assert_called_once_with('/api/sport/request', request, publisher_gid=None)
+
+
+def test_runtime_errors_are_explicit_in_summary(tmp_path):
+    writer = TraceWriter(tmp_path)
+    writer.emit('recorder_error', {'type': 'TypeError', 'message': 'synthetic callback failure'})
+    assert writer.close()['runtime_error_count'] == 1

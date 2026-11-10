@@ -121,6 +121,7 @@ class TraceWriter:
         summary = {'started_wall_ns': self.started_ns, 'finished_wall_ns': time.time_ns(),
                    'counts': dict(self.counts), 'dropped': dict(self.dropped), 'write_error': self.error,
                    'evaluations_present': self.counts['/evaluation'] > 0,
+                   'runtime_error_count': self.counts['recorder_error'],
                    'note': 'Message receipt times are recorded; exact sensor synchronization is not implied.'}
         (self.directory/'summary.json').write_text(json.dumps(summary, indent=2))
         return summary
@@ -177,6 +178,8 @@ class NavigationRecorder(Node):
         metadata = {'utc': datetime.now(timezone.utc).isoformat(), 'evaluation_hz': self.get_parameter('evaluation_hz').value,
                     'map_database': self.get_parameter('map_database').value,
                     'config_file': config, 'config_text': Path(config).read_text() if config and Path(config).is_file() else None,
+                    'request_topic': self.resolve_topic_name('/api/sport/request'),
+                    'publisher_gid_supported': False,
                     'images_recorded': False, 'pointclouds_recorded': False,
                     'candidate_scores_may_be_partial': 'DWB short_circuit_trajectory_evaluation is unchanged.'}
         (self.writer.directory/'metadata.json').write_text(json.dumps(metadata, indent=2))
@@ -203,12 +206,10 @@ class NavigationRecorder(Node):
         if self.due('/evaluation', self.get_parameter('evaluation_hz').value):
             self.writer.emit('/evaluation', evaluation_record(msg), ros_receive_ns=self.get_clock().now().nanoseconds)
 
-    def request(self, msg, info):
-        try:
-            gid = bytes(info.publisher_gid).hex()
-        except (AttributeError, TypeError):
-            gid = None
-        self.simple('/api/sport/request', msg, publisher_gid=gid)
+    def request(self, msg):
+        # This Humble rclpy executor passes only the message to subscriptions.
+        # The graph lists endpoints, but per-sample publisher GIDs are unavailable.
+        self.simple('/api/sport/request', msg, publisher_gid=None)
 
     def costmap(self, topic, msg):
         if self.due(topic, 5. if topic.startswith('/local') else .2):
@@ -258,6 +259,9 @@ def main(args=None):
             rclpy.spin_once(node, timeout_sec=0.2)
     except (KeyboardInterrupt, ExternalShutdownException):
         pass
+    except Exception as exc:
+        node.writer.emit('recorder_error', {'type': type(exc).__name__, 'message': str(exc)})
+        raise
     finally:
         summary = node.close()
         print('Diagnostics saved:', node.writer.directory, 'counts:', summary['counts'], flush=True)
