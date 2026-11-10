@@ -88,7 +88,7 @@ GO2_ENABLE_MOTION=true bash scripts/run_nav.sh \
   "$HOME/GH/go2_l1_nav2_ws/analysis/saved_map_fix_20261109/navigation_map.db"
 ```
 
-The operator sends any RViz2 navigation goal and controls the supervised test. Maximum translation is `0.30m/s` (updated at the operator’s request); maximum turn rate is `0.6rad/s`. The Sport timeout remains `0.25s`; zero/invalid/stale commands use StopMove (`1003`). No stand-up, dance, or other motion services are exposed by this navigation bridge.
+The operator sends any RViz2 navigation goal and controls the supervised test. Maximum translation is `0.30m/s` (updated at the operator’s request); maximum turn rate is `1.8rad/s`. The Sport timeout remains `0.25s`; zero/invalid/stale commands use StopMove (`1003`). No stand-up, dance, or other motion services are exposed by this navigation bridge.
 
 ## Optional: mapping into a new DB
 
