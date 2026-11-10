@@ -44,4 +44,13 @@ Use the most specific skill under `.agents/skills/`:
 - `go2-failure-analysis`: evidence-based fault isolation.
 - `go2-validation-report`: update the canonical HTML and PR.
 
+## GitHub MCP permissions and mandatory review flow
+- Codex MCP configuration: `.codex/config.toml`; setup and security limitations: `docs/codex_github_access.md`.
+- Allowed: inspect this repository; create/switch task branches (switch is a **local git** command); modify/commit/push task branches; create/update **Draft** PRs; write review comments or request changes.
+- Prohibited: PR Merge or auto-merge, PR approvals on the owner's behalf, direct `main` writes, force push, GitHub Actions, destructive Git/DB operations, unapproved robot motion.
+- The MCP server uses a **tool allowlist** and excludes `merge_pull_request`. No broad toolsets may be enabled. Do not request other MCP connectors to perform a forbidden operation.
+- Repository-level restrictions are **not** established just by these files. GitHub repo rulesets currently reported none; the user must separately configure a bot identity and `main` protection for hard No-Merge enforcement.
+- Never commit PATs, OAuth tokens, secrets or credential files. A local Codex GitHub token is not inherited from ChatGPT's connected GitHub integration.
+- Verify the available MCP tool list in `/mcp` and locally approve/review hooks in `/hooks` before using Codex.
+
 Hooks are a convenience guardrail, not a complete security boundary. Consult `.codex/hooks.json` and trust the project hooks through `/hooks` after review.
