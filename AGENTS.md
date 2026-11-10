@@ -15,6 +15,7 @@ Scope: this repository, its Codex agents, and all subagents. Read this file firs
 3. For concurrent agents, allocate a separate task branch and Git worktree to each writer. Do not let two agents edit the same file concurrently. Share changes through review or separate PRs; assign one integrator to PR #1.
 4. Before editing, check `git status --short`, `git branch --show-current`, current PR/branch head and unmerged work. Do not overwrite another agent's changes.
 5. Keep independent code/config changes in separate commits. Use a short Korean/English commit subject with explicit before → after values. Put rationale, expected effects, limitations and verification evidence in commit body and Draft PR.
+   **Mandatory immediate commit and push:** After every individual file edit or independently completed modification, create a dedicated commit and push it to the current task branch immediately, before starting the next edit. Do not batch multiple edits into a later commit, postpone a push, or leave completed modifications uncommitted/unpushed. Never push directly to `main`. This applies to code, configuration, scripts, documentation, and validation records.
 6. Do not force-push, rewrite shared history, or delete branches by default.
 7. After changing code, configuration, scripts or validation evidence, update the **same** HTML file and its revision notes in a separate docs commit. Never create a second competing validation HTML.
 
