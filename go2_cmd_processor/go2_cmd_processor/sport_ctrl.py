@@ -1,155 +1,75 @@
+"""Operator-enabled Nav2 Sport bridge with unconditional forward-only translation."""
+import json
+import math
+import time
+
 import rclpy
-from rclpy.node import Node
-from rclpy.logging import LoggingSeverity
 from geometry_msgs.msg import Twist
-from std_srvs.srv import Empty
+from rclpy.node import Node
 from unitree_api.msg import Request
+
+from go2_cmd_processor.motion_policy import bounded_command
+
 
 class Go2CmdProcessor(Node):
     def __init__(self):
-        super().__init__("go2_cmd_processor")
+        super().__init__('go2_cmd_processor')
+        self.declare_parameter('enabled', False)
+        self.declare_parameter('rate', 200.0)
+        self.declare_parameter('cmd_vel_timeout', 0.25)
+        self.declare_parameter('max_linear_x', 0.15)
+        self.declare_parameter('max_angular_z', 0.6)
+        for key in ('rate', 'cmd_vel_timeout', 'max_linear_x', 'max_angular_z'):
+            value = self.get_parameter(key).value
+            if not math.isfinite(value) or value <= 0:
+                raise ValueError(f'{key} must be finite and positive')
+        self.publisher = self.create_publisher(Request, '/api/sport/request', 10)
+        self.create_subscription(Twist, 'cmd_vel', self.cmd_vel_callback, 10)
+        self.create_timer(1.0 / self.get_parameter('rate').value, self.timer_callback)
+        self.last_command_time = None
+        self.stopped = True
 
-        # Declare parameters
-        self.declare_parameter("rate", 200.0)
-        self.declare_parameter("cmd_vel_timeout", 0.25)  # Timeout in seconds
-        self.declare_parameter("log_level", "info")  # Logging level
-
-        # Set the logger level based on the parameter
-        log_level = self.get_parameter("log_level").value.lower()
-        log_severity = {
-            "debug": LoggingSeverity.DEBUG,
-            "info": LoggingSeverity.INFO,
-            "warn": LoggingSeverity.WARN,
-            "error": LoggingSeverity.ERROR,
-            "fatal": LoggingSeverity.FATAL,
-        }.get(log_level, LoggingSeverity.INFO)
-        self.get_logger().set_level(log_severity)
-
-        self.rate = self.get_parameter("rate").value
-        self.cmd_vel_timeout = self.get_parameter("cmd_vel_timeout").value
-
-        # Time intervals
-        self.publish_interval = 1.0 / self.rate
-        self.cmd_vel_timeout_duration = self.cmd_vel_timeout
-        self.cmd_vel_counter = 0.0
-
-        # Publishers
-        self.publisher = self.create_publisher(Request, "/api/sport/request", 10)
-
-        # Subscribers
-        self.subscription = self.create_subscription(
-            Twist, "cmd_vel", self.cmd_vel_callback, 10
-        )
-
-        # Services
-        self.create_service(Empty, "stand_up", self.stand_up_callback)
-        self.create_service(Empty, "lay_down", self.lay_down_callback)
-        self.create_service(Empty, "recover_stand", self.recover_stand_callback)
-        self.create_service(Empty, "damping", self.damping_callback)
-        self.create_service(Empty, "dance1", self.dance1_callback)
-        self.create_service(Empty, "dance2", self.dance2_callback)
-
-        # Timers
-        self.timer = self.create_timer(self.publish_interval, self.timer_callback)
-
-        # Command state
-        self.current_request = None
-        self.reset_state = False
-
-        self.get_logger().info("Go2 Command Processor Node Started")
-
-    def create_request(self, api_id, parameters=None):
-        """Helper function to create a Request message."""
+    def send(self, api_id, velocities=None):
+        if not self.get_parameter('enabled').value:
+            return
         req = Request()
         req.header.identity.api_id = api_id
-        if parameters:
-            req.parameter = parameters
-        return req
-
-    def cmd_vel_callback(self, msg: Twist):
-        """
-        Callback for cmd_vel messages. Converts the velocity commands into SportMode commands.
-        """
-        self.get_logger().info(f"Received cmd_vel: linear.x={msg.linear.x}, linear.y={msg.linear.y}, angular.z={msg.angular.z}")
-
-        # Create a SportMode Move request
-        req = self.create_request(
-            api_id=1008,  # API ID for "Move"
-            parameters=f'{{"x": {msg.linear.x}, "y": {msg.linear.y}, "z": {msg.angular.z}}}',
-        )
-
-        # Publish the request
+        if velocities is not None:
+            req.parameter = json.dumps(dict(zip(('x', 'y', 'z'), velocities)), allow_nan=False)
         self.publisher.publish(req)
-        self.current_request = req
-        self.cmd_vel_counter = 0.0  # Reset the timeout counter
+
+    def stop(self):
+        self.send(1003)  # Unitree StopMove, matching the current local bridge.
+        self.stopped = True
+
+    def cmd_vel_callback(self, msg):
+        if not self.get_parameter('enabled').value:
+            return
+        velocities = bounded_command(msg.linear.x, msg.linear.y, msg.angular.z,
+                                     self.get_parameter('max_linear_x').value,
+                                     self.get_parameter('max_angular_z').value)
+        self.last_command_time = time.monotonic()
+        if velocities == (0.0, 0.0, 0.0):
+            self.stop()
+        else:
+            self.send(1008, velocities)
+            self.stopped = False
 
     def timer_callback(self):
-        """
-        Timer callback to handle periodic command publishing and timeout.
-        """
-        if self.cmd_vel_counter >= self.cmd_vel_timeout_duration:
-            # Send Idle command if cmd_vel has timed out
-            self.publish_idle_command()
-        else:
-            self.cmd_vel_counter += self.publish_interval
-
-        # Handle reset state
-        if self.reset_state:
-            self.reset_state = False
-            self.publish_idle_command()
-
-    def publish_idle_command(self):
-        """Publishes an Idle command."""
-        req = self.create_request(api_id=0)  # API ID for "Idle"
-        self.publisher.publish(req)
-        self.get_logger().info("Published Idle command")
-
-    # Service Callbacks
-    def stand_up_callback(self, request, response):
-        self.publisher.publish(self.create_request(api_id=1004))  # StandUp
-        self.reset_state = True
-        self.get_logger().info("Stand Up command sent")
-        return response
-
-    def lay_down_callback(self, request, response):
-        self.publisher.publish(self.create_request(api_id=1005))  # StandDown
-        self.reset_state = True
-        self.get_logger().info("Lay Down command sent")
-        return response
-
-    def recover_stand_callback(self, request, response):
-        self.publisher.publish(self.create_request(api_id=1006))  # RecoveryStand
-        self.reset_state = True
-        self.get_logger().info("Recover Stand command sent")
-        return response
-
-    def damping_callback(self, request, response):
-        self.publisher.publish(self.create_request(api_id=1001))  # Damping
-        self.reset_state = True
-        self.get_logger().info("Damping command sent")
-        return response
-
-    def dance1_callback(self, request, response):
-        self.publisher.publish(self.create_request(api_id=1022))  # Dance1
-        self.reset_state = True
-        self.get_logger().info("Dance1 command sent")
-        return response
-
-    def dance2_callback(self, request, response):
-        self.publisher.publish(self.create_request(api_id=1023))  # Dance2
-        self.reset_state = True
-        self.get_logger().info("Dance2 command sent")
-        return response
+        if (not self.stopped and self.last_command_time is not None and
+                time.monotonic() - self.last_command_time >= self.get_parameter('cmd_vel_timeout').value):
+            self.stop()
 
 
 def main(args=None):
     rclpy.init(args=args)
     node = Go2CmdProcessor()
-    rclpy.spin(node)
-    rclpy.shutdown()
-
-
-if __name__ == "__main__":
-    main()
-
-
+    try:
+        rclpy.spin(node)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        if not node.stopped:
+            node.stop()
+        node.destroy_node()
+        rclpy.try_shutdown()
