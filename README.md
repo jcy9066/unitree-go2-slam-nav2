@@ -148,7 +148,7 @@ For comprehensive explanations and insights into each project component, please 
 - GitHub MCP configuration: [.codex/config.toml](.codex/config.toml)
 - Hook events and policy: [.codex/hooks.json](.codex/hooks.json), [.codex/hooks/policy.py](.codex/hooks/policy.py)
 - Six role-specific verification Skills: [.agents/skills/](.agents/skills/)
-- **Latest validation HTML:** [docs/go2_navigation_validation.html](docs/go2_navigation_validation.html) (Revision R2; keep this one file current)
+- **Latest validation HTML:** [docs/go2_navigation_validation.html](docs/go2_navigation_validation.html) (see the HTML header for the current revision; keep this one file current)
 
 The GitHub MCP configuration exposes branch/file push/Draft PR/review tools **without a Merge tool**. This is not a server-side permission boundary. A local Codex credential and trusted hooks are **not yet configured by this repository change**; only the user can complete local authentication. Protect `main` with a GitHub Ruleset and a separate Codex App identity to enforce No-Merge at the GitHub server.
 
