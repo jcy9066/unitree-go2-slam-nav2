@@ -96,7 +96,7 @@ def launch_setup(context):
     if LaunchConfiguration('enable_motion').perform(context) == 'true':
         actions.append(Node(
             package='go2_cmd_processor', executable='sport_ctrl', name='sport_ctrl',
-            parameters=[{'enabled': True, 'max_linear_x': 0.3, 'max_angular_z': 0.6}],
+            parameters=[{'enabled': True, 'max_linear_x': 0.3, 'max_angular_z': 1.8}],
             remappings=[('cmd_vel', '/go2_nav/cmd_vel')], output='screen',
         ))
     actions.append(Node(

@@ -15,7 +15,7 @@ class Bridge:
     timer_callback = sport_ctrl.Go2CmdProcessor.timer_callback
 
     def __init__(self, enabled=True):
-        self.values = dict(enabled=enabled, max_linear_x=.3, max_angular_z=.6, cmd_vel_timeout=.25)
+        self.values = dict(enabled=enabled, max_linear_x=.3, max_angular_z=1.8, cmd_vel_timeout=.25)
         self.publisher = Mock()
         self.stopped = True
         self.last_command_time = None
@@ -31,9 +31,11 @@ def command(x, y, yaw):
 
 
 @pytest.mark.parametrize('x,y,yaw,expected', [
-    (-.3, .4, .2, (0., 0., .2)), (.4, -.3, -.9, (.3, 0., -.6)),
+    (-.3, .4, .2, (0., 0., .2)), (.4, -.3, -.9, (.3, 0., -.9)),
     (.1, .1, 0., (.1, 0., 0.)),
     (.25, -.2, .1, (.25, 0., .1)),
+    (.1, .2, 2.4, (.1, 0., 1.8)),
+    (0., -.2, -2.4, (0., 0., -1.8)),
 ])
 def test_encoder_cannot_send_reverse_or_lateral_translation(x, y, yaw, expected):
     bridge = Bridge()

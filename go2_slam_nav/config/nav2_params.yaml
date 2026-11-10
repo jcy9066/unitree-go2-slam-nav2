@@ -92,7 +92,7 @@ controller_server:
       min_vel_y: 0.0
       max_vel_x: 0.3
       max_vel_y: 0.0
-      max_vel_theta: 0.6
+      max_vel_theta: 1.8
       min_speed_xy: 0.0
       max_speed_xy: 0.3
       min_speed_theta: 0.0
@@ -279,7 +279,7 @@ behavior_server:
     transform_tolerance: 0.1
     use_sim_time: false
     simulate_ahead_time: 2.0
-    max_rotational_vel: 0.6
+    max_rotational_vel: 1.8
     min_rotational_vel: 0.4
     rotational_acc_lim: 3.2
 waypoint_follower:
@@ -301,11 +301,11 @@ velocity_smoother:
     max_velocity:
     - 0.3
     - 0.0
-    - 0.6
+    - 1.8
     min_velocity:
     - 0.0
     - 0.0
-    - -0.6
+    - -1.8
     max_accel:
     - 2.5
     - 2.5
