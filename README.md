@@ -1,5 +1,13 @@
 # Unitree Go2 L1 + D435i: RTAB-Map / Nav2
 
+새 지도를 만들 때는 노트북에서 다음 한 줄을 실행합니다. 카메라 재사용/SSH 시작 → 센서 수신 확인 → 새 DB Mapping·RViz → Ctrl+C 후 저장 검사를 묶었습니다. 로봇 이동은 운영자가 수행합니다.
+
+```bash
+bash /home/cvr/GH/unitree-go2-slam-nav2/scripts/laptop_slam.sh
+```
+
+먼저 설치만 확인하려면 끝에 `check`, 아무것도 시작하지 않고 계획만 보려면 `plan`을 붙입니다. 실제 Go2에서의 새 SSH·Mapping 전체 실행은 아직 검증하지 않았습니다. 드론 튜토리얼 형식의 [Go2 SLAM 따라하기 및 실험 보고서](docs/go2_navigation_validation.html#tutorial-start)에 준비·예상 출력·저장·문제 해결을 정리했습니다.
+
 현재 노트북에서는 아래 명령을 사용합니다. 저장소와 실제 `~/GH/unitree_go2_pr1_ws` 설치를 연결해 두었습니다.
 
 ```bash
