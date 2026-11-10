@@ -1,0 +1,44 @@
+{
+  "description": "Go2 Nav2 Codex local guardrails: no merge, Actions, destructive map operations or automatic physical motion.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$(git rev-parse --show-toplevel)/.codex/hooks/policy.py\"",
+            "timeout": 10,
+            "additionalContextLimit": 3000,
+            "statusMessage": "Loading Go2 repository rules"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$(git rev-parse --show-toplevel)/.codex/hooks/policy.py\"",
+            "timeout": 10,
+            "statusMessage": "Checking GitHub/robot operation policy"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$(git rev-parse --show-toplevel)/.codex/hooks/policy.py\"",
+            "timeout": 20,
+            "statusMessage": "Checking Go2 static files"
+          }
+        ]
+      }
+    ]
+  }
+}
