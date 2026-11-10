@@ -91,6 +91,17 @@ def launch_setup(context):
         parameters=[{'use_sim_time': False, 'autostart': True,
                      'node_names': [name for _, name, _ in servers]}],
     ))
+    if LaunchConfiguration('record_diagnostics').perform(context) == 'true':
+        database = os.path.expanduser(LaunchConfiguration('database_path').perform(context))
+        directory = LaunchConfiguration('diagnostics_dir').perform(context)
+        if not directory:
+            directory = os.path.join(os.path.dirname(database), 'diagnostics')
+        actions.append(Node(
+            package='go2_slam_nav', executable='navigation_recorder', name='navigation_recorder',
+            parameters=[{'output_dir': directory, 'config_file': params, 'map_database': database,
+                         'evaluation_hz': 2.0}], output='screen',
+        ))
+
     # The bridge is absent during planning-only checks. Its output policy also
     # rejects reverse/lateral commands if a controller or external sender errs.
     if LaunchConfiguration('enable_motion').perform(context) == 'true':
@@ -117,6 +128,8 @@ def generate_launch_description():
         DeclareLaunchArgument('start_localization', default_value='true', choices=['true', 'false'],
                               description='False when the existing localization pipeline is running'),
         DeclareLaunchArgument('odom_bridge', default_value='true', choices=['true', 'false']),
+        DeclareLaunchArgument('record_diagnostics', default_value='true', choices=['true', 'false']),
+        DeclareLaunchArgument('diagnostics_dir', default_value=''),
         DeclareLaunchArgument('enable_motion', default_value='false', choices=['true', 'false'],
                               description='Operator opt-in: enable the forward-only Sport command bridge'),
         DeclareLaunchArgument('nav_camera_calibration', default_value=PathJoinSubstitution([

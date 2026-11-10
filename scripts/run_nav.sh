@@ -45,4 +45,6 @@ ros2 launch go2_slam_nav nav.launch.py \
     restart_map:=false \
     use_rviz:=false \
     use_nav2_rviz:=true \
-    enable_motion:="${GO2_ENABLE_MOTION:-false}"
+    enable_motion:="${GO2_ENABLE_MOTION:-false}" \
+    record_diagnostics:="${GO2_RECORD_DIAGNOSTICS:-true}" \
+    diagnostics_dir:="$SESSION_DIR/diagnostics"

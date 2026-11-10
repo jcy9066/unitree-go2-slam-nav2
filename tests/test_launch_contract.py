@@ -13,7 +13,8 @@ ROOT = Path(__file__).parents[1]
 
 
 @pytest.mark.parametrize('motion', ['false', 'true'])
-def test_l1_navigation_expands_without_starting_any_process(monkeypatch, tmp_path, motion):
+@pytest.mark.parametrize('recording', ['false', 'true'])
+def test_l1_navigation_expands_without_starting_any_process(monkeypatch, tmp_path, motion, recording):
     monkeypatch.setenv("ROS_LOG_DIR", str(tmp_path / "logs"))
     recorded = []
     class RecordNode(Action):
@@ -32,6 +33,7 @@ def test_l1_navigation_expands_without_starting_any_process(monkeypatch, tmp_pat
     service.include_launch_description(launch.LaunchDescription([
         SetLaunchConfiguration('database_path', str(database)),
         SetLaunchConfiguration('enable_motion', motion),
+        SetLaunchConfiguration('record_diagnostics', recording),
         SetLaunchConfiguration('use_nav2_rviz', 'false'), *description.entities]))
     assert service.run() == 0
     assert not any(n['package'] in ['rslidar_sdk','rtabmap_odom','go2_camera_bringup'] for n in recorded)
@@ -45,6 +47,7 @@ def test_l1_navigation_expands_without_starting_any_process(monkeypatch, tmp_pat
     assert controllers[0]['remappings'] == [('cmd_vel','/go2_nav/cmd_vel_raw')]
     assert len([n for n in recorded if n.get('executable')=='lifecycle_manager']) == 1
     assert not any(n.get('package')=='rviz2' for n in recorded)
+    assert any(n.get('executable') == 'navigation_recorder' for n in recorded) == (recording == 'true')
 
 
 def test_all_nav2_translation_and_recovery_routes_obey_forward_only_policy():
