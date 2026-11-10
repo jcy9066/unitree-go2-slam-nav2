@@ -36,7 +36,7 @@ mkdir -p "$GO2_WS_ROOT/src"
 # On this laptop this symlink already exists. For a new checkout, create it once:
 # ln -s /absolute/path/unitree-go2-slam-nav2 "$GO2_WS_ROOT/src/unitree-go2-slam-nav2"
 cd "$GO2_WS_ROOT"
-colcon build --packages-select go2_cmd_processor go2_slam_nav
+colcon build --base-paths "$GO2_WS_ROOT/src" --packages-select go2_nav2_critics go2_cmd_processor go2_slam_nav
 source install/setup.bash
 ```
 
@@ -113,7 +113,7 @@ Mapping refuses an existing DB path. Stop with Ctrl+C to flush it. Navigation us
 | Planner / Controller | NavFn Dijkstra / DWB, retained from PR #1 |
 | Forward / lateral velocity | 0…0.30 m/s / 0 |
 
-The footprint is a configuration baseline, **not a measured dynamic leg boundary**. The previous PR's 70×40cm and 0.42m inflation remain historical experiments in the same validation record. Current DWB still uses its existing critics, including center-cost `BaseObstacle`; no full-body collision guarantee is made. Initial localization and the 90cm second-door traversal remain NOT TESTED with this port because Go2 is powered off.
+The footprint is a configuration baseline, **not a measured dynamic leg boundary**. The previous PR's 70×40cm and 0.42m inflation remain historical experiments in the same validation record. DWB now restores `Go2WalkingSpeed` and `ObstacleFootprint` in addition to its existing critics. Nonzero translation candidates below 0.20m/s are rejected; zero-translation turns remain available. The padded rectangular boundary is checked at sampled trajectory poses. This is not a measured dynamic leg envelope or a guarantee of continuous collision safety. Initial localization and the 90cm second-door traversal remain NOT TESTED with this port because Go2 is powered off.
 
 Local checks:
 
@@ -124,3 +124,26 @@ python3 -m pytest -q tests
 ```
 
 See the single [validation record](docs/go2_navigation_validation.html) for R5 results, T00–T10, exact limits, and commit history. Follow [AGENTS.md](AGENTS.md). No GitHub Actions or automatic merge.
+
+## Corner safeguards and automatic evaluation recording
+
+Nonzero DWB translation candidates are limited to **0.20…0.30m/s**, while `min_vel_x=0` retains in-place rotation. `min_speed_theta=0.20rad/s` filters tiny pure turns. `Go2WalkingSpeed` rejects small translation even when mixed with rotation; `ObstacleFootprint` checks the rotated padded boundary. The 0.20m/s threshold is an adjustable trial value informed by the earlier response measurements, not a proven universal walking threshold. Smoother startup/braking can still pass briefly through lower speeds. Commands are never boosted after collision scoring. The maximum yaw rate remains ±1.8rad/s; reverse/lateral translation remains blocked. The current progress checker is unchanged for comparison.
+
+A read-only recorder starts automatically with `view` and `drive`. It sends no motion or parameter-setting requests. It saves:
+
+- `/evaluation`: all candidate velocities, validity/totals, critic costs, and the selected predicted poses at up to 2Hz. DWB short-circuiting remains enabled, so some losing candidates have partial scores.
+- Raw/smoothed commands, Sport requests/responses, native/synchronized odometry, robot gait/velocity/foot state, TF, plans, action status and selected ROS logs.
+- Exact uint8 raw Local/Global Costmaps, footprints, parameter snapshots and the Sport publisher graph. Images and pointclouds are excluded.
+
+Each session has a unique directory:
+
+```text
+~/go2_maps/nav_sessions/<session>/diagnostics/<run>/
+  metadata.json
+  events.jsonl.gz
+  summary.json
+```
+
+Receipt timestamps share the same recording clock; this does not make sensor acquisition hardware-synchronous. The writer uses a bounded background queue and reports diagnostic drops instead of blocking the callback. Its drop count does not measure transport losses. Stop the experiment normally with **Ctrl+C** to close the compressed file and write the summary. `evaluations_present=false` means no DWB evaluations were received, for example when no Goal ran. Another process's Sport commands can only be attributed when the installed RMW exposes a publisher GID; an unavailable GID is recorded as null.
+
+To disable logging for a comparison run, use `GO2_RECORD_DIAGNOSTICS=false` before the existing laptop command. To reproduce the recorder smoke check without robot motion, source the workspace, select a nonzero loopback-only DDS domain, and run `python3 tests/recorder_ros_smoke.py`. The test refuses domain 0 and creates only diagnostic evaluation/costmap publishers.
