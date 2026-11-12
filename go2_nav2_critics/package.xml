@@ -8,5 +8,8 @@
   <depend>pluginlib</depend><depend>rclcpp</depend>
   <test_depend>ament_cmake_gtest</test_depend><test_depend>dwb_critics</test_depend>
   <test_depend>nav2_costmap_2d</test_depend>
+  <test_depend>nav2_controller</test_depend>
+  <test_depend>rclcpp_lifecycle</test_depend>
+  <test_depend>geometry_msgs</test_depend>
   <export><build_type>ament_cmake</build_type></export>
 </package>
