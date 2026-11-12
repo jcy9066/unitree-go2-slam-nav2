@@ -91,6 +91,12 @@ def launch_setup(context):
         ))
 
     actions.append(Node(
+        package='go2_slam_nav', executable='obstacle_cloud_filter',
+        name='go2_obstacle_cloud_filter', output='screen',
+        parameters=[{'use_sim_time': False, 'minimum_body_height': -0.20,
+                     'maximum_body_height': 1.20}],
+    ))
+    actions.append(Node(
         package='depthimage_to_laserscan', executable='depthimage_to_laserscan_node',
         name='go2_nav_depth_to_scan', output='screen',
         parameters=[{'use_sim_time': False, 'scan_height': 10, 'scan_time': 1.0 / 30.0,

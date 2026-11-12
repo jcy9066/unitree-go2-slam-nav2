@@ -171,7 +171,7 @@ local_costmap:
         min_obstacle_height: 0.1
         max_obstacle_height: 1.5
         l1:
-          topic: /cloud_base_synced
+          topic: /go2_nav/obstacle_cloud
           data_type: PointCloud2
           clearing: true
           marking: true
@@ -218,7 +218,7 @@ global_costmap:
         min_obstacle_height: 0.1
         max_obstacle_height: 1.5
         l1:
-          topic: /cloud_base_synced
+          topic: /go2_nav/obstacle_cloud
           data_type: PointCloud2
           clearing: true
           marking: true

@@ -26,6 +26,7 @@ setup(
     entry_points={
         'console_scripts': [
             'sensor_time_sync = go2_slam_nav.sensor_time_sync:main',
+            'obstacle_cloud_filter = go2_slam_nav.obstacle_cloud_filter:main',
             'navigation_recorder = go2_slam_nav.navigation_recorder:main',
         ],
     },
