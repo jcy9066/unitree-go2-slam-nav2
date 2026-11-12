@@ -75,3 +75,70 @@ def test_visual_yaw_updates_pose_and_tf_identically_without_mutating_native(monk
     assert tf.transform.rotation == out.pose.pose.orientation
     assert tf.transform.translation.x == out.pose.pose.position.x
     assert odom.pose.pose.orientation.z == 0. and odom.pose.pose.orientation.w == 1.
+
+
+def source_sensor():
+    sensor = Sensor()
+    sensor.use_source_stamps = True
+    sensor.max_source_stamp_skew = 1.
+    sensor.get_logger = Mock()
+    return sensor
+
+
+def test_delayed_rgb_does_not_relabel_or_repeat_native_odometry(monkeypatch):
+    sensor = source_sensor()
+    monkeypatch.setattr(sync.time, 'monotonic', lambda: 10.)
+    rgb = Image(); rgb.header.stamp.sec = 100
+    sensor.rgb_callback(rgb)
+    odom = Odometry(); odom.header.stamp.sec = 100
+    odom.header.stamp.nanosec = 150_000_000
+    odom.pose.pose.position.x = 1.5
+    odom.pose.pose.orientation.w = 1.
+    sensor.odom_callback(odom)
+    first = sensor.odom_pub.publish.call_args.args[0]
+    assert first.header.stamp == odom.header.stamp
+    assert first.pose == odom.pose
+    assert sensor.tf_pub.sendTransform.call_args.args[0].header.stamp == odom.header.stamp
+    odom.header.stamp.nanosec = 156_666_667
+    sensor.odom_callback(odom)
+    assert sensor.odom_pub.publish.call_count == 2  # preserve 150 Hz between images
+    rgb.header.stamp.nanosec = 66_666_667
+    sensor.rgb_callback(rgb)
+    assert sensor.odom_pub.publish.call_count == 2  # no cached pose on camera tick
+    assert first.header.stamp.nanosec == 150_000_000  # output is not aliased
+
+
+def test_source_cloud_keeps_acquisition_time_and_rejects_other_epoch(monkeypatch):
+    sensor = source_sensor()
+    monkeypatch.setattr(sync.time, 'monotonic', lambda: 10.)
+    rgb = Image(); rgb.header.stamp.sec = 100
+    sensor.rgb_callback(rgb)
+    cloud = PointCloud2(); cloud.header.frame_id = 'base_link'
+    cloud.header.stamp.sec = 100; cloud.header.stamp.nanosec = 120_000_000
+    sensor.cloud_callback(cloud)
+    output = sensor.cloud_pub.publish.call_args.args[0]
+    assert output.header == cloud.header
+    cloud.header.stamp.sec = 900
+    sensor.cloud_callback(cloud)
+    assert sensor.cloud_pub.publish.call_count == 1
+    cloud.header.stamp.sec = 0; cloud.header.stamp.nanosec = 0
+    sensor.cloud_callback(cloud)
+    assert sensor.cloud_pub.publish.call_count == 1
+
+
+def test_source_odom_drops_reverse_time_and_stale_camera(monkeypatch):
+    sensor = source_sensor()
+    monkeypatch.setattr(sync.time, 'monotonic', lambda: 10.)
+    rgb = Image(); rgb.header.stamp.sec = 100
+    sensor.rgb_callback(rgb)
+    odom = Odometry(); odom.header.stamp.sec = 100
+    odom.header.stamp.nanosec = 100_000_000
+    sensor.odom_callback(odom)
+    sensor.odom_callback(odom)
+    odom.header.stamp.nanosec = 90_000_000
+    sensor.odom_callback(odom)
+    assert sensor.odom_pub.publish.call_count == 1
+    monkeypatch.setattr(sync.time, 'monotonic', lambda: 11.)
+    odom.header.stamp.nanosec = 200_000_000
+    sensor.odom_callback(odom)
+    assert sensor.odom_pub.publish.call_count == 1

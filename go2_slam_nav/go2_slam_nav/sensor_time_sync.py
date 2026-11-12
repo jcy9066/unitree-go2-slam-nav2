@@ -1,7 +1,8 @@
 """Approximate camera-clock alignment for the current Go2 L1/RGB-D setup.
 
-This preserves the existing latest-RGB-stamp convention; it is not hardware
-synchronization. Stale camera input stops output instead of reusing old stamps.
+The default preserves the legacy latest-RGB-stamp convention; it is not hardware
+synchronization. Opt-in source mode retains acquisition times for TF interpolation.
+Stale camera input stops output instead of reusing old stamps.
 The RealSense driver supplies camera_link -> color/optical frame transforms.
 """
 import math
@@ -29,6 +30,15 @@ class SensorTimeSync(Node):
         self.declare_parameter('publish_odom', True)
         self.declare_parameter('camera_timeout', 0.5)
         self.declare_parameter('visual_heading', False)
+        self.declare_parameter('stamp_mode', 'latest_rgb')
+        self.declare_parameter('max_source_stamp_skew', 1.0)
+        mode = self.get_parameter('stamp_mode').value
+        if mode not in ('latest_rgb', 'source'):
+            raise ValueError('stamp_mode must be latest_rgb or source')
+        self.use_source_stamps = mode == 'source'
+        self.max_source_stamp_skew = float(self.get_parameter('max_source_stamp_skew').value)
+        if not math.isfinite(self.max_source_stamp_skew) or self.max_source_stamp_skew <= 0:
+            raise ValueError('max_source_stamp_skew must be positive and finite')
         self.declare_parameter('visual_odom_topic', '/go2_heading/odom')
         self.heading_fusion = HeadingFusion() if self.get_parameter('visual_heading').value else None
         if self.heading_fusion is not None:
@@ -53,7 +63,8 @@ class SensorTimeSync(Node):
     def rgb_callback(self, msg):
         self.stamp = msg.header.stamp
         self.last_rgb_time = time.monotonic()
-        if (self.last_odom is not None and self.last_odom_time is not None and
+        if (not getattr(self, 'use_source_stamps', False) and
+                self.last_odom is not None and self.last_odom_time is not None and
                 time.monotonic() - self.last_odom_time <= 0.5):
             self.publish_odom(self.last_odom)
 
@@ -68,12 +79,18 @@ class SensorTimeSync(Node):
             self.publish_odom(msg)
 
     def publish_odom(self, msg):
-        stamp_key = (self.stamp.sec, self.stamp.nanosec)
-        if stamp_key == self.last_odom_stamp:
+        source_mode = getattr(self, 'use_source_stamps', False)
+        stamp = msg.header.stamp if source_mode else self.stamp
+        if source_mode and not compatible_stamp(stamp, self.stamp, self.max_source_stamp_skew):
+            self.get_logger().warning('Dropping odometry: source and camera clocks differ')
+            return
+        stamp_key = (stamp.sec, stamp.nanosec)
+        if (self.last_odom_stamp is not None and
+                (stamp_key <= self.last_odom_stamp if source_mode else stamp_key == self.last_odom_stamp)):
             return  # One odometry/TF sample per camera stamp; avoid TF duplicates.
         self.last_odom_stamp = stamp_key
         out = copy.deepcopy(msg)
-        out.header.stamp = self.stamp
+        out.header.stamp = copy.deepcopy(stamp)
         out.header.frame_id = out.header.frame_id or 'odom'
         out.child_frame_id = out.child_frame_id or 'base_link'
         fusion = getattr(self, 'heading_fusion', None)
@@ -109,9 +126,22 @@ class SensorTimeSync(Node):
 
     def cloud_callback(self, msg):
         if self.fresh():
+            source_mode = getattr(self, 'use_source_stamps', False)
+            if source_mode and not compatible_stamp(
+                    msg.header.stamp, self.stamp, self.max_source_stamp_skew):
+                self.get_logger().warning('Dropping cloud: source and camera clocks differ')
+                return
             out = copy.deepcopy(msg)
-            out.header.stamp = self.stamp
+            if not source_mode:
+                out.header.stamp = self.stamp
             self.cloud_pub.publish(out)
+
+
+def compatible_stamp(source, camera, max_skew):
+    """Reject missing or unrelated clock epochs; never invent acquisition times."""
+    stamp_ns = source.sec * 1_000_000_000 + source.nanosec
+    camera_ns = camera.sec * 1_000_000_000 + camera.nanosec
+    return stamp_ns > 0 and camera_ns > 0 and abs(stamp_ns-camera_ns) <= max_skew*1e9
 
 
 def main(args=None):
