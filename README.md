@@ -155,3 +155,38 @@ Each session has a unique directory:
 Receipt timestamps share the same recording clock; this does not make sensor acquisition hardware-synchronous. The writer uses a bounded background queue and reports diagnostic drops instead of blocking the callback. Its drop count does not measure transport losses. Stop the experiment normally with **Ctrl+C** to close the compressed file and write the summary. `evaluations_present=false` means no DWB evaluations were received, for example when no Goal ran. This Humble recorder receives message-only callbacks, so per-message Sport publisher GIDs are always null. The publisher graph lists endpoints but cannot attribute an individual command. Runtime callback failures are counted in `summary.json`; launch restarts the recorder after two seconds into a new recording folder.
 
 To disable logging for a comparison run, use `GO2_RECORD_DIAGNOSTICS=false` before the existing laptop command. To reproduce the recorder smoke check without robot motion, source the workspace, select a nonzero loopback-only DDS domain, and run `python3 tests/recorder_ros_smoke.py`. The test refuses domain 0 and creates diagnostic evaluation/costmap publishers and a metadata request on a remapped diagnostic topic. It creates no Sport command publisher.
+
+### Capture the observations behind doorway obstacles
+
+The ordinary trace does not retain raw LiDAR or depth scans. To distinguish
+saved-map walls, sensor projection and stale marking, enable the optional raw
+capture when starting a fresh **view** session:
+
+```bash
+GO2_RECORD_OBSTACLE_SENSORS=true bash scripts/laptop_nav.sh view "$GO2_TEST_MAP"
+```
+
+This keeps motion disabled. It records `/cloud_base_synced` and
+`/go2_nav/depth_scan` as base64 CDR, preserving cloud layout, scan NaN/Inf,
+frames and acquisition stamps. It also records initial/localization poses and
+RTAB-Map Info, removes application downsampling of TF and received DWB
+evaluations, and raises the Global Costmap recording limit from 0.2 to 1 Hz.
+The default is **off**. It does not recover messages lost before reception,
+invent missing DWB evaluations, or synchronize hardware clocks.
+
+For a 40-second capture beside an existing Nav2 session, use another terminal
+with the **same ROS environment**; no Nav2 restart or motion activation is needed:
+
+```bash
+ros2 run go2_slam_nav navigation_recorder --ros-args \
+  -r __node:=door_obstacle_recorder \
+  -p record_obstacle_sensors:=true -p duration:=40.0 \
+  -p output_dir:="$HOME/go2_maps/door_obstacle_trials"
+```
+
+Check `summary.json` for dropped messages and write errors. Raw capture increases
+CPU and disk use; the existing queue bounds memory but does not cap total disk
+usage. The loopback smoke test verifies lossless capture and no motion
+publishers; live recording load and actual doorway passage remain unverified.
+See [R32](docs/go2_navigation_validation.html#door-failure-r32) for the first-door
+analysis, confirmed limits and next supervised test sequence.
