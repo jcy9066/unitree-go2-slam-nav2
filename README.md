@@ -96,7 +96,7 @@ GO2_ENABLE_MOTION=true bash scripts/run_nav.sh \
   "$HOME/GH/go2_l1_nav2_ws/analysis/saved_map_fix_20261109/navigation_map.db"
 ```
 
-The operator sends any RViz2 navigation goal and controls the supervised test. Maximum translation is `0.30m/s` (updated at the operator’s request); maximum turn rate is `1.8rad/s`. The Sport timeout remains `0.25s`; zero/invalid/stale commands use StopMove (`1003`). No stand-up, dance, or other motion services are exposed by this navigation bridge.
+The operator sends any RViz2 navigation goal and controls the supervised test. Maximum translation is `0.50m/s` (raised from `0.30m/s` at the operator’s request); maximum turn rate is `1.8rad/s`. The higher cap requires a new operator-supervised trial; it is not physically validated. The Sport timeout remains `0.25s`; zero/invalid/stale commands use StopMove (`1003`). No stand-up, dance, or other motion services are exposed by this navigation bridge.
 
 ## Optional: mapping into a new DB
 
@@ -119,7 +119,7 @@ Mapping refuses an existing DB path. Stop with Ctrl+C to flush it. Navigation us
 | Global / Local padding | 0.01 / 0.02 m |
 | Both inflation radii / scaling | 0.45 m / 4.0 |
 | Planner / Controller | NavFn Dijkstra / DWB, retained from PR #1 |
-| Forward / lateral velocity | 0…0.30 m/s / 0 |
+| Forward / lateral velocity | 0…0.50 m/s / 0 |
 
 The footprint is a configuration baseline, **not a measured dynamic leg boundary**. The previous PR's 70×40cm and 0.42m inflation remain historical experiments in the same validation record. DWB now restores `Go2WalkingSpeed` and `ObstacleFootprint` in addition to its existing critics. Nonzero translation candidates below 0.20m/s are rejected; zero-translation turns remain available. The padded rectangular boundary is checked at sampled trajectory poses. This is not a measured dynamic leg envelope or a guarantee of continuous collision safety. Initial localization and the 90cm second-door traversal remain NOT TESTED with this port because Go2 is powered off.
 
@@ -135,7 +135,7 @@ See the single [validation record](docs/go2_navigation_validation.html) for R5 r
 
 ## Corner safeguards and automatic evaluation recording
 
-Nonzero DWB translation candidates are limited to **0.20…0.30m/s**, while `min_vel_x=0` retains in-place rotation. `min_speed_theta=0.20rad/s` filters tiny pure turns. `Go2WalkingSpeed` rejects small translation even when mixed with rotation; `ObstacleFootprint` checks the rotated padded boundary. The 0.20m/s threshold is an adjustable trial value informed by the earlier response measurements, not a proven universal walking threshold. Smoother startup/braking can still pass briefly through lower speeds. Commands are never boosted after collision scoring. The maximum yaw rate remains ±1.8rad/s; reverse/lateral translation remains blocked. The current progress checker is unchanged for comparison.
+Nonzero DWB translation candidates are limited to **0.20…0.50m/s**, while `min_vel_x=0` retains in-place rotation. `min_speed_theta=0.20rad/s` filters tiny pure turns. `Go2WalkingSpeed` rejects small translation even when mixed with rotation; `ObstacleFootprint` checks the rotated padded boundary. The 0.20m/s threshold is an adjustable trial value informed by the earlier response measurements, not a proven universal walking threshold. Smoother startup/braking can still pass briefly through lower speeds. Commands are never boosted after collision scoring. The maximum yaw rate remains ±1.8rad/s; reverse/lateral translation remains blocked. The current progress checker is unchanged for comparison.
 
 A read-only recorder starts automatically with `view` and `drive`. It sends no motion or parameter-setting requests. It saves:
 

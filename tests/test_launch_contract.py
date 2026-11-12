@@ -43,6 +43,13 @@ def test_l1_navigation_expands_without_starting_any_process(monkeypatch, tmp_pat
     assert rtab['parameters'][0]['Mem/LocalizationReadOnly'] == 'true'
     assert rtab['parameters'][0]['Reg/Strategy'] == '0'
     assert any(n.get('executable') == 'sport_ctrl' for n in recorded) == (motion == 'true')
+    if motion == 'true':
+        bridge = next(n for n in recorded if n.get('executable') == 'sport_ctrl')
+        cfg = yaml.safe_load((ROOT/'go2_slam_nav/config/nav2_params.yaml').read_text())
+        dwb = cfg['controller_server']['ros__parameters']['FollowPath']
+        smoother = cfg['velocity_smoother']['ros__parameters']
+        assert (bridge['parameters'][0]['max_linear_x'] == dwb['max_vel_x'] ==
+                dwb['max_speed_xy'] == smoother['max_velocity'][0])
     controllers = [n for n in recorded if n.get('name')=='controller_server']
     assert controllers[0]['remappings'] == [('cmd_vel','/go2_nav/cmd_vel_raw')]
     assert len([n for n in recorded if n.get('executable')=='lifecycle_manager']) == 1

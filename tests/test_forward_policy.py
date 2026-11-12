@@ -14,8 +14,8 @@ class Bridge:
     cmd_vel_callback = sport_ctrl.Go2CmdProcessor.cmd_vel_callback
     timer_callback = sport_ctrl.Go2CmdProcessor.timer_callback
 
-    def __init__(self, enabled=True):
-        self.values = dict(enabled=enabled, max_linear_x=.3, max_angular_z=1.8, cmd_vel_timeout=.25)
+    def __init__(self, enabled=True, max_linear_x=.3):
+        self.values = dict(enabled=enabled, max_linear_x=max_linear_x, max_angular_z=1.8, cmd_vel_timeout=.25)
         self.publisher = Mock()
         self.stopped = True
         self.last_command_time = None
@@ -43,6 +43,15 @@ def test_encoder_cannot_send_reverse_or_lateral_translation(x, y, yaw, expected)
     request = bridge.publisher.publish.call_args.args[0]
     assert request.header.identity.api_id == 1008
     assert tuple(json.loads(request.parameter).values()) == expected
+
+
+@pytest.mark.parametrize('x,expected_x', [(.45, .45), (.6, .5), (-.1, 0.)])
+def test_faster_cap_reaches_encoder_while_reverse_lateral_and_yaw_stay_bounded(x, expected_x):
+    bridge = Bridge(max_linear_x=.5)
+    bridge.cmd_vel_callback(command(x, .5, -2.4))
+    request = bridge.publisher.publish.call_args.args[0]
+    assert request.header.identity.api_id == 1008
+    assert json.loads(request.parameter) == {'x': expected_x, 'y': 0., 'z': -1.8}
 
 
 @pytest.mark.parametrize('values', [(-.3,.2,0.), (float('nan'),0.,.2),

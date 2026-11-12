@@ -17,7 +17,7 @@ class Go2CmdProcessor(Node):
         self.declare_parameter('enabled', False)
         self.declare_parameter('rate', 200.0)
         self.declare_parameter('cmd_vel_timeout', 0.25)
-        self.declare_parameter('max_linear_x', 0.3)
+        self.declare_parameter('max_linear_x', 0.5)
         self.declare_parameter('max_angular_z', 1.8)
         for key in ('rate', 'cmd_vel_timeout', 'max_linear_x', 'max_angular_z'):
             value = self.get_parameter(key).value
