@@ -46,6 +46,7 @@ ros2 launch go2_slam_nav nav.launch.py \
     use_rviz:=false \
     use_nav2_rviz:=true \
     enable_motion:="${GO2_ENABLE_MOTION:-false}" \
+    localization_profile:="${GO2_LOCALIZATION_PROFILE:-legacy}" \
     first_door_only:="${GO2_FIRST_DOOR_ONLY:-false}" \
     record_diagnostics:="${GO2_RECORD_DIAGNOSTICS:-true}" \
     record_obstacle_sensors:="${GO2_RECORD_OBSTACLE_SENSORS:-false}" \

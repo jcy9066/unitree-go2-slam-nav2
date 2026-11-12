@@ -21,6 +21,11 @@ def launch_setup(context):
     if not os.path.isfile(params):
         raise RuntimeError(f'Nav2 parameter file does not exist: {params}')
     first_door_only = LaunchConfiguration('first_door_only').perform(context) == 'true'
+    profile = LaunchConfiguration('localization_profile').perform(context)
+    if profile not in ('legacy', 'aligned_visual', 'reference_visual'):
+        raise RuntimeError('Unknown localization profile')
+    if profile != 'legacy' and LaunchConfiguration('enable_motion').perform(context) == 'true':
+        raise RuntimeError('Comparison profiles are view-only until localization is validated')
     if first_door_only:
         default_params = os.path.join(share, 'config', 'nav2_params.yaml')
         if os.path.realpath(params) != os.path.realpath(default_params):
@@ -51,14 +56,19 @@ def launch_setup(context):
             raise RuntimeError(f'An existing RTAB-Map database is required: {database}')
         # Keep the mapping viewer switches local to this include. Otherwise its
         # use_rviz=false also disables the navigation RViz declared below.
+        localization_launch = 'l1_rgbd.launch.py' if profile == 'legacy' else 'aligned_visual_localization.launch.py'
+        localization_args = {
+            'database_path': database, 'localize_only': 'true', 'restart_map': 'false',
+            'use_rviz': 'false', 'use_rtabmapviz': 'false',
+            'odom_bridge': LaunchConfiguration('odom_bridge'),
+        } if profile == 'legacy' else {
+            'database_path': database,
+            'reference_camera': str(profile == 'reference_visual').lower(),
+        }
         actions.append(GroupAction(scoped=True, actions=[
             IncludeLaunchDescription(
-                PythonLaunchDescriptionSource(os.path.join(share, 'launch', 'l1_rgbd.launch.py')),
-                launch_arguments={
-                    'database_path': database, 'localize_only': 'true', 'restart_map': 'false',
-                    'use_rviz': 'false', 'use_rtabmapviz': 'false',
-                    'odom_bridge': LaunchConfiguration('odom_bridge'),
-                }.items(),
+                PythonLaunchDescriptionSource(os.path.join(share, 'launch', localization_launch)),
+                launch_arguments=localization_args.items(),
             ),
         ]))
 
@@ -153,6 +163,9 @@ def generate_launch_description():
             FindPackageShare('go2_slam_nav'), 'config', 'nav2_params.yaml'])),
         DeclareLaunchArgument('start_localization', default_value='true', choices=['true', 'false'],
                               description='False when the existing localization pipeline is running'),
+        DeclareLaunchArgument('localization_profile', default_value='legacy',
+                              choices=['legacy', 'aligned_visual', 'reference_visual'],
+                              description='Explicit view-only acquisition-time/6DoF comparison profiles'),
         DeclareLaunchArgument('odom_bridge', default_value='true', choices=['true', 'false']),
         DeclareLaunchArgument('record_diagnostics', default_value='true', choices=['true', 'false']),
         DeclareLaunchArgument('first_door_only', default_value='false', choices=['true', 'false'],
