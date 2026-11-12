@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # Payload executed by laptop_slam.sh over an owned SSH PTY. No motion commands.
 set -Eeuo pipefail
+# SSH -tt may make the receiving bash interactive. Prevent setsid from forking
+# away from $!, so the cleanup trap retains the actual camera launch group.
+set +m
 domain="${1:-0}"
 [[ "$domain" =~ ^[0-9]+$ ]] && (( domain <= 232 )) || exit 2
 if [[ ! -f "$HOME/ros2_realsense_456_ws/activate.bash" ]]; then
@@ -11,8 +14,9 @@ set +u
 source "$HOME/ros2_realsense_456_ws/activate.bash"
 set -u
 export ROS_DOMAIN_ID="$domain" ROS_LOCALHOST_ONLY=0
-# Match the laptop transport; Foxy's default Fast DDS can fail parsing peers.
-export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
+# Keep the backend validated on this Foxy device. Cyclone crashed during the
+# live comparison; an explicit opt-in remains available for separate testing.
+export RMW_IMPLEMENTATION="${GO2_CAMERA_RMW_IMPLEMENTATION:-rmw_fastrtps_cpp}"
 camera_pid=''
 cleanup() {
     trap - EXIT HUP INT TERM
@@ -34,3 +38,4 @@ setsid ros2 launch realsense2_camera rs_launch.py \
     depth_module.emitter_enabled:=1 depth_module.emitter_on_off:=false &
 camera_pid=$!
 wait "$camera_pid"
+exit 0
