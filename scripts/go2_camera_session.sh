@@ -11,6 +11,8 @@ set +u
 source "$HOME/ros2_realsense_456_ws/activate.bash"
 set -u
 export ROS_DOMAIN_ID="$domain" ROS_LOCALHOST_ONLY=0
+# Match the laptop transport; Foxy's default Fast DDS can fail parsing peers.
+export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
 camera_pid=''
 cleanup() {
     trap - EXIT HUP INT TERM

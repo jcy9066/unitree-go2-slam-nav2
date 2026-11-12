@@ -158,6 +158,11 @@ def test_remote_pty_hangup_stops_only_owned_camera(tmp_path):
             if log.exists() and 'camera_started' in log.read_text():break
             time.sleep(.03)
         else:raise AssertionError('Camera fixture never started')
+        # Check the actual child environment, not just the shell's source text.
+        children=(Path(f'/proc/{process.pid}/task/{process.pid}/children').read_text().split())
+        assert children
+        child_env=Path(f'/proc/{children[0]}/environ').read_bytes().split(b'\0')
+        assert b'RMW_IMPLEMENTATION=rmw_cyclonedds_cpp' in child_env
         process.send_signal(signal.SIGHUP);process.communicate(timeout=5)
         assert 'camera_closed' in log.read_text()
     finally:
