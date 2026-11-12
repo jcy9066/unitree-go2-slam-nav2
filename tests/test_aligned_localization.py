@@ -20,7 +20,14 @@ def test_aligned_visual_uses_source_time_full_pose_and_readonly_db(monkeypatch, 
     nodes = runpy.run_path(str(ROOT/'go2_slam_nav/launch/aligned_visual_localization.launch.py'))['launch_setup'](context)
     assert not any(n.package in ('go2_cmd_processor', 'nav2_controller') for n in nodes)
     sync = next(n for n in nodes if n.executable == 'sensor_time_sync').parameters[0]
-    assert sync['stamp_mode'] == 'source' and sync['visual_heading'] is False
+    assert sync['stamp_mode'] == 'source'
+    assert sync['visual_heading'] == (reference == 'false')
+    vo = [n for n in nodes if n.executable == 'rgbd_odometry']
+    assert bool(vo) == (reference == 'false')
+    if vo:
+        assert vo[0].parameters[0]['publish_tf'] is False
+        assert vo[0].parameters[0]['subscribe_rgbd'] is True
+        assert vo[0].parameters[0]['Reg/Force3DoF'] == 'false'
     rtab = next(n for n in nodes if n.executable == 'rtabmap').parameters[0]
     assert rtab['Reg/Force3DoF'] == 'false' and rtab['odom_sensor_sync'] is True
     assert rtab['qos'] == rtab['qos_odom'] == 1

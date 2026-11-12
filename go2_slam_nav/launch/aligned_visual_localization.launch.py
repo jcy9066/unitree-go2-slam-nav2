@@ -14,11 +14,11 @@ def launch_setup(context):
         raise RuntimeError('An existing session-copy database is required')
     reference = LaunchConfiguration('reference_camera').perform(context) == 'true'
     use_sim_time = ParameterValue(LaunchConfiguration('use_sim_time'), value_type=bool)
-    return [
+    actions = [
         Node(package='go2_slam_nav', executable='sensor_time_sync', name='sensor_time_sync',
              output='screen', parameters=[{
                  'use_sim_time': use_sim_time, 'stamp_mode': 'source',
-                 'visual_heading': False, 'publish_odom': True,
+                 'visual_heading': not reference, 'publish_odom': True,
                  'max_source_stamp_skew': 1.0,
              }]),
         # Match the saved camera model for each DB family. These are historical
@@ -62,6 +62,20 @@ def launch_setup(context):
              }], remappings=[('odom', '/robot_odom_fixed'),
                              ('rgbd_image', '/go2_localization/rgbd_image')]),
     ]
+    if not reference:
+        # Relative camera rotation constrains demonstrated native yaw drift.
+        # SensorTimeSync remains the sole odom -> base_link TF publisher.
+        actions.append(Node(
+            package='rtabmap_odom', executable='rgbd_odometry', name='go2_heading_vo',
+            output='screen', parameters=[{
+                'use_sim_time': use_sim_time, 'frame_id': 'base_link',
+                'odom_frame_id': 'go2_visual_heading_odom', 'publish_tf': False,
+                'subscribe_rgbd': True, 'approx_sync': True, 'qos': 1, 'qos_rgbd': 1,
+                'max_update_rate': 10.0, 'Reg/Force3DoF': 'false',
+                'Odom/ResetCountdown': '0', 'Vis/MinDepth': '0.3', 'Vis/MaxDepth': '4.0',
+            }], remappings=[('rgbd_image', '/go2_localization/rgbd_image'),
+                            ('odom', '/go2_heading/odom'), ('odom_info', '/go2_heading/info')]))
+    return actions
 
 
 def generate_launch_description():
