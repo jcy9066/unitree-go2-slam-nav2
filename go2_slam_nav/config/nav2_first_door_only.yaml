@@ -151,8 +151,8 @@ local_costmap:
       width: 3
       height: 3
       resolution: 0.02
-      footprint: '[[-0.40, -0.21], [0.40, -0.21], [0.40, 0.21], [-0.40, 0.21]]'
-      footprint_padding: 0.02
+      footprint: '[[-0.35, -0.18], [0.35, -0.18], [0.35, 0.18], [-0.35, 0.18]]'
+      footprint_padding: 0.01
       plugins:
       - obstacle_layer
       - inflation_layer
@@ -210,7 +210,7 @@ global_costmap:
       global_frame: map
       robot_base_frame: base_link
       use_sim_time: false
-      footprint: '[[-0.40, -0.21], [0.40, -0.21], [0.40, 0.21], [-0.40, 0.21]]'
+      footprint: '[[-0.35, -0.18], [0.35, -0.18], [0.35, 0.18], [-0.35, 0.18]]'
       footprint_padding: 0.01
       resolution: 0.05
       track_unknown_space: true
