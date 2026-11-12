@@ -58,3 +58,20 @@ def test_odom_tf_once_per_rgb_stamp_and_stale_odom_not_reused(monkeypatch):
     rgb.header.stamp.sec = 21
     sensor.rgb_callback(rgb)
     assert sensor.odom_pub.publish.call_count == 1
+
+
+def test_visual_yaw_updates_pose_and_tf_identically_without_mutating_native(monkeypatch):
+    import math
+    from go2_slam_nav.heading_fusion import HeadingFusion
+    sensor = Sensor(); sensor.heading_fusion = HeadingFusion(); sensor.get_logger = Mock()
+    monkeypatch.setattr(sync.time, 'monotonic', lambda: 10.)
+    odom = Odometry(); odom.pose.pose.orientation.w = 1.; odom.pose.pose.position.x = 1.
+    sensor.last_odom, sensor.last_odom_time = odom, 10.
+    image = Image(); image.header.stamp.sec = 20; sensor.rgb_callback(image)
+    sensor.heading_fusion.offset = .1
+    image.header.stamp.nanosec = 100000000; sensor.rgb_callback(image)
+    out = sensor.odom_pub.publish.call_args.args[0]; tf = sensor.tf_pub.sendTransform.call_args.args[0]
+    assert abs(out.pose.pose.orientation.z-math.sin(.05)) < 1e-8
+    assert tf.transform.rotation == out.pose.pose.orientation
+    assert tf.transform.translation.x == out.pose.pose.position.x
+    assert odom.pose.pose.orientation.z == 0. and odom.pose.pose.orientation.w == 1.

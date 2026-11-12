@@ -4,6 +4,7 @@ This preserves the existing latest-RGB-stamp convention; it is not hardware
 synchronization. Stale camera input stops output instead of reusing old stamps.
 The RealSense driver supplies camera_link -> color/optical frame transforms.
 """
+import math
 import copy
 import time
 
@@ -14,6 +15,7 @@ from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import Image, PointCloud2
 from tf2_ros import TransformBroadcaster
+from go2_slam_nav.heading_fusion import HeadingFusion
 
 
 class SensorTimeSync(Node):
@@ -26,6 +28,12 @@ class SensorTimeSync(Node):
         self.declare_parameter('out_odom', '/robot_odom_fixed')
         self.declare_parameter('publish_odom', True)
         self.declare_parameter('camera_timeout', 0.5)
+        self.declare_parameter('visual_heading', False)
+        self.declare_parameter('visual_odom_topic', '/go2_heading/odom')
+        self.heading_fusion = HeadingFusion() if self.get_parameter('visual_heading').value else None
+        if self.heading_fusion is not None:
+            self.create_subscription(Odometry, self.get_parameter('visual_odom_topic').value,
+                                     self.visual_callback, qos_profile_sensor_data)
         self.stamp = None
         self.last_rgb_time = None
         self.last_odom_stamp = None
@@ -68,6 +76,19 @@ class SensorTimeSync(Node):
         out.header.stamp = self.stamp
         out.header.frame_id = out.header.frame_id or 'odom'
         out.child_frame_id = out.child_frame_id or 'base_link'
+        fusion = getattr(self, 'heading_fusion', None)
+        if fusion is not None:
+            q = out.pose.pose.orientation
+            yaw = math.atan2(2*(q.w*q.z+q.x*q.y), 1-2*(q.y*q.y+q.z*q.z))
+            try:
+                x, y, _ = fusion.native(out.header.stamp.sec+out.header.stamp.nanosec*1e-9,
+                                        out.pose.pose.position.x, out.pose.pose.position.y, yaw)
+            except ValueError as exc:
+                self.get_logger().error(str(exc))
+                return
+            out.pose.pose.position.x, out.pose.pose.position.y = x, y
+            c, s = math.cos(fusion.offset/2), math.sin(fusion.offset/2)
+            q.x, q.y, q.z, q.w = c*q.x-s*q.y, c*q.y+s*q.x, c*q.z+s*q.w, c*q.w-s*q.z
         self.odom_pub.publish(out)
         tf = TransformStamped()
         tf.header = out.header
@@ -77,6 +98,14 @@ class SensorTimeSync(Node):
         tf.transform.translation.z = out.pose.pose.position.z
         tf.transform.rotation = out.pose.pose.orientation
         self.tf_pub.sendTransform(tf)
+
+    def visual_callback(self, msg):
+        q = msg.pose.pose.orientation
+        norm = q.x*q.x+q.y*q.y+q.z*q.z+q.w*q.w
+        covariance = msg.pose.covariance[35] if abs(norm-1.) < 1e-3 else math.inf
+        yaw = math.atan2(2*(q.w*q.z+q.x*q.y), 1-2*(q.y*q.y+q.z*q.z))
+        self.heading_fusion.observe(msg.header.stamp.sec+msg.header.stamp.nanosec*1e-9,
+                                    yaw, covariance, msg.header.frame_id)
 
     def cloud_callback(self, msg):
         if self.fresh():

@@ -33,6 +33,8 @@ LIDAR_TOPIC = '/utlidar/cloud_base'
 
 def launch_setup(context):
     localize_only = LaunchConfiguration('localize_only').perform(context) == 'true'
+    visual_heading = localize_only and (
+        LaunchConfiguration('visual_heading_correction').perform(context) == 'true')
     # Existing databases are never reset by this adapter.
     database_path = os.path.expanduser(LaunchConfiguration('database_path').perform(context))
     grid_sensor = LaunchConfiguration('grid_sensor').perform(context)
@@ -56,6 +58,7 @@ def launch_setup(context):
             'out_cloud': '/cloud_base_synced',
             'rgb_topic': RGB_TOPIC,
             'publish_odom': LaunchConfiguration('odom_bridge'),
+            'visual_heading': visual_heading,
         }],
     )
 
@@ -138,7 +141,22 @@ def launch_setup(context):
         condition=IfCondition(LaunchConfiguration('use_rviz')),
     )
 
-    return [cloud_time_sync, assembler, rtabmap, rtabmap_viz, rviz]
+    actions = []
+    if visual_heading:
+        # Comparison-validated relative visual yaw; SensorTimeSync remains the
+        # sole odom->base_link TF owner. Saved-map visual registration is intact.
+        actions.append(Node(
+            package='rtabmap_odom', executable='rgbd_odometry', name='go2_heading_vo',
+            output='screen', parameters=[{
+                'frame_id': 'base_link', 'odom_frame_id': 'go2_visual_heading_odom',
+                'publish_tf': False, 'approx_sync': True,
+                'approx_sync_max_interval': 0.03, 'qos': 2, 'qos_camera_info': 2,
+                'max_update_rate': 10.0, 'Reg/Force3DoF': 'true',
+                'Odom/ResetCountdown': '0', 'Vis/MinDepth': '0.3', 'Vis/MaxDepth': '4.0',
+            }], remappings=[('rgb/image', RGB_TOPIC), ('depth/image', DEPTH_TOPIC),
+                            ('rgb/camera_info', CAMERA_INFO_TOPIC),
+                            ('odom', '/go2_heading/odom'), ('odom_info', '/go2_heading/info')]))
+    return actions + [cloud_time_sync, assembler, rtabmap, rtabmap_viz, rviz]
 
 
 def generate_launch_description():
@@ -146,6 +164,9 @@ def generate_launch_description():
         DeclareLaunchArgument(
             'localize_only', default_value='false', choices=['true', 'false'],
             description='Localize in the saved map without changing it'),
+        DeclareLaunchArgument('visual_heading_correction', default_value='true',
+                              choices=['true', 'false'],
+                              description='Constrain native yaw drift using relative visual odometry in localization'),
         DeclareLaunchArgument(
             'restart_map', default_value='false', choices=['false'],
             description='Database reset is disabled'),

@@ -43,8 +43,10 @@ def test_l1_navigation_expands_without_starting_any_process(
         SetLaunchConfiguration('first_door_only', first_door),
         SetLaunchConfiguration('use_nav2_rviz', 'false'), *description.entities]))
     assert service.run() == 0
-    assert not any(n['package'] in ['rslidar_sdk','rtabmap_odom','go2_camera_bringup'] for n in recorded)
+    assert not any(n['package'] in ['rslidar_sdk','go2_camera_bringup'] for n in recorded)
     assert any(n.get('executable') == 'sensor_time_sync' for n in recorded)
+    assert all(n['executable'] == 'rgbd_odometry' and n['parameters'][0]['publish_tf'] is False
+               for n in recorded if n['package'] == 'rtabmap_odom')
     rtab = next(n for n in recorded if n.get('executable') == 'rtabmap')
     assert rtab['parameters'][0]['Mem/IncrementalMemory'] == 'false'
     assert rtab['parameters'][0]['Mem/LocalizationReadOnly'] == 'true'
