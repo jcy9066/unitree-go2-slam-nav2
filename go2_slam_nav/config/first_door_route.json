@@ -1,0 +1,30 @@
+{
+  "purpose": "Virtual Nav2 route constraint: exclude alternative door2; not a physical wall or RTAB-Map edit",
+  "map_sha256": "f5fabc46ec2051bf02214a42da1b2b73b8524a91ac8aee63c4d772655dfd3f9e",
+  "width": 1131,
+  "height": 1537,
+  "resolution": 0.05000000074505806,
+  "origin": [
+    -31.47262191772461,
+    -8.514455795288086
+  ],
+  "keepout_bounds_map_m": [
+    2.35,
+    4.75,
+    -2.55,
+    0.2
+  ],
+  "mask_png_sha256": "610158375ded89b1a2b40136a8ac47ccbc7396134172aac90e6c25dacff9c4a7",
+  "first_door_reference_point": [
+    0.2964073,
+    -2.050168
+  ],
+  "second_door_reference_point": [
+    3.437989,
+    -0.966309
+  ],
+  "professor_reference_point": [
+    -15.491,
+    13.743
+  ]
+}

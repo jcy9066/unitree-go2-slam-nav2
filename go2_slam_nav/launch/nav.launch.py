@@ -12,6 +12,7 @@ from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterFile
 from launch_ros.substitutions import FindPackageShare
+from go2_slam_nav.first_door_route import validate_route_database
 
 
 def launch_setup(context):
@@ -19,9 +20,31 @@ def launch_setup(context):
     params = os.path.expanduser(LaunchConfiguration('nav2_params_file').perform(context))
     if not os.path.isfile(params):
         raise RuntimeError(f'Nav2 parameter file does not exist: {params}')
+    first_door_only = LaunchConfiguration('first_door_only').perform(context) == 'true'
+    if first_door_only:
+        default_params = os.path.join(share, 'config', 'nav2_params.yaml')
+        if os.path.realpath(params) != os.path.realpath(default_params):
+            raise RuntimeError('first_door_only uses its validated built-in parameter file')
+        validate_route_database(
+            LaunchConfiguration('database_path').perform(context),
+            os.path.join(share, 'config', 'first_door_route.json'))
+        params = os.path.join(share, 'config', 'nav2_first_door_only.yaml')
     # Resolve installed behavior-tree paths in the parameter YAML.
     parameter_file = ParameterFile(params, allow_substs=True)
     actions = []
+    route_nodes = []
+    if first_door_only:
+        actions.extend([
+            Node(package='nav2_map_server', executable='map_server',
+                 name='first_door_mask', output='screen', parameters=[{
+                     'use_sim_time': False, 'frame_id': 'map', 'topic_name': '/first_door_mask',
+                     'yaml_filename': os.path.join(share, 'config', 'first_door_keepout.yaml')}]),
+            Node(package='nav2_map_server', executable='costmap_filter_info_server',
+                 name='first_door_filter_info', output='screen', parameters=[{
+                     'use_sim_time': False, 'filter_info_topic': '/first_door_filter_info',
+                     'type': 0, 'mask_topic': '/first_door_mask', 'base': 0.0, 'multiplier': 1.0}]),
+        ])
+        route_nodes = ['first_door_mask', 'first_door_filter_info']
     if LaunchConfiguration('start_localization').perform(context) == 'true':
         database = os.path.expanduser(LaunchConfiguration('database_path').perform(context))
         if not os.path.isfile(database) or os.path.getsize(database) == 0:
@@ -89,7 +112,7 @@ def launch_setup(context):
         package='nav2_lifecycle_manager', executable='lifecycle_manager',
         name='lifecycle_manager_navigation', output='screen',
         parameters=[{'use_sim_time': False, 'autostart': True,
-                     'node_names': [name for _, name, _ in servers]}],
+                     'node_names': route_nodes + [name for _, name, _ in servers]}],
     ))
     if LaunchConfiguration('record_diagnostics').perform(context) == 'true':
         database = os.path.expanduser(LaunchConfiguration('database_path').perform(context))
@@ -132,6 +155,8 @@ def generate_launch_description():
                               description='False when the existing localization pipeline is running'),
         DeclareLaunchArgument('odom_bridge', default_value='true', choices=['true', 'false']),
         DeclareLaunchArgument('record_diagnostics', default_value='true', choices=['true', 'false']),
+        DeclareLaunchArgument('first_door_only', default_value='false', choices=['true', 'false'],
+                              description='Saved-lab-map route policy: forbid door2, stop on waypoint failure'),
         DeclareLaunchArgument('record_obstacle_sensors', default_value='false',
                               choices=['true', 'false'],
                               description='Record raw L1/depth scan and full TF for obstacle attribution'),

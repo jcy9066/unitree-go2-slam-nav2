@@ -15,8 +15,11 @@ ROOT = Path(__file__).parents[1]
 @pytest.mark.parametrize('motion', ['false', 'true'])
 @pytest.mark.parametrize('recording', ['false', 'true'])
 @pytest.mark.parametrize('raw_sensors', ['false', 'true'])
+@pytest.mark.parametrize('first_door', ['false', 'true'])
 def test_l1_navigation_expands_without_starting_any_process(
-        monkeypatch, tmp_path, motion, recording, raw_sensors):
+        monkeypatch, tmp_path, motion, recording, raw_sensors, first_door):
+    import go2_slam_nav.first_door_route as route
+    monkeypatch.setattr(route, 'validate_route_database', lambda *args: None)
     monkeypatch.setenv("ROS_LOG_DIR", str(tmp_path / "logs"))
     recorded = []
     class RecordNode(Action):
@@ -37,6 +40,7 @@ def test_l1_navigation_expands_without_starting_any_process(
         SetLaunchConfiguration('enable_motion', motion),
         SetLaunchConfiguration('record_diagnostics', recording),
         SetLaunchConfiguration('record_obstacle_sensors', raw_sensors),
+        SetLaunchConfiguration('first_door_only', first_door),
         SetLaunchConfiguration('use_nav2_rviz', 'false'), *description.entities]))
     assert service.run() == 0
     assert not any(n['package'] in ['rslidar_sdk','rtabmap_odom','go2_camera_bringup'] for n in recorded)
@@ -61,6 +65,11 @@ def test_l1_navigation_expands_without_starting_any_process(
     if recording == 'true':
         recorder = next(n for n in recorded if n.get('executable') == 'navigation_recorder')
         assert recorder['parameters'][0]['record_obstacle_sensors'] == (raw_sensors == 'true')
+    mask_nodes = [n for n in recorded if n.get('name') == 'first_door_mask']
+    assert bool(mask_nodes) == (first_door == 'true')
+    manager = next(n for n in recorded if n.get('executable') == 'lifecycle_manager')
+    if first_door == 'true':
+        assert manager['parameters'][0]['node_names'][:2] == ['first_door_mask', 'first_door_filter_info']
 
 
 def test_all_nav2_translation_and_recovery_routes_obey_forward_only_policy():

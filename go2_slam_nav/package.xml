@@ -19,6 +19,7 @@
   <exec_depend>rtabmap_msgs</exec_depend>
   <exec_depend>rtabmap_viz</exec_depend>
   <exec_depend>nav2_bringup</exec_depend>
+  <exec_depend>nav2_map_server</exec_depend>
   <exec_depend>depthimage_to_laserscan</exec_depend>
   <exec_depend>go2_cmd_processor</exec_depend>
   <exec_depend>go2_nav2_critics</exec_depend>
