@@ -159,7 +159,7 @@ local_costmap:
       inflation_layer:
         plugin: nav2_costmap_2d::InflationLayer
         cost_scaling_factor: 4.0
-        inflation_radius: 0.25
+        inflation_radius: 0.20
       static_layer:
         plugin: nav2_costmap_2d::StaticLayer
         map_subscribe_transient_local: true
@@ -256,7 +256,7 @@ global_costmap:
       inflation_layer:
         plugin: nav2_costmap_2d::InflationLayer
         cost_scaling_factor: 4.0
-        inflation_radius: 0.25
+        inflation_radius: 0.20
       always_send_full_costmap: true
       filters:
       - first_door_keepout

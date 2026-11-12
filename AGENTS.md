@@ -22,7 +22,7 @@ Scope: this repository, its Codex agents, and all subagents. Read this file firs
 - Do not initiate physical robot motion, `NavigateToPose` goals, `/cmd_vel` publication or Unitree Sport motion commands. The operator must perform live movement and safety checks.
 - Do not claim physical validation from static analysis, compile checks, simulated data, or RViz screenshots alone.
 - Do not use `restart_map:=true`, `--delete_db_on_start`, or overwrite/delete an existing .db. Navigation must use a copy of the original DB.
-- Current 70×36 cm configured Footprint, 1 cm padding, and 25 cm Inflation Radius are the operator-requested reduced profile based on the official 70×31 cm standing dimensions and reported 47×30 cm foot stance. They remain **unverified for the dynamic walking envelope at 0.5 m/s**. The 80×42 cm / 45 cm laptop baseline and earlier 70×40 cm / 42 cm PR settings are historical profiles, not proven collision boundaries.
+- Current 70×36 cm configured Footprint, 1 cm padding, and 20 cm Inflation Radius are the operator-requested reduced profile based on the official 70×31 cm standing dimensions and reported 47×30 cm foot stance. They remain **unverified for the dynamic walking envelope at 0.5 m/s**. The 80×42 cm / 45 cm laptop baseline and earlier 70×40 cm / 42 cm PR settings are historical profiles, not proven collision boundaries.
 - Treat initial localization separately from door-passage path planning; verify `map → odom → base_link` before navigation.
 - Inspect sensor TF, time synchronization and Costmaps before modifying algorithms. No Planner/Controller/Critic replacement without a reproducible reason and comparison.
 - Do not make uncontrolled changes to robot firmware, safety settings, command timeouts or network configuration.
