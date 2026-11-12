@@ -99,7 +99,10 @@ def launch_setup(context):
         actions.append(Node(
             package='go2_slam_nav', executable='navigation_recorder', name='navigation_recorder',
             parameters=[{'output_dir': directory, 'config_file': params, 'map_database': database,
-                         'evaluation_hz': 2.0}], output='screen', respawn=True, respawn_delay=2.0,
+                         'evaluation_hz': 2.0,
+                         'record_obstacle_sensors': LaunchConfiguration(
+                             'record_obstacle_sensors').perform(context) == 'true'}],
+            output='screen', respawn=True, respawn_delay=2.0,
         ))
 
     # The bridge is absent during planning-only checks. Its output policy also
@@ -129,6 +132,9 @@ def generate_launch_description():
                               description='False when the existing localization pipeline is running'),
         DeclareLaunchArgument('odom_bridge', default_value='true', choices=['true', 'false']),
         DeclareLaunchArgument('record_diagnostics', default_value='true', choices=['true', 'false']),
+        DeclareLaunchArgument('record_obstacle_sensors', default_value='false',
+                              choices=['true', 'false'],
+                              description='Record raw L1/depth scan and full TF for obstacle attribution'),
         DeclareLaunchArgument('diagnostics_dir', default_value=''),
         DeclareLaunchArgument('enable_motion', default_value='false', choices=['true', 'false'],
                               description='Operator opt-in: enable the forward-only Sport command bridge'),

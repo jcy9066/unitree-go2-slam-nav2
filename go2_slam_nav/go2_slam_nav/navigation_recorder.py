@@ -16,15 +16,17 @@ from rclpy.node import Node
 from rclpy.parameter import parameter_value_to_python
 from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
 from rclpy.executors import ExternalShutdownException
+from rclpy.serialization import serialize_message
 from rosidl_runtime_py.convert import message_to_ordereddict
 from action_msgs.msg import GoalStatusArray
 from dwb_msgs.msg import LocalPlanEvaluation
-from geometry_msgs.msg import Twist, PolygonStamped
+from geometry_msgs.msg import Twist, PolygonStamped, PoseWithCovarianceStamped
 from nav_msgs.msg import Odometry, Path as NavPath
 from nav2_msgs.msg import Costmap
 from rcl_interfaces.msg import Log
 from rcl_interfaces.srv import GetParameters
-from sensor_msgs.msg import CameraInfo
+from sensor_msgs.msg import CameraInfo, LaserScan, PointCloud2
+from rtabmap_msgs.msg import Info
 from tf2_msgs.msg import TFMessage
 from unitree_api.msg import Request, Response
 from unitree_go.msg import SportModeState
@@ -38,6 +40,14 @@ def clean(value):
     if isinstance(value, (list, tuple)):
         return [clean(v) for v in value]
     return value
+
+
+def obstacle_sensor_record(msg):
+    """Lossless CDR preserves cloud layouts, scan NaN/Inf, frames and stamps."""
+    return {'encoding': 'base64-cdr',
+            'message_type': 'sensor_msgs/msg/' + type(msg).__name__,
+            'header': message_to_ordereddict(msg.header),
+            'data': base64.b64encode(serialize_message(msg)).decode('ascii')}
 
 
 def evaluation_record(msg):
@@ -132,9 +142,11 @@ class NavigationRecorder(Node):
         super().__init__('navigation_recorder')
         self.declare_parameter('output_dir', str(Path.home()/'go2_maps/diagnostics'))
         self.declare_parameter('evaluation_hz', 2.0)
+        self.declare_parameter('record_obstacle_sensors', False)
         self.declare_parameter('duration', 0.0)
         self.declare_parameter('config_file', '')
         self.declare_parameter('map_database', '')
+        self.record_obstacle_sensors = self.get_parameter('record_obstacle_sensors').value
         self.writer = TraceWriter(self.get_parameter('output_dir').value)
         self.last = {}
         self.closed = False
@@ -152,6 +164,14 @@ class NavigationRecorder(Node):
         sensor = QoSProfile(depth=5, reliability=ReliabilityPolicy.BEST_EFFORT)
         latched = QoSProfile(depth=1, reliability=ReliabilityPolicy.RELIABLE,
                              durability=DurabilityPolicy.TRANSIENT_LOCAL)
+        if self.record_obstacle_sensors:
+            for topic, cls in [('/cloud_base_synced', PointCloud2),
+                               ('/go2_nav/depth_scan', LaserScan)]:
+                self.create_subscription(cls, topic,
+                                         lambda m, t=topic: self.obstacle_sensor(t, m), sensor)
+            for topic, cls in [('/initialpose', PoseWithCovarianceStamped),
+                               ('/localization_pose', PoseWithCovarianceStamped), ('/info', Info)]:
+                self.create_subscription(cls, topic, lambda m, t=topic: self.simple(t, m), sensor)
         for topic in ['/go2_nav/cmd_vel_raw', '/go2_nav/cmd_vel']:
             self.create_subscription(Twist, topic, lambda m, t=topic: self.simple(t, m), sensor)
         self.create_subscription(LocalPlanEvaluation, '/evaluation', self.evaluation, sensor)
@@ -180,7 +200,11 @@ class NavigationRecorder(Node):
                     'config_file': config, 'config_text': Path(config).read_text() if config and Path(config).is_file() else None,
                     'request_topic': self.resolve_topic_name('/api/sport/request'),
                     'publisher_gid_supported': False,
-                    'images_recorded': False, 'pointclouds_recorded': False,
+                    'images_recorded': False,
+                    'pointclouds_recorded': self.record_obstacle_sensors,
+                    'laser_scans_recorded': self.record_obstacle_sensors,
+                    'tf_downsampled': not self.record_obstacle_sensors,
+                    'evaluation_downsampled': not self.record_obstacle_sensors,
                     'candidate_scores_may_be_partial': 'DWB short_circuit_trajectory_evaluation is unchanged.'}
         (self.writer.directory/'metadata.json').write_text(json.dumps(metadata, indent=2))
         self.create_timer(5., self.parameters_and_graph)
@@ -203,8 +227,13 @@ class NavigationRecorder(Node):
             self.simple(topic, msg)
 
     def evaluation(self, msg):
-        if self.due('/evaluation', self.get_parameter('evaluation_hz').value):
+        if self.record_obstacle_sensors or self.due('/evaluation', self.get_parameter('evaluation_hz').value):
             self.writer.emit('/evaluation', evaluation_record(msg), ros_receive_ns=self.get_clock().now().nanoseconds)
+
+    def obstacle_sensor(self, topic, msg):
+        if self.record_obstacle_sensors:
+            self.writer.emit(topic, obstacle_sensor_record(msg),
+                             ros_receive_ns=self.get_clock().now().nanoseconds)
 
     def request(self, msg):
         # This Humble rclpy executor passes only the message to subscriptions.
@@ -212,7 +241,8 @@ class NavigationRecorder(Node):
         self.simple('/api/sport/request', msg, publisher_gid=None)
 
     def costmap(self, topic, msg):
-        if self.due(topic, 5. if topic.startswith('/local') else .2):
+        hz = 5. if topic.startswith('/local') else (1. if self.record_obstacle_sensors else .2)
+        if self.due(topic, hz):
             raw = msg.data.tobytes() if hasattr(msg.data, 'tobytes') else bytes(v & 255 for v in msg.data)
             self.writer.emit(topic, {'header': message_to_ordereddict(msg.header), 'metadata': message_to_ordereddict(msg.metadata),
                                      'encoding': 'base64-uint8', 'data': base64.b64encode(raw).decode('ascii')},
@@ -220,7 +250,8 @@ class NavigationRecorder(Node):
 
     def transforms(self, msg):
         transforms = [t for t in msg.transforms if t.header.frame_id in ['map', 'odom'] and
-                      t.child_frame_id in ['odom', 'base_link'] and self.due('tf:'+t.child_frame_id, 10.)]
+                      t.child_frame_id in ['odom', 'base_link'] and
+                      (self.record_obstacle_sensors or self.due('tf:'+t.child_frame_id, 10.))]
         if transforms:
             self.writer.emit('/tf', [message_to_ordereddict(t) for t in transforms], ros_receive_ns=self.get_clock().now().nanoseconds)
 

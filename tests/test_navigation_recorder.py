@@ -4,7 +4,13 @@ import json
 from types import SimpleNamespace
 from dwb_msgs.msg import LocalPlanEvaluation, TrajectoryScore, CriticScore
 from geometry_msgs.msg import Pose2D
-from go2_slam_nav.navigation_recorder import evaluation_record, TraceWriter, NavigationRecorder
+from go2_slam_nav.navigation_recorder import (
+    evaluation_record, obstacle_sensor_record, TraceWriter, NavigationRecorder)
+from sensor_msgs.msg import LaserScan, PointCloud2, PointField
+from rclpy.serialization import serialize_message, deserialize_message
+import base64
+import math
+import struct
 from unitree_api.msg import Request
 from unittest.mock import Mock
 
@@ -70,3 +76,38 @@ def test_runtime_errors_are_explicit_in_summary(tmp_path):
     writer = TraceWriter(tmp_path)
     writer.emit('recorder_error', {'type': 'TypeError', 'message': 'synthetic callback failure'})
     assert writer.close()['runtime_error_count'] == 1
+
+
+def test_obstacle_scan_preserves_invalid_ranges_for_clearing_analysis():
+    scan = LaserScan(); scan.header.frame_id = 'camera_scan'
+    scan.header.stamp.sec = 123; scan.header.stamp.nanosec = 456
+    scan.angle_min = -.5; scan.angle_increment = .25
+    scan.range_min = .3; scan.range_max = 3.
+    scan.ranges = [float('inf'), float('nan'), .8, float('-inf')]
+    record = obstacle_sensor_record(scan)
+    restored = deserialize_message(base64.b64decode(record['data']), LaserScan)
+    assert record['message_type'] == 'sensor_msgs/msg/LaserScan'
+    assert serialize_message(restored) == serialize_message(scan)
+    assert math.isnan(restored.ranges[1]) and math.isinf(restored.ranges[0])
+    assert restored.ranges[-1] < 0
+    assert record['header']['stamp']['nanosec'] == 456
+
+
+def test_obstacle_cloud_preserves_endianness_fields_and_row_padding():
+    cloud = PointCloud2(); cloud.header.frame_id = 'base_link'
+    cloud.height = 1; cloud.width = 1; cloud.is_bigendian = True
+    cloud.point_step = 16; cloud.row_step = 20
+    cloud.fields = [PointField(name=k, offset=i*4, datatype=PointField.FLOAT32, count=1)
+                    for i, k in enumerate(['x', 'y', 'z'])]
+    cloud.data = struct.pack('>fff', 1., 2., 3.) + b'padding!'
+    record = obstacle_sensor_record(cloud)
+    restored = deserialize_message(base64.b64decode(record['data']), PointCloud2)
+    assert record['message_type'] == 'sensor_msgs/msg/PointCloud2'
+    assert serialize_message(restored) == serialize_message(cloud)
+    assert bytes(restored.data)[12:] == b'padding!'
+
+
+def test_disabled_raw_obstacle_capture_does_not_serialize_or_write():
+    sink = SimpleNamespace(record_obstacle_sensors=False, writer=Mock())
+    NavigationRecorder.obstacle_sensor(sink, '/go2_nav/depth_scan', LaserScan())
+    sink.writer.emit.assert_not_called()
