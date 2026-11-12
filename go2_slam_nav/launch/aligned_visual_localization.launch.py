@@ -72,7 +72,10 @@ def launch_setup(context):
                 'odom_frame_id': 'go2_visual_heading_odom', 'publish_tf': False,
                 'subscribe_rgbd': True, 'approx_sync': True, 'qos': 1, 'qos_rgbd': 1,
                 'max_update_rate': 10.0, 'Reg/Force3DoF': 'false',
-                'Odom/ResetCountdown': '0', 'Vis/MinDepth': '0.3', 'Vis/MaxDepth': '4.0',
+                # Do not extrapolate a stale constant-motion guess through a
+                # missing-camera interval. Reanchor after consecutive losses.
+                'Odom/GuessMotion': 'false', 'Odom/ResetCountdown': '5',
+                'Vis/MinDepth': '0.3', 'Vis/MaxDepth': '4.0',
             }], remappings=[('rgbd_image', '/go2_localization/rgbd_image'),
                             ('odom', '/go2_heading/odom'), ('odom_info', '/go2_heading/info')]))
     return actions
