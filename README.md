@@ -18,6 +18,8 @@ bash scripts/laptop_nav.sh view    # Go2/카메라 시작 후 지도·위치 확
 
 위 `view`를 Ctrl+C로 종료하고 위치 정합을 확인한 뒤, 운영자만 `bash scripts/laptop_nav.sh drive`로 주행 bridge를 켭니다. Goal도 운영자가 지정합니다. 두 번째 인자로 다른 `.db`를 선택할 수 있습니다. Ethernet `eno1`에 연결이 없으면 `view`/`drive`는 ROS 기동 전에 중단합니다.
 
+2026-11-12 현재 navigation profile은 두 문 허용(`GO2_FIRST_DOOR_ONLY=false`), Footprint70×36cm와 padding1cm(검사72×38cm), inflation20cm입니다. 공식 정지 외형70×31cm를 근거로 줄인 후보이며0.5m/s 실제 다리 스윕/제동은 미검증입니다. Localization은 TF를 발행하지 않는 RGB-D odometry 상대 yaw로 native Go2 yaw drift를 제한하고, 기존 SensorTimeSync 한 개가 odom TF를 발행합니다. Mapping 및 저장 지도는 유지합니다. 정지75초 raw yaw변화1.31° 대비 map yaw span0.11° 확인. 첫 문 동결 경로 외곽 검사는 왕복0/63, 둘째 문은 잔여 겹침이 있어 실제 통과 성공으로 취급하지 않습니다. [현재 설정·실패/성공 범위 R37](docs/go2_navigation_validation.html#heading-fix-r37).
+
 2026-11-10 설치 점검: 실제 작업공간 빌드 PASS, 기존 DB 복사본 quick_check `ok` / 4,516 keyframes, 로봇과 분리한 ROS 기동에서 1131×1537 지도 로드 PASS. Live 센서·초기 위치 정합·실제 문 통과는 Go2 전원 OFF로 NOT TESTED. 자세한 기록은 같은 HTML의 R6에 있습니다.
 
 This fork adapts Hossein Naderi's Go2 SLAM/Nav2 demo to the **current laptop + stock Go2** experiment: ROS 2 Humble on the laptop, Go2 native odometry, internal L1 LiDAR, and the head-mounted D435i. The original RoboSense launch files remain as legacy references; the default Mapping/Navigation scripts do not start RoboSense or ICP odometry.
