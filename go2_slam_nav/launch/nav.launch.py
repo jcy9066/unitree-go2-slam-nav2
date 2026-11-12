@@ -113,9 +113,16 @@ def launch_setup(context):
         ('nav2_velocity_smoother', 'velocity_smoother', [
             ('cmd_vel', '/go2_nav/cmd_vel_raw'), ('cmd_vel_smoothed', '/go2_nav/cmd_vel')]),
     ]
+    server_parameters = [parameter_file]
+    if profile == 'aligned_visual':
+        # The original planar DB uses body-height zero, unlike odom's floor
+        # datum. Preserve equivalent physical height filtering in Global.
+        server_parameters.append(ParameterFile(os.path.join(
+            share, 'config', 'nav2_aligned_visual_height.yaml')))
+    server_parameters.append({'use_sim_time': False})
     for package, name, remappings in servers:
         actions.append(Node(package=package, executable=name, name=name, output='screen',
-                            parameters=[parameter_file, {'use_sim_time': False}], remappings=remappings))
+                            parameters=server_parameters, remappings=remappings))
     actions.append(Node(
         package='nav2_lifecycle_manager', executable='lifecycle_manager',
         name='lifecycle_manager_navigation', output='screen',
