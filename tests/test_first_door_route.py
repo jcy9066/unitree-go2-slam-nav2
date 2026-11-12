@@ -17,11 +17,11 @@ ROOT = Path(__file__).parents[1]
 CONFIG = ROOT / 'go2_slam_nav/config'
 
 
-def test_route_policy_changes_only_keepout_and_waypoint_failure_handling():
+def test_route_policy_changes_only_keepout_and_both_stop_on_failure():
     baseline = yaml.safe_load((CONFIG / 'nav2_params.yaml').read_text())
     trial = yaml.safe_load((CONFIG / 'nav2_first_door_only.yaml').read_text())
     assert trial['waypoint_follower']['ros__parameters']['stop_on_failure'] is True
-    trial['waypoint_follower']['ros__parameters']['stop_on_failure'] = False
+    assert baseline['waypoint_follower']['ros__parameters']['stop_on_failure'] is True
     for name in ['global_costmap', 'local_costmap']:
         p = trial[name][name]['ros__parameters']
         assert p.pop('filters') == ['first_door_keepout']
