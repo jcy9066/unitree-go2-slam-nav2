@@ -214,3 +214,18 @@ without falling back to door 2. The mask enforces that route preference; it does
 not solve the first-door registration or walking-clearance problems. See
 [R33](docs/go2_navigation_validation.html#first-door-r33) for the planner-only
 comparison and the two-terminal startup commands.
+
+### Camera `bad_alloc caught` messages
+
+Do not infer exhausted RAM from this message alone. In R34 the Go2 had
+6,209 MiB available and RGB/aligned-depth reception continued while the camera
+used Foxy Fast DDS 2.1.4. The same log text exists in Fast DDS discovery-data
+deserialization; the exact offending packet was not identified.
+
+The tested camera backend remains `rmw_fastrtps_cpp`. A Cyclone DDS comparison
+crashed this device's camera node and was reverted. The payload exposes
+`GO2_CAMERA_RMW_IMPLEMENTATION` for explicit separate experiments, not as a
+recommendation to switch this device. Stream profiles and the laptop RMW are
+unchanged. The SSH payload disables interactive job control so `setsid` retains
+the owned launch PID/group for cleanup. See [R34](docs/go2_navigation_validation.html#camera-dds-r34)
+for before/failure/restoration evidence and the remaining limitations.
