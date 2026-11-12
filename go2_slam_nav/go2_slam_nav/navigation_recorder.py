@@ -26,7 +26,7 @@ from nav2_msgs.msg import Costmap
 from rcl_interfaces.msg import Log
 from rcl_interfaces.srv import GetParameters
 from sensor_msgs.msg import CameraInfo, LaserScan, PointCloud2
-from rtabmap_msgs.msg import Info
+from rtabmap_msgs.msg import Info, OdomInfo
 from tf2_msgs.msg import TFMessage
 from unitree_api.msg import Request, Response
 from unitree_go.msg import SportModeState
@@ -187,9 +187,11 @@ class NavigationRecorder(Node):
             self.create_subscription(Costmap, topic, lambda m, t=topic: self.costmap(t, m), latched)
         for topic in ['/local_costmap/published_footprint', '/global_costmap/published_footprint']:
             self.create_subscription(PolygonStamped, topic, lambda m, t=topic: self.sample(t, m, 2.), sensor)
-        for action in ['navigate_to_pose', 'follow_path', 'compute_path_to_pose']:
+        for action in ['navigate_to_pose', 'navigate_through_poses', 'follow_waypoints',
+                       'follow_path', 'compute_path_to_pose', 'compute_path_through_poses']:
             topic = '/'+action+'/_action/status'
             self.create_subscription(GoalStatusArray, topic, lambda m, t=topic: self.simple(t, m), latched)
+        self.create_subscription(OdomInfo, '/go2_heading/info', self.heading_health, sensor)
         self.create_subscription(TFMessage, '/tf', self.transforms, sensor)
         self.create_subscription(TFMessage, '/tf_static', lambda m: self.simple('/tf_static', m), latched)
         self.create_subscription(CameraInfo, '/camera/color/camera_info', lambda m: self.sample('/camera/color/camera_info', m, 1.), sensor)
@@ -218,6 +220,12 @@ class NavigationRecorder(Node):
             return False
         self.last[key] = now
         return True
+
+    def heading_health(self, msg):
+        if self.due('heading_health', 2.):
+            self.writer.emit('heading_health', {
+                'header': message_to_ordereddict(msg.header),
+                'lost': msg.lost, 'inliers': msg.inliers})
 
     def simple(self, topic, msg, **extra):
         self.writer.emit(topic, message_to_ordereddict(msg), ros_receive_ns=self.get_clock().now().nanoseconds, **extra)
