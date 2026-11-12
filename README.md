@@ -190,3 +190,27 @@ usage. The loopback smoke test verifies lossless capture and no motion
 publishers; live recording load and actual doorway passage remain unverified.
 See [R32](docs/go2_navigation_validation.html#door-failure-r32) for the first-door
 analysis, confirmed limits and next supervised test sequence.
+
+### First-door-only laboratory round trip
+
+For the saved lab map used in R32, enable an optional route policy that keeps
+the second door out of both Costmaps and stops at a failed waypoint:
+
+```bash
+export GO2_TEST_MAP="$HOME/GH/go2_l1_nav2_ws/analysis/left_door_repair_20261110/navigation_map.db"
+GO2_FIRST_DOOR_ONLY=true GO2_RECORD_OBSTACLE_SENSORS=true \
+  bash scripts/laptop_nav.sh view "$GO2_TEST_MAP"
+```
+
+This is still **view**, with no motion bridge. The route mask is a virtual
+restriction and never edits the RTAB-Map DB or describes a new physical wall.
+The launch checks the saved occupancy hash, geometry and mask checksum before
+starting nodes; other maps are rejected. The default route mode is unchanged.
+
+The intended mission is lab → first door → professor's room entrance → first
+door → lab. The operator selects current waypoints and headings after verifying
+localization and body clearance. First-door failure must stop the mission,
+without falling back to door 2. The mask enforces that route preference; it does
+not solve the first-door registration or walking-clearance problems. See
+[R33](docs/go2_navigation_validation.html#first-door-r33) for the planner-only
+comparison and the two-terminal startup commands.
