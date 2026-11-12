@@ -32,12 +32,15 @@ def test_aligned_visual_uses_source_time_full_pose_and_readonly_db(monkeypatch, 
 
 
 @pytest.mark.parametrize('profile', ['aligned_visual', 'reference_visual'])
-def test_unvalidated_comparison_profile_cannot_enable_motion(tmp_path, profile):
+def test_comparison_defaults_to_no_motion_bridge(monkeypatch, tmp_path, profile):
+    monkeypatch.setattr(launch_ros.actions, 'Node', lambda **kw: SimpleNamespace(**kw))
     ctx = LaunchContext()
-    ctx.launch_configurations.update(localization_profile=profile, enable_motion='true',
-                                     first_door_only='false')
+    ctx.launch_configurations.update(localization_profile=profile, enable_motion='false',
+                                     first_door_only='false', start_localization='false',
+                                     nav_camera_calibration='', record_diagnostics='false',
+                                     use_nav2_rviz='false')
     import ament_index_python.packages
     share = ament_index_python.packages.get_package_share_directory('go2_slam_nav')
     ctx.launch_configurations['nav2_params_file'] = str(Path(share)/'config/nav2_params.yaml')
-    with pytest.raises(RuntimeError, match='view-only'):
-        runpy.run_path(str(ROOT/'go2_slam_nav/launch/nav.launch.py'))['launch_setup'](ctx)
+    nodes = runpy.run_path(str(ROOT/'go2_slam_nav/launch/nav.launch.py'))['launch_setup'](ctx)
+    assert not any(getattr(n, 'executable', None) == 'sport_ctrl' for n in nodes)

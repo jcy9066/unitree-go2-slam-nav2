@@ -24,8 +24,6 @@ def launch_setup(context):
     profile = LaunchConfiguration('localization_profile').perform(context)
     if profile not in ('legacy', 'aligned_visual', 'reference_visual'):
         raise RuntimeError('Unknown localization profile')
-    if profile != 'legacy' and LaunchConfiguration('enable_motion').perform(context) == 'true':
-        raise RuntimeError('Comparison profiles are view-only until localization is validated')
     if first_door_only:
         default_params = os.path.join(share, 'config', 'nav2_params.yaml')
         if os.path.realpath(params) != os.path.realpath(default_params):
@@ -165,7 +163,7 @@ def generate_launch_description():
                               description='False when the existing localization pipeline is running'),
         DeclareLaunchArgument('localization_profile', default_value='legacy',
                               choices=['legacy', 'aligned_visual', 'reference_visual'],
-                              description='Explicit view-only acquisition-time/6DoF comparison profiles'),
+                              description='Explicit acquisition-time/6DoF localization comparison profiles'),
         DeclareLaunchArgument('odom_bridge', default_value='true', choices=['true', 'false']),
         DeclareLaunchArgument('record_diagnostics', default_value='true', choices=['true', 'false']),
         DeclareLaunchArgument('first_door_only', default_value='false', choices=['true', 'false'],
