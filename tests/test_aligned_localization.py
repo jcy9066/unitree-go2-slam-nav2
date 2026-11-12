@@ -23,6 +23,7 @@ def test_aligned_visual_uses_source_time_full_pose_and_readonly_db(monkeypatch, 
     assert sync['stamp_mode'] == 'source' and sync['visual_heading'] is False
     rtab = next(n for n in nodes if n.executable == 'rtabmap').parameters[0]
     assert rtab['Reg/Force3DoF'] == 'false' and rtab['odom_sensor_sync'] is True
+    assert rtab['qos'] == rtab['qos_odom'] == 1
     assert rtab['Mem/IncrementalMemory'] == 'false'
     assert rtab['Mem/LocalizationReadOnly'] == 'true'
     assert rtab['map_always_update'] is False and rtab['subscribe_scan_cloud'] is False

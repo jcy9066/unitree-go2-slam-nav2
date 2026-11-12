@@ -33,7 +33,7 @@ def launch_setup(context):
              output='screen', parameters=[{
                  'use_sim_time': use_sim_time, 'approx_sync': True,
                  'approx_sync_max_interval': 0.03, 'topic_queue_size': 100,
-                 'sync_queue_size': 100, 'qos': 2, 'qos_image': 2, 'qos_camera_info': 2,
+                 'sync_queue_size': 100, 'qos': 1, 'qos_image': 1, 'qos_camera_info': 1,
              }], remappings=[
                  ('rgb/image', '/camera/color/image_raw'),
                  ('depth/image', '/camera/aligned_depth_to_color/image_raw'),
@@ -48,7 +48,7 @@ def launch_setup(context):
                  'subscribe_scan_cloud': False, 'approx_sync': True,
                  'approx_sync_max_interval': 0.03, 'odom_sensor_sync': True,
                  'topic_queue_size': 100, 'sync_queue_size': 100,
-                 'wait_for_transform': 0.2, 'qos': 2, 'qos_odom': 2,
+                 'wait_for_transform': 0.2, 'qos': 1, 'qos_odom': 1,
                  'publish_tf': ParameterValue(LaunchConfiguration('publish_map_tf'), value_type=bool),
                  'map_always_update': False, 'use_saved_map': True,
                  'Reg/Strategy': '0', 'Reg/Force3DoF': 'false',
