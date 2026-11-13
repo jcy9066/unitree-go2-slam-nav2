@@ -389,13 +389,15 @@
         <p>R53에서는 모바일 항목 번호가 두 줄로 나뉘던 표시를 한 줄로 보정하고, R52의 검사 예정 상태를 실제 문서 검사 결과로 갱신했습니다. <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/fe8cbc14d7f37d617a1e129b3183b6cc0761ce8c">8개 항목 개편 커밋</a>과 이번 검증 기록을 구분합니다.</p>
         <p>R54: 소개 우측 요약 카드 → 사용자 제공 사진의 1254×1254 보정본, 소개 이관 문단·2/3번 부연 문구 → 삭제, 4–8번 안내·배지·작성 양식 제목 → 컬럼명과 빈 표만 유지, 영상 설명·길이·다운로드 링크 → 영상 재생창만 유지. <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/183b1bc">이미지 자산 커밋</a>. 기본 imagegen 도구에 “원본 로봇 형태·자세·구도·흰 배경을 유지하고 해상도와 선명도만 개선”을 요청했습니다. 이전 R53은 <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/blob/8d18bf5/docs/go2_navigation_validation.html">개편 전 문서</a>에 보존합니다.</p>
         <p>R55: <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/47c00c4">화면 간소화 커밋</a> 검증 완료. HTML5 오류·중복 ID·깨진 앵커 0, 개념 9개와 표 컬럼명 유지. Chrome 390/768/1440px에서 본문 가로 넘침 0, 1254×1254 이미지 로드와 영상 재생, 표 내부 스크롤·키보드 포커스·인쇄 스타일을 확인했습니다.</p>
+        <p>R56: <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/7b1662f28d65e5be2ec4fd7a136b2e79ce8d73b4">디자인 변경 커밋</a>에서 초록 강조·18px 카드 → 드론_PX4_TuTo의 파란 강조·6px 카드, 고딕 제목 → 명조 제목, 1100px 본문 → 최대 1440px 문서 폭, 연두 표 머리글 → 회색 표 머리글로 변경했습니다. 참고 파일은 「드론_NonGPS_자율비행_튜토리얼.html」입니다. 본문의 8개 항목·9개 개념·사진·영상·빈 표 5개와 문구는 그대로 유지했습니다. 참고 양식에 맞춘 다크 모드와 인쇄 스타일을 포함하며, 외부 글꼴 다운로드 없이 설치된 한글 글꼴로 표시합니다.</p>
+        <p>R56 정적 검사: html5lib HTML5 오류 0, 수정 전후 본문 완전 일치, 중복 ID·깨진 앵커 0, 로컬 이미지·영상 경로 존재, git diff --check 통과. 이번 Chrome 실행은 샌드박스의 socket 권한 제한으로 차단됐으므로 R55의 화면·재생 검사 결과를 R56의 검증으로 간주하지 않습니다. 원격 HEAD·Draft PR 조회와 push는 github.com 이름 해석 실패로 완료하지 못했습니다.</p>
         <p>이전 기록은 <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/blob/d460841/docs/go2_navigation_validation.html">R51 문서</a>와 <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/blob/7fb55e3fbd7fe29b0808c1e663e8e1ba59cbc91e/docs/go2_navigation_validation.html">개편 전 검증·실험 이력</a>에서 확인할 수 있습니다. 기술 설명은 <a href="../go2_slam_nav/launch/l1_rgbd.launch.py">L1·RGB-D 실행 소스</a>, <a href="../go2_slam_nav/config/nav2_params.yaml">Nav2 설정</a>, <a href="../scripts/run_nav.sh">저장 지도 실행 스크립트</a>와 대조했습니다.</p>
         <div class="table-scroll" role="region" aria-label="문서 개정 검증 기록" tabindex="0">
           <table>
             <caption>이번 문서 개정의 검증 범위</caption>
             <thead><tr><th scope="col">항목</th><th scope="col">상태</th><th scope="col">근거 · 범위</th></tr></thead>
             <tbody>
-              <tr><th scope="row">T00 소스 · 브랜치</th><td>PASS</td><td>git ls-remote·fetch와 gh pr view로 원격 HEAD·Draft PR #1/#2를 확인. 최신 원격 문서 이력과 기존 로컬 문서를 함께 보존.</td></tr>
+              <tr><th scope="row">T00 소스 · 브랜치</th><td>BLOCKED</td><td>로컬 fix/l1-rgbd-forward-only와 수정 전 HEAD 5e7fabe를 확인. git ls-remote·gh pr view·push는 GitHub 연결 실패로 차단. 원격 HEAD와 Draft PR #2의 현재 상태는 미확인.</td></tr>
               <tr><th scope="row">T01 대상 서버 실행</th><td>NOT TESTED</td><td>연구실 서버에서 프로젝트 실행 검사 미실행.</td></tr>
               <tr><th scope="row">T02 센서 · TF</th><td>NOT TESTED</td><td>서버와 Go2의 실시간 센서 검사 미실행.</td></tr>
               <tr><th scope="row">T03 Mapping · DB</th><td>NOT TESTED</td><td>새 지도 생성 및 DB 검사 미실행.</td></tr>
@@ -405,11 +407,11 @@
               <tr><th scope="row">T07 통과 계획</th><td>NOT TESTED</td><td>문 통과 계획 검사 미실행.</td></tr>
               <tr><th scope="row">T08 편도 주행</th><td>NOT TESTED</td><td>실제 이동 시험 미실행.</td></tr>
               <tr><th scope="row">T09 왕복 주행</th><td>NOT TESTED</td><td>실제 왕복 주행 시험 미실행.</td></tr>
-              <tr><th scope="row">T10 문서 · 증거</th><td>PASS</td><td>정적: HTML5 오류·중복 ID·깨진 앵커 0, 8개 항목·9개 개념·컬럼명 유지, 요청 문구·영상 설명·다운로드 링크 삭제 확인. 브라우저: Chrome 390/768/1440px에서 본문 가로 넘침 0, 고해상도 이미지 로드·영상 재생·표 내부 스크롤·인쇄 CSS 확인.</td></tr>
+              <tr><th scope="row">T10 문서 · 증거</th><td>BLOCKED</td><td>정적 PASS: HTML5 오류·중복 ID·깨진 앵커 0, 8개 항목·9개 개념·빈 표 5개·본문·미디어 경로 유지. 브라우저 BLOCKED: Chrome이 socket 권한 오류로 실행되지 않아 R56의 화면 폭·재생·표 스크롤·다크 모드·인쇄 렌더링은 미검증.</td></tr>
             </tbody>
           </table>
         </div>
-        <p>브라우저 검사는 실제 화면 폭을 지정하고 영상 재생 시간이 증가하는지 확인했습니다. 초기 CLI 검사는 화면 폭 제한과 가상시간 재생값 때문에 판정에 사용하지 않았습니다. 새 ROS 실행·RViz2 평가·실물 주행은 위 문서 검사와 구분합니다.</p>
+        <p>R55의 브라우저 검사는 실제 화면 폭을 지정하고 영상 재생 시간이 증가하는지 확인했습니다. 당시 초기 CLI 검사는 화면 폭 제한과 가상시간 재생값 때문에 판정에 사용하지 않았습니다. R56은 정적 검사만 완료했으며, 새 ROS 실행·RViz2 평가·실물 주행은 미실행입니다.</p>
         <h3 id="conda-setup-r56">R56 · 현재 PC용 Conda 설치와 주행 현황 기록</h3>
         <p>기준 PC는 Ubuntu 22.04.5 x86_64입니다. 이번 설치 대상은 연구실 서버가 아니라 현재 PC입니다. 아래 기록은 R55의 문서·브라우저 검사와 별개이며, 본문의 8개 항목·9개 개념·빈 표 5개와 이미지·영상은 유지합니다.</p>
         <div class="table-scroll" role="region" aria-label="R56 환경 관리 변경" tabindex="0">
