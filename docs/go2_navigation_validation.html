@@ -52,21 +52,15 @@
     .hero { display: grid; grid-template-columns: 1.45fr 1fr; align-items: center; gap: 48px; padding-block: 68px 60px; }
     .eyebrow { display: block; margin-bottom: 16px; font-size: 12px; font-weight: 700; letter-spacing: .08em; color: var(--green); }
     .hero-lead { margin-top: 22px; font-size: 17px; }
-    .hero-description { color: var(--muted); font-size: 15px; }
+    .project-image { overflow: hidden; border-radius: var(--radius); background: white; }
+    .project-image img { display: block; width: 100%; height: auto; object-fit: contain; }
     .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
     .tag { padding: 4px 11px; border: 1px solid var(--line); border-radius: 6px; font-size: 12px; color: var(--muted); }
-    .goal-card { padding: 28px; border: 1px solid #d2e0d5; border-radius: var(--radius); background: var(--soft); }
-    .goal-card h2 { margin-bottom: 18px; font-size: 20px; }
-    .project-facts > div + div { margin-top: 15px; padding-top: 15px; border-top: 1px solid #d2e0d5; }
-    .project-facts dt { font-size: 12px; color: var(--green); font-weight: 700; }
-    .project-facts dd { margin-top: 4px; font-size: 14px; }
     .section { padding-block: 52px; border-top: 1px solid var(--line); }
     .section-heading { display: flex; gap: 18px; align-items: flex-start; margin-bottom: 26px; }
     .section-number { flex-shrink: 0; white-space: nowrap; margin-top: 5px; font-size: 13px; font-weight: 700; color: var(--green); }
-    .section-heading p { margin-top: 10px; color: var(--muted); }
     .video-frame { overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius); background: #14201b; }
     video { display: block; width: 100%; height: auto; max-height: 560px; aspect-ratio: 16 / 9; object-fit: contain; background: #14201b; }
-    figcaption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin-top: 12px; font-size: 13px; color: var(--muted); }
     .concepts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
     .concept { padding: 24px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
     .concept h3 { font-size: 18px; }
@@ -81,9 +75,6 @@
     .notice { margin-top: 22px; padding: 18px 22px; border-left: 3px solid var(--green); border-radius: 0 10px 10px 0; background: var(--soft); font-size: 14px; }
     .notice strong { color: var(--green); }
     .notice p { margin-top: 5px; }
-    .placeholder { padding: 24px; border: 1px dashed #b8c7bc; border-radius: var(--radius); background: var(--surface); }
-    .pending { display: inline-block; margin-bottom: 10px; padding: 2px 9px; border-radius: 5px; background: var(--soft); color: var(--green); font-size: 12px; font-weight: 700; }
-    .placeholder > p { font-size: 14px; color: var(--muted); }
     .table-scroll { margin-top: 18px; overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; background: white; font-size: 13px; }
     caption { padding-bottom: 10px; text-align: left; font-weight: 700; }
@@ -109,10 +100,8 @@
       .topbar-inner { min-height: 68px; gap: 16px; }
       .brand-mark { width: 38px; height: 36px; font-size: 12px; }
       .hero-lead { font-size: 16px; }
-      .goal-card, .placeholder { padding: 20px; }
       .section { padding-block: 36px; }
       .section-heading { gap: 12px; margin-bottom: 22px; }
-      .section-heading p { font-size: 14px; }
       .concepts { grid-template-columns: 1fr; gap: 12px; }
       .concept { padding: 22px; }
       .system-flow { grid-template-columns: 1fr; gap: 30px; }
@@ -128,7 +117,7 @@
       .section { padding-block: 24px; }
       h1 { font-size: 28pt; }
       h2 { font-size: 20pt; }
-      .concept, .placeholder, figure { break-inside: avoid; }
+      .concept, .table-scroll, figure { break-inside: avoid; }
       video { max-height: 240px; }
       .table-scroll { overflow: visible; }
       .template-table, .revision table { min-width: 0; }
@@ -163,7 +152,6 @@
         <span class="eyebrow">01 · 프로젝트 소개</span>
         <h1 id="project-title">Go2 EDU<br>SLAM · Nav2 자율주행</h1>
         <p class="hero-lead">Unitree Go2 EDU 사족보행 로봇이 주변 지도를 만들고, 지도에서 자신의 위치를 찾으며, 지정한 목적지까지 이동하도록 하는 프로젝트입니다.</p>
-        <p class="hero-description">기존에는 다른 노트북에서 SLAM과 Nav2를 이용해 프로젝트를 진행했습니다. 이를 이어받아 연구실 서버 컴퓨터에서도 Go2와 연결해 자율주행을 실행할 수 있도록 만드는 것이 목표입니다.</p>
         <div class="tags" aria-label="프로젝트 주요 구성">
           <span class="tag">Unitree Go2 EDU</span>
           <span class="tag">ROS 2 Humble</span>
@@ -171,15 +159,9 @@
           <span class="tag">Nav2</span>
         </div>
       </div>
-      <aside class="goal-card" aria-labelledby="goal-title">
-        <h2 id="goal-title">프로젝트 한눈에 보기</h2>
-        <dl class="project-facts">
-          <div><dt>로봇과 센서</dt><dd>Go2 EDU · 내장 L1 LiDAR · RealSense D435i</dd></div>
-          <div><dt>지도와 위치 추정</dt><dd>RTAB-Map으로 지도 작성 및 저장 지도 기반 위치 추정</dd></div>
-          <div><dt>경로 계획과 제어</dt><dd>Nav2 · NavFn 전역 경로 계획 · DWB 주행 제어</dd></div>
-          <div><dt>이번 프로젝트의 목표</dt><dd>기존 노트북의 자율주행 프로젝트를 연구실 서버에서 이어서 실행</dd></div>
-        </dl>
-      </aside>
+      <figure class="project-image">
+        <img src="images/go2-edu-hero.png" width="1254" height="1254" alt="흰 배경에 서 있는 회색 Unitree Go2 EDU 사족보행 로봇" decoding="async" fetchpriority="high">
+      </figure>
     </section>
 
     <section class="section" id="video" aria-labelledby="video-title">
@@ -187,20 +169,15 @@
         <span class="section-number" aria-hidden="true">02</span>
         <div>
           <h2 id="video-title">주행영상</h2>
-          <p>기존 프로젝트에서 기록한 Go2의 주행 모습입니다.</p>
         </div>
       </div>
       <figure>
         <div class="video-frame">
           <video id="go2-video" controls playsinline preload="metadata" width="720" height="1280" aria-label="Go2 기존 주행 기록 영상">
             <source src="KakaoTalk_20261112_203846672_web.mp4" type="video/mp4">
-            동영상 재생을 지원하지 않는 브라우저입니다. <a href="KakaoTalk_20261112_203846672_web.mp4">주행영상 파일 열기</a>
+            동영상 재생을 지원하지 않는 브라우저입니다.
           </video>
         </div>
-        <figcaption>
-          <span>기존 Go2 주행 기록 · 약 1분 4초</span>
-          <a href="KakaoTalk_20261112_203846672_web.mp4" download>주행영상 다운로드</a>
-        </figcaption>
       </figure>
     </section>
 
@@ -209,7 +186,6 @@
         <span class="section-number" aria-hidden="true">03</span>
         <div>
           <h2 id="concepts-title">프로젝트 이해에 필요한 개념</h2>
-          <p>센서 정보를 받아 지도를 이해하고, 현재 위치에서 목적지까지 이동하는 흐름을 살펴봅니다.</p>
         </div>
       </div>
       <div class="concepts">
@@ -275,16 +251,11 @@
         <span class="section-number" aria-hidden="true">04</span>
         <div><h2 id="terminal-title">서버 컴퓨터에서 실행할 터미널 명령어</h2></div>
       </div>
-      <div class="placeholder">
-        <span class="pending">작성 예정</span>
-        <p>전달받은 실행 명령어를 터미널과 순서에 맞춰 추가합니다.</p>
-        <div class="table-scroll" role="region" aria-label="터미널 명령어 템플릿" tabindex="0">
-          <table class="template-table">
-            <caption>실행 명령어 작성 양식</caption>
-            <thead><tr><th scope="col">순서</th><th scope="col">터미널</th><th scope="col">실행 목적</th><th scope="col">명령어</th><th scope="col">확인할 결과</th></tr></thead>
-            <tbody><tr><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr></tbody>
-          </table>
-        </div>
+      <div class="table-scroll" role="region" aria-label="터미널 명령어 표" tabindex="0">
+        <table class="template-table">
+          <thead><tr><th scope="col">순서</th><th scope="col">터미널</th><th scope="col">실행 목적</th><th scope="col">명령어</th><th scope="col">확인할 결과</th></tr></thead>
+          <tbody><tr><td></td><td></td><td></td><td></td><td></td></tr></tbody>
+        </table>
       </div>
     </section>
 
@@ -293,16 +264,11 @@
         <span class="section-number" aria-hidden="true">05</span>
         <div><h2 id="rviz-title">RViz2에서 눌러야 할 버튼과 조작 순서</h2></div>
       </div>
-      <div class="placeholder">
-        <span class="pending">작성 예정</span>
-        <p>전달받은 RViz2 조작 내용을 화면과 버튼별로 추가합니다.</p>
-        <div class="table-scroll" role="region" aria-label="RViz2 조작 템플릿" tabindex="0">
-          <table class="template-table">
-            <caption>RViz2 조작 순서 작성 양식</caption>
-            <thead><tr><th scope="col">순서</th><th scope="col">화면 · 메뉴</th><th scope="col">누를 버튼</th><th scope="col">조작 방법</th><th scope="col">확인할 결과</th></tr></thead>
-            <tbody><tr><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr></tbody>
-          </table>
-        </div>
+      <div class="table-scroll" role="region" aria-label="RViz2 조작 표" tabindex="0">
+        <table class="template-table">
+          <thead><tr><th scope="col">순서</th><th scope="col">화면 · 메뉴</th><th scope="col">누를 버튼</th><th scope="col">조작 방법</th><th scope="col">확인할 결과</th></tr></thead>
+          <tbody><tr><td></td><td></td><td></td><td></td><td></td></tr></tbody>
+        </table>
       </div>
     </section>
 
@@ -311,16 +277,11 @@
         <span class="section-number" aria-hidden="true">06</span>
         <div><h2 id="completed-title">현재 완료한 작업</h2></div>
       </div>
-      <div class="placeholder">
-        <span class="pending">작성 예정</span>
-        <p>전달받은 완료 작업과 확인 근거를 추가합니다.</p>
-        <div class="table-scroll" role="region" aria-label="완료 작업 템플릿" tabindex="0">
-          <table class="template-table">
-            <caption>완료 작업 작성 양식</caption>
-            <thead><tr><th scope="col">작업</th><th scope="col">완료 내용</th><th scope="col">확인 근거</th></tr></thead>
-            <tbody><tr><td>—</td><td>—</td><td>—</td></tr></tbody>
-          </table>
-        </div>
+      <div class="table-scroll" role="region" aria-label="완료 작업 표" tabindex="0">
+        <table class="template-table">
+          <thead><tr><th scope="col">작업</th><th scope="col">완료 내용</th><th scope="col">확인 근거</th></tr></thead>
+          <tbody><tr><td></td><td></td><td></td></tr></tbody>
+        </table>
       </div>
     </section>
 
@@ -329,16 +290,11 @@
         <span class="section-number" aria-hidden="true">07</span>
         <div><h2 id="improvements-title">개선해야 할 점</h2></div>
       </div>
-      <div class="placeholder">
-        <span class="pending">작성 예정</span>
-        <p>전달받은 문제와 개선 방향을 추가합니다.</p>
-        <div class="table-scroll" role="region" aria-label="개선 사항 템플릿" tabindex="0">
-          <table class="template-table">
-            <caption>개선 사항 작성 양식</caption>
-            <thead><tr><th scope="col">항목</th><th scope="col">현재 문제</th><th scope="col">개선 방향</th><th scope="col">확인 기준</th></tr></thead>
-            <tbody><tr><td>—</td><td>—</td><td>—</td><td>—</td></tr></tbody>
-          </table>
-        </div>
+      <div class="table-scroll" role="region" aria-label="개선 사항 표" tabindex="0">
+        <table class="template-table">
+          <thead><tr><th scope="col">항목</th><th scope="col">현재 문제</th><th scope="col">개선 방향</th><th scope="col">확인 기준</th></tr></thead>
+          <tbody><tr><td></td><td></td><td></td><td></td></tr></tbody>
+        </table>
       </div>
     </section>
 
@@ -347,27 +303,23 @@
         <span class="section-number" aria-hidden="true">08</span>
         <div><h2 id="future-title">추가적으로 발전시킬 수 있는 부분</h2></div>
       </div>
-      <div class="placeholder">
-        <span class="pending">작성 예정</span>
-        <p>전달받은 아이디어 중 현실적으로 적용 가능한 발전 방향을 추가합니다.</p>
-        <div class="table-scroll" role="region" aria-label="발전 방향 템플릿" tabindex="0">
-          <table class="template-table">
-            <caption>발전 방향 작성 양식</caption>
-            <thead><tr><th scope="col">아이디어</th><th scope="col">기대 효과</th><th scope="col">필요한 조건</th><th scope="col">우선순위</th></tr></thead>
-            <tbody><tr><td>—</td><td>—</td><td>—</td><td>—</td></tr></tbody>
-          </table>
-        </div>
+      <div class="table-scroll" role="region" aria-label="발전 방향 표" tabindex="0">
+        <table class="template-table">
+          <thead><tr><th scope="col">아이디어</th><th scope="col">기대 효과</th><th scope="col">필요한 조건</th><th scope="col">우선순위</th></tr></thead>
+          <tbody><tr><td></td><td></td><td></td><td></td></tr></tbody>
+        </table>
       </div>
     </section>
   </main>
 
   <footer>
     <div class="wrap">
-      <div class="footer-line"><span>Unitree Go2 EDU · SLAM · Nav2 자율주행 프로젝트</span><span>소개 · 영상 · 개념 작성 / 후속 5개 항목 작성 예정</span></div>
+      <div class="footer-line"><span>Unitree Go2 EDU · SLAM · Nav2 자율주행 프로젝트</span></div>
       <details class="revision" id="revision-history">
-        <summary>문서 관리 기록 · R53 · 2026-11-13</summary>
+        <summary>문서 관리 기록 · R54 · 2026-11-13</summary>
         <p>R51의 소개·영상·개념·실습 순서 4개 구성을 요청한 8개 항목으로 변경했습니다. 소개에 Go2 EDU와 기존 노트북에서 연구실 서버로 이어가는 목표를 명시하고, 핵심 개념 6개를 9개로 보강했습니다. 기존 실습 절차는 비워 둔 명령어·RViz2·완료 작업·개선점·발전 방향 템플릿 5개로 변경했습니다.</p>
         <p>R53에서는 모바일 항목 번호가 두 줄로 나뉘던 표시를 한 줄로 보정하고, R52의 검사 예정 상태를 실제 문서 검사 결과로 갱신했습니다. <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/fe8cbc14d7f37d617a1e129b3183b6cc0761ce8c">8개 항목 개편 커밋</a>과 이번 검증 기록을 구분합니다.</p>
+        <p>R54: 소개 우측 요약 카드 → 사용자 제공 사진의 1254×1254 보정본, 소개 이관 문단·2/3번 부연 문구 → 삭제, 4–8번 안내·배지·작성 양식 제목 → 컬럼명과 빈 표만 유지, 영상 설명·길이·다운로드 링크 → 영상 재생창만 유지. <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/183b1bc">이미지 자산 커밋</a>. 기본 imagegen 도구에 “원본 로봇 형태·자세·구도·흰 배경을 유지하고 해상도와 선명도만 개선”을 요청했습니다. 이전 R53은 <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/blob/8d18bf5/docs/go2_navigation_validation.html">개편 전 문서</a>에 보존합니다.</p>
         <p>이전 기록은 <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/blob/d460841/docs/go2_navigation_validation.html">R51 문서</a>와 <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/blob/7fb55e3fbd7fe29b0808c1e663e8e1ba59cbc91e/docs/go2_navigation_validation.html">개편 전 검증·실험 이력</a>에서 확인할 수 있습니다. 기술 설명은 <a href="../go2_slam_nav/launch/l1_rgbd.launch.py">L1·RGB-D 실행 소스</a>, <a href="../go2_slam_nav/config/nav2_params.yaml">Nav2 설정</a>, <a href="../scripts/run_nav.sh">저장 지도 실행 스크립트</a>와 대조했습니다.</p>
         <div class="table-scroll" role="region" aria-label="문서 개정 검증 기록" tabindex="0">
           <table>
@@ -384,7 +336,7 @@
               <tr><th scope="row">T07 통과 계획</th><td>NOT TESTED</td><td>문 통과 계획 검사 미실행.</td></tr>
               <tr><th scope="row">T08 편도 주행</th><td>NOT TESTED</td><td>실제 이동 시험 미실행.</td></tr>
               <tr><th scope="row">T09 왕복 주행</th><td>NOT TESTED</td><td>실제 왕복 주행 시험 미실행.</td></tr>
-              <tr><th scope="row">T10 문서 · 증거</th><td>PASS</td><td>정적: html5lib 오류 0, 중복 ID·깨진 앵커 0, 8개 항목·9개 개념·빈 템플릿 5개·로컬 파일 참조 확인. 브라우저: Chrome 390/768/1440px에서 본문 가로 넘침 0, 영상 재생·표 내부 스크롤·인쇄 CSS 확인.</td></tr>
+              <tr><th scope="row">T10 문서 · 증거</th><td>NOT TESTED</td><td>이번 화면 간소화의 정적·브라우저 검사 결과는 후속 검증 개정에 기록.</td></tr>
             </tbody>
           </table>
         </div>
