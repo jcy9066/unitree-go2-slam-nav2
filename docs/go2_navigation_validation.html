@@ -316,10 +316,11 @@
     <div class="wrap">
       <div class="footer-line"><span>Unitree Go2 EDU · SLAM · Nav2 자율주행 프로젝트</span></div>
       <details class="revision" id="revision-history">
-        <summary>문서 관리 기록 · R54 · 2026-11-13</summary>
+        <summary>문서 관리 기록 · R55 · 2026-11-13</summary>
         <p>R51의 소개·영상·개념·실습 순서 4개 구성을 요청한 8개 항목으로 변경했습니다. 소개에 Go2 EDU와 기존 노트북에서 연구실 서버로 이어가는 목표를 명시하고, 핵심 개념 6개를 9개로 보강했습니다. 기존 실습 절차는 비워 둔 명령어·RViz2·완료 작업·개선점·발전 방향 템플릿 5개로 변경했습니다.</p>
         <p>R53에서는 모바일 항목 번호가 두 줄로 나뉘던 표시를 한 줄로 보정하고, R52의 검사 예정 상태를 실제 문서 검사 결과로 갱신했습니다. <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/fe8cbc14d7f37d617a1e129b3183b6cc0761ce8c">8개 항목 개편 커밋</a>과 이번 검증 기록을 구분합니다.</p>
         <p>R54: 소개 우측 요약 카드 → 사용자 제공 사진의 1254×1254 보정본, 소개 이관 문단·2/3번 부연 문구 → 삭제, 4–8번 안내·배지·작성 양식 제목 → 컬럼명과 빈 표만 유지, 영상 설명·길이·다운로드 링크 → 영상 재생창만 유지. <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/183b1bc">이미지 자산 커밋</a>. 기본 imagegen 도구에 “원본 로봇 형태·자세·구도·흰 배경을 유지하고 해상도와 선명도만 개선”을 요청했습니다. 이전 R53은 <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/blob/8d18bf5/docs/go2_navigation_validation.html">개편 전 문서</a>에 보존합니다.</p>
+        <p>R55: <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/47c00c4">화면 간소화 커밋</a> 검증 완료. HTML5 오류·중복 ID·깨진 앵커 0, 개념 9개와 표 컬럼명 유지. Chrome 390/768/1440px에서 본문 가로 넘침 0, 1254×1254 이미지 로드와 영상 재생, 표 내부 스크롤·키보드 포커스·인쇄 스타일을 확인했습니다.</p>
         <p>이전 기록은 <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/blob/d460841/docs/go2_navigation_validation.html">R51 문서</a>와 <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/blob/7fb55e3fbd7fe29b0808c1e663e8e1ba59cbc91e/docs/go2_navigation_validation.html">개편 전 검증·실험 이력</a>에서 확인할 수 있습니다. 기술 설명은 <a href="../go2_slam_nav/launch/l1_rgbd.launch.py">L1·RGB-D 실행 소스</a>, <a href="../go2_slam_nav/config/nav2_params.yaml">Nav2 설정</a>, <a href="../scripts/run_nav.sh">저장 지도 실행 스크립트</a>와 대조했습니다.</p>
         <div class="table-scroll" role="region" aria-label="문서 개정 검증 기록" tabindex="0">
           <table>
@@ -336,7 +337,7 @@
               <tr><th scope="row">T07 통과 계획</th><td>NOT TESTED</td><td>문 통과 계획 검사 미실행.</td></tr>
               <tr><th scope="row">T08 편도 주행</th><td>NOT TESTED</td><td>실제 이동 시험 미실행.</td></tr>
               <tr><th scope="row">T09 왕복 주행</th><td>NOT TESTED</td><td>실제 왕복 주행 시험 미실행.</td></tr>
-              <tr><th scope="row">T10 문서 · 증거</th><td>NOT TESTED</td><td>이번 화면 간소화의 정적·브라우저 검사 결과는 후속 검증 개정에 기록.</td></tr>
+              <tr><th scope="row">T10 문서 · 증거</th><td>PASS</td><td>정적: HTML5 오류·중복 ID·깨진 앵커 0, 8개 항목·9개 개념·컬럼명 유지, 요청 문구·영상 설명·다운로드 링크 삭제 확인. 브라우저: Chrome 390/768/1440px에서 본문 가로 넘침 0, 고해상도 이미지 로드·영상 재생·표 내부 스크롤·인쇄 CSS 확인.</td></tr>
             </tbody>
           </table>
         </div>
