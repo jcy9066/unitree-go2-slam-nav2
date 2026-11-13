@@ -62,7 +62,7 @@
     .project-facts dd { margin-top: 4px; font-size: 14px; }
     .section { padding-block: 52px; border-top: 1px solid var(--line); }
     .section-heading { display: flex; gap: 18px; align-items: flex-start; margin-bottom: 26px; }
-    .section-number { margin-top: 5px; font-size: 13px; font-weight: 700; color: var(--green); }
+    .section-number { flex-shrink: 0; white-space: nowrap; margin-top: 5px; font-size: 13px; font-weight: 700; color: var(--green); }
     .section-heading p { margin-top: 10px; color: var(--muted); }
     .video-frame { overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius); background: #14201b; }
     video { display: block; width: 100%; height: auto; max-height: 560px; aspect-ratio: 16 / 9; object-fit: contain; background: #14201b; }
@@ -365,8 +365,9 @@
     <div class="wrap">
       <div class="footer-line"><span>Unitree Go2 EDU · SLAM · Nav2 자율주행 프로젝트</span><span>소개 · 영상 · 개념 작성 / 후속 5개 항목 작성 예정</span></div>
       <details class="revision" id="revision-history">
-        <summary>문서 관리 기록 · R52 · 2026-11-13</summary>
+        <summary>문서 관리 기록 · R53 · 2026-11-13</summary>
         <p>R51의 소개·영상·개념·실습 순서 4개 구성을 요청한 8개 항목으로 변경했습니다. 소개에 Go2 EDU와 기존 노트북에서 연구실 서버로 이어가는 목표를 명시하고, 핵심 개념 6개를 9개로 보강했습니다. 기존 실습 절차는 비워 둔 명령어·RViz2·완료 작업·개선점·발전 방향 템플릿 5개로 변경했습니다.</p>
+        <p>R53에서는 모바일 항목 번호가 두 줄로 나뉘던 표시를 한 줄로 보정하고, R52의 검사 예정 상태를 실제 문서 검사 결과로 갱신했습니다. <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/fe8cbc14d7f37d617a1e129b3183b6cc0761ce8c">8개 항목 개편 커밋</a>과 이번 검증 기록을 구분합니다.</p>
         <p>이전 기록은 <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/blob/d460841/docs/go2_navigation_validation.html">R51 문서</a>와 <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/blob/7fb55e3fbd7fe29b0808c1e663e8e1ba59cbc91e/docs/go2_navigation_validation.html">개편 전 검증·실험 이력</a>에서 확인할 수 있습니다. 기술 설명은 <a href="../go2_slam_nav/launch/l1_rgbd.launch.py">L1·RGB-D 실행 소스</a>, <a href="../go2_slam_nav/config/nav2_params.yaml">Nav2 설정</a>, <a href="../scripts/run_nav.sh">저장 지도 실행 스크립트</a>와 대조했습니다.</p>
         <div class="table-scroll" role="region" aria-label="문서 개정 검증 기록" tabindex="0">
           <table>
@@ -383,10 +384,11 @@
               <tr><th scope="row">T07 통과 계획</th><td>NOT TESTED</td><td>문 통과 계획 검사 미실행.</td></tr>
               <tr><th scope="row">T08 편도 주행</th><td>NOT TESTED</td><td>실제 이동 시험 미실행.</td></tr>
               <tr><th scope="row">T09 왕복 주행</th><td>NOT TESTED</td><td>실제 왕복 주행 시험 미실행.</td></tr>
-              <tr><th scope="row">T10 문서 · 증거</th><td>NOT TESTED</td><td>이번 개정의 HTML 구조·앵커·템플릿·영상 참조와 화면 표시 검사 예정.</td></tr>
+              <tr><th scope="row">T10 문서 · 증거</th><td>PASS</td><td>정적: html5lib 오류 0, 중복 ID·깨진 앵커 0, 8개 항목·9개 개념·빈 템플릿 5개·로컬 파일 참조 확인. 브라우저: Chrome 390/768/1440px에서 본문 가로 넘침 0, 영상 재생·표 내부 스크롤·인쇄 CSS 확인.</td></tr>
             </tbody>
           </table>
         </div>
+        <p>브라우저 검사는 실제 화면 폭을 지정하고 영상 재생 시간이 증가하는지 확인했습니다. 초기 CLI 검사는 화면 폭 제한과 가상시간 재생값 때문에 판정에 사용하지 않았습니다. 새 ROS 실행·RViz2 평가·실물 주행은 위 문서 검사와 구분합니다.</p>
       </details>
     </div>
   </footer>
