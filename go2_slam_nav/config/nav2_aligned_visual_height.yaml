@@ -1,0 +1,15 @@
+# The current legacy DB stored base_link at z=0: its floor is about z=-0.30.
+# Apply only to aligned_visual with that DB family. Local Costmap remains in
+# odom (floor around z=0); reference_visual uses its own 6DoF map datum.
+global_costmap:
+  global_costmap:
+    ros__parameters:
+      obstacle_layer:
+        min_obstacle_height: -0.20
+        max_obstacle_height: 1.20
+        l1:
+          min_obstacle_height: -0.20
+          max_obstacle_height: 1.20
+        depth_scan:
+          min_obstacle_height: -0.20
+          max_obstacle_height: 1.20
