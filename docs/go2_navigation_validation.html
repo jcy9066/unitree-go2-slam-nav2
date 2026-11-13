@@ -5,6 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Unitree Go2 EDU의 SLAM·Nav2 자율주행 프로젝트 소개, 기존 주행 영상, 핵심 개념, 두 가지 지도 활용 방법, 서버 실행·RViz2 조작과 작업 현황을 설명합니다.">
   <title>Go2 EDU | SLAM · Nav2 자율주행 프로젝트</title>
+  <script>
+    (() => {
+      let savedTheme;
+      try { savedTheme = localStorage.getItem('go2-doc-theme'); } catch (_) {}
+      const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.dataset.theme = savedTheme === 'light' || savedTheme === 'dark'
+        ? savedTheme : (systemDark ? 'dark' : 'light');
+    })();
+  </script>
   <style>
     /* 드론_PX4_TuTo의 문서 양식: 회색 바탕, 파란 강조, 명조 제목, 6px 테두리. */
     :root {
@@ -29,7 +38,7 @@
       --radius: 6px;
     }
     @media (prefers-color-scheme: dark) {
-      :root {
+      :root:not([data-theme="light"]) {
         --ground: #101310;
         --surface: #181c1a;
         --surface-2: #1f2422;
@@ -46,6 +55,24 @@
         --shadow: 0 1px 2px rgb(0 0 0 / 45%), 0 10px 26px -18px rgb(0 0 0 / 85%);
       }
     }
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+        --ground: #101310;
+        --surface: #181c1a;
+        --surface-2: #1f2422;
+        --surface-3: #262d2a;
+        --ink: #e8ebe5;
+        --ink-2: #a6b0a8;
+        --ink-3: #96a198;
+        --rule: #2b322e;
+        --rule-strong: #3d4641;
+        --accent: #6fb6e0;
+        --accent-soft: #122734;
+        --warm: #e58a55;
+        --warm-soft: #331c10;
+        --shadow: 0 1px 2px rgb(0 0 0 / 45%), 0 10px 26px -18px rgb(0 0 0 / 85%);
+    }
+    :root[data-theme="light"] { color-scheme: light; }
     * { box-sizing: border-box; }
     html { scroll-padding-top: 24px; }
     body {
@@ -75,6 +102,10 @@
     .skip-link:focus { top: 10px; }
     .topbar { border-bottom: 1px solid var(--rule); background: var(--surface); }
     .topbar-inner { min-height: 68px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 28px; padding-block: 16px; }
+    .theme-toggle { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; min-height: 36px; padding: 6px 11px; border: 1px solid var(--rule-strong); border-radius: 6px; background: var(--surface-2); color: var(--ink); cursor: pointer; font: 500 12px/1.6 var(--sans); white-space: nowrap; }
+    .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+    .theme-toggle[hidden] { display: none; }
+    @media (max-width: 900px) { .theme-toggle { margin-left: auto; } .topbar nav { order: 3; } }
     .brand { display: flex; flex-shrink: 0; align-items: center; gap: 10px; color: var(--ink); text-decoration: none; white-space: nowrap; }
     .brand-mark { display: grid; place-items: center; width: 40px; height: 34px; border: 1px solid var(--rule); border-radius: 4px; background: var(--surface-2); color: var(--accent); font: 600 12px var(--mono); }
     .brand-name { font-size: 13px; font-weight: 600; }
@@ -156,7 +187,7 @@
       *, *::before, *::after { animation: none !important; transition: none !important; }
     }
     @media print {
-      :root {
+      :root, :root[data-theme] {
         color-scheme: light;
         --ground: #fff;
         --surface: #fff;
@@ -283,6 +314,7 @@
         <a href="#improvements">개선할 점</a>
         <a href="#future">발전 방향</a>
       </nav>
+      <button type="button" class="theme-toggle" id="theme-toggle" aria-label="라이트 모드로 전환" hidden><span class="theme-icon" aria-hidden="true">☀</span><span class="theme-label">라이트 모드</span></button>
     </div>
   </header>
 
@@ -483,6 +515,26 @@ ros2 param get /sport_ctrl enabled</code></pre></div><p>반환값이 <code>true<
         button.focus({preventScroll: true});
         statusTimer = setTimeout(() => { status.textContent = ''; button.textContent = '복사'; }, 1800);
       });
+    })();
+  </script>
+  <script>
+    (() => {
+      const root = document.documentElement;
+      const button = document.getElementById('theme-toggle');
+      function applyTheme(theme, remember) {
+        root.dataset.theme = theme;
+        const nextLabel = theme === 'dark' ? '라이트 모드' : '다크 모드';
+        button.querySelector('.theme-label').textContent = nextLabel;
+        button.querySelector('.theme-icon').textContent = theme === 'dark' ? '☀' : '☾';
+        button.setAttribute('aria-label', nextLabel + '로 전환');
+        button.title = (theme === 'dark' ? '현재 다크 모드' : '현재 라이트 모드') + ' · ' + nextLabel + '로 전환';
+        if (remember) {
+          try { localStorage.setItem('go2-doc-theme', theme); } catch (_) {}
+        }
+      }
+      applyTheme(root.dataset.theme, false);
+      button.hidden = false;
+      button.addEventListener('click', () => applyTheme(root.dataset.theme === 'dark' ? 'light' : 'dark', true));
     })();
   </script>
 </body>
