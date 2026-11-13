@@ -10,6 +10,7 @@ Unitree Go2의 내장 L1 LiDAR, D435i, native odometry를 이용하는 ROS 2 Hum
 |---|---|
 | [environment.json](environment.json) | 의존성·채널·버전·외부 소스 SHA·빌드·검증 설정의 단일 기준 |
 | [scripts/install_student.sh](scripts/install_student.sh) | 기존 Conda에서 `go2_nav2` 생성부터 설치·빌드·검증까지 수행하는 진입점 |
+| [scripts/setup_maps.sh](scripts/setup_maps.sh) | 지도 DB의 무손실 압축·복원·검증. Git 공유는 사용자가 수행 |
 | [검증 HTML](docs/go2_navigation_validation.html) | 프로젝트 소개·주행영상·개념과 검증 기록. 4~8번의 명령어·RViz2·완료 작업·개선점·발전 방향 표는 아직 비어 있음 |
 | [환경 검증 R56](docs/go2_navigation_validation.html#conda-setup-r56) | 현재 PC용 설치 구현, 과거 운용 근거, 검증 범위와 미실행 항목 |
 | [고정 과거 기록 R50](https://github.com/jcy9066/unitree-go2-slam-nav2/blob/7aa21b2/docs/go2_navigation_validation.html) | HTML 개편 전 튜토리얼과 R1~R50의 실험·실패 이력 |
@@ -78,6 +79,51 @@ bash scripts/install_student.sh verify
 | 무개입 전체 왕복 | FAIL: 기존 운용에서 초기 위치·소구간 목표 지정·180° 회전에 수동 개입 필요. 새 Conda 주행은 NOT TESTED |
 
 실제 설치 성공 여부는 설치 명령의 검증과 완료 문구로 확인해야 합니다. 소스 회귀와 모의 설치 검사는 새 Conda 환경의 컴파일·GUI·실물 주행 성공을 증명하지 않습니다.
+
+## 지도 공유: `setup_maps.sh`
+
+지도는 `maps/<지도 이름>/`에서 관리합니다. Git LFS에는 `*.db.zst`, 일반 Git에는 함께 생성된 `*.db.zst.json`을 올립니다. 원본 `.db`와 SQLite 임시 파일은 Git에서 제외합니다. 압축 도구·Git LFS 의존성과 압축 설정은 `environment.json`에 선언합니다.
+
+```text
+maps/창학관 3층/
+├── rtabmap.db           # 로컬 원본 또는 복원본, Git 제외
+├── rtabmap.db.zst       # 무손실 압축본, Git LFS
+└── rtabmap.db.zst.json  # 자동 생성한 크기·SHA256·관측 지점 수
+```
+
+현재 창학관 3층 지도 원본은 사용자가 넣은 상태이며, **실제 지도 압축·업로드는 아직 수행하지 않았습니다.** 아래 Git 공유가 완료된 뒤에 다른 PC에서 Mapping 없이 복원할 수 있습니다.
+
+| 명령 | 동작 |
+|---|---|
+| `bash scripts/setup_maps.sh plan` | 파일을 만들지 않고 처리 예정 지도만 표시 |
+| `bash scripts/setup_maps.sh` | 전체 지도 처리: 압축본이 있으면 복원·기존 DB 확인, DB만 있으면 압축 |
+| `bash scripts/setup_maps.sh pack "창학관 3층"` | 지정 지도 압축 및 왕복 무결성 검사 |
+| `bash scripts/setup_maps.sh restore "창학관 3층"` | 지정 지도 복원. 기존 DB와 내용이 다르면 보존하고 중단 |
+| `bash scripts/setup_maps.sh verify "창학관 3층"` | 압축본·DB 크기와 SHA256, SQLite 무결성 검사 |
+
+지도 이름을 생략하면 `maps/` 아래 모든 지도 폴더를 처리합니다. 스크립트 경로를 지정하면 다른 작업 디렉터리에서도 실행할 수 있습니다. `setup_maps.sh`는 로컬 파일만 처리하고 Git 명령이나 ROS 노드를 실행하지 않습니다.
+
+새 지도를 공유하는 PC에서는 Mapping을 정상 종료한 독립 DB를 지도 폴더에 넣고 `pack`을 실행합니다. `-journal`, `-wal`, `-shm`이 있거나 WAL 모드인 DB는 자동 수정하지 않고 중단합니다. 부수 파일을 임의로 지우지 말고 저장 상태를 확인하세요. 기존 압축본 갱신은 `pack --replace-archive "창학관 3층"`으로 명시하며 원본 DB는 변경하지 않습니다.
+
+이후 **사용자가** 해당 작업 브랜치에서 압축본과 생성 메타데이터를 함께 공유합니다.
+
+```bash
+git add -- "maps/창학관 3층/rtabmap.db.zst" "maps/창학관 3층/rtabmap.db.zst.json"
+git commit -m "map: 창학관 3층 지도 공유"
+git push
+```
+
+다른 PC에서는 Git LFS 설치 후 저장소를 clone하고 `go2_nav2` 환경을 준비합니다. Git LFS가 설치된 일반 clone은 압축본도 내려받습니다. 포인터만 내려왔거나 다운로드를 건너뛴 경우 다음을 실행합니다. 이미 clone한 PC에서는 먼저 사용자가 `git pull`로 작업 브랜치를 갱신합니다.
+
+```bash
+git lfs pull
+conda activate go2_nav2
+bash scripts/setup_maps.sh restore "창학관 3층"
+```
+
+완료 시 `RESTORE OK` 또는 같은 DB가 이미 있으면 `REUSE DB`가 표시됩니다. 복원된 경로는 `maps/창학관 3층/rtabmap.db`입니다. Nav2 실행 시 이 경로를 지정하고 기존처럼 주행용 복사본을 사용합니다. 기존 DB가 다르면 덮어쓰지 않으므로 다른 지도 폴더에 보관한 뒤 진행하세요.
+
+검증: 가짜 SQLite DB로 PC 간 압축본 전달·복원, 원본 보존, 손상 거부, 로컬 Git LFS 포인터 생성 등 23개 검사 PASS. 실제 지도 압축·GitHub LFS 업로드·다른 PC Nav2 실행은 NOT TESTED입니다.
 
 ## 기존 노트북 실행 경로
 
