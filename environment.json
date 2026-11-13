@@ -93,7 +93,6 @@
       "name": "unitree_ros2",
       "url": "https://github.com/unitreerobotics/unitree_ros2.git",
       "ref": "668d1ec5a05d1c38d3306bdca7d59f2ba3581a88",
-      "workspace": "unitree_ws",
       "source_subpath": "cyclonedds_ws/src/unitree",
       "packages": [
         "unitree_go",
@@ -104,7 +103,6 @@
       "name": "rtabmap_ros",
       "url": "https://github.com/introlab/rtabmap_ros.git",
       "ref": "cb2117f1ed6674cf7cfc644d7bb4ffc0b567b364",
-      "workspace": "rtabmap_viz_ws",
       "source_subpath": "rtabmap_viz",
       "packages": [
         "rtabmap_viz"
@@ -112,9 +110,6 @@
       "reason": "RoboStack Humble channel has no rtabmap_viz binary; build the matching 0.23.13 source against the Conda RTAB-Map libraries."
     }
   ],
-  "paths": {
-    "prefix": ".local/share/go2_nav2"
-  },
   "build": {
     "jobs": 2,
     "cmake_args": [
