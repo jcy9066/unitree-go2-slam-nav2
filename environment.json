@@ -32,6 +32,8 @@
       "pkg-config",
       "make",
       "git",
+      "git-lfs>=3.0,<4",
+      "zstd>=1.4.8,<2",
       "openssh",
       "numpy",
       "scipy",
@@ -175,5 +177,13 @@
       "RMW_IMPLEMENTATION": "rmw_cyclonedds_cpp",
       "PYTHONNOUSERSITE": "1"
     }
+  },
+  "maps": {
+    "root": "maps",
+    "archive_suffix": ".zst",
+    "metadata_suffix": ".json",
+    "compression_level": 9,
+    "compression_threads": 2,
+    "lfs_pattern": "maps/**/*.db.zst"
   }
 }

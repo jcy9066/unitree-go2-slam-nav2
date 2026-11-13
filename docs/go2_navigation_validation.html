@@ -1,386 +1,358 @@
-<!doctype html>
+<!DOCTYPE html>
+
 <html lang="ko">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Unitree Go2 EDU의 SLAM·Nav2 자율주행 프로젝트 소개, 기존 주행 영상, 핵심 개념과 후속 문서 템플릿입니다.">
-  <title>Go2 EDU | SLAM · Nav2 자율주행 프로젝트</title>
-  <style>
-    :root {
-      --paper: #f7f8f5;
-      --surface: #fff;
-      --ink: #1e302b;
-      --muted: #5e6c66;
-      --line: #dce3dd;
-      --green: #24664c;
-      --soft: #eaf2ec;
-      --radius: 18px;
-    }
-    * { box-sizing: border-box; }
-    html { scroll-padding-top: 100px; }
-    body {
-      margin: 0;
-      background: var(--paper);
-      color: var(--ink);
-      font-family: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
-      font-size: 16px;
-      line-height: 1.75;
-      word-break: keep-all;
-      overflow-wrap: anywhere;
-    }
-    a { color: var(--green); text-underline-offset: 4px; }
-    a:hover { text-decoration-thickness: 2px; }
-    :focus-visible { outline: 3px solid var(--green); outline-offset: 4px; }
-    h1, h2, h3, p, figure, dl, dd { margin: 0; }
-    h1, h2, h3 { line-height: 1.4; letter-spacing: -.04em; }
-    h1 { font-size: clamp(32px, 4.4vw, 50px); font-weight: 800; }
-    h2 { font-size: clamp(25px, 3vw, 32px); }
-    h3 { font-size: 19px; }
-    p + p { margin-top: 12px; }
-    code { font-size: .9em; overflow-wrap: anywhere; }
-    .wrap { width: min(1100px, calc(100% - 64px)); margin-inline: auto; }
-    .skip-link { position: absolute; top: -100px; left: 20px; z-index: 10; padding: 8px 16px; background: white; }
-    .skip-link:focus { top: 10px; }
-    .topbar { position: sticky; top: 0; z-index: 5; border-bottom: 1px solid var(--line); background: var(--paper); }
-    .topbar-inner { min-height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
-    .brand { display: flex; flex-shrink: 0; align-items: center; gap: 12px; color: var(--ink); text-decoration: none; white-space: nowrap; }
-    .brand-mark { display: grid; place-items: center; width: 44px; height: 40px; border-radius: 12px; background: var(--ink); color: white; font-weight: 800; font-size: 14px; }
-    .brand-name { font-size: 14px; font-weight: 700; }
-    nav { display: flex; min-width: 0; gap: 20px; overflow-x: auto; padding-block: 14px; scrollbar-width: thin; }
-    nav a { flex-shrink: 0; color: var(--muted); text-decoration: none; font-size: 13px; white-space: nowrap; }
-    nav a:hover { color: var(--green); }
-    .hero { display: grid; grid-template-columns: 1.45fr 1fr; align-items: center; gap: 48px; padding-block: 68px 60px; }
-    .eyebrow { display: block; margin-bottom: 16px; font-size: 12px; font-weight: 700; letter-spacing: .08em; color: var(--green); }
-    .hero-lead { margin-top: 22px; font-size: 17px; }
-    .project-image { overflow: hidden; border-radius: var(--radius); background: white; }
-    .project-image img { display: block; width: 100%; height: auto; object-fit: contain; }
-    .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; }
-    .tag { padding: 4px 11px; border: 1px solid var(--line); border-radius: 6px; font-size: 12px; color: var(--muted); }
-    .section { padding-block: 52px; border-top: 1px solid var(--line); }
-    .section-heading { display: flex; gap: 18px; align-items: flex-start; margin-bottom: 26px; }
-    .section-number { flex-shrink: 0; white-space: nowrap; margin-top: 5px; font-size: 13px; font-weight: 700; color: var(--green); }
-    .video-frame { overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius); background: #14201b; }
-    video { display: block; width: 100%; height: auto; max-height: 560px; aspect-ratio: 16 / 9; object-fit: contain; background: #14201b; }
-    .concepts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
-    .concept { padding: 24px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
-    .concept h3 { font-size: 18px; }
-    .term { display: block; margin-block: 5px 14px; font-size: 12px; color: var(--green); }
-    .concept p { font-size: 14px; color: var(--muted); }
-    .system-flow { display: grid; grid-template-columns: 1fr 1.25fr 1fr; gap: 36px; margin-top: 26px; }
-    .flow-item { position: relative; padding: 18px; border: 1px solid var(--line); border-radius: 12px; text-align: center; }
-    .flow-item + .flow-item::before { content: "→"; position: absolute; left: -28px; top: 50%; transform: translateY(-50%); color: var(--green); font-size: 20px; }
-    .flow-item strong { display: block; font-size: 15px; }
-    .flow-item span { display: block; font-size: 13px; color: var(--muted); }
-    .flow-item.server { background: var(--soft); border-color: #d2e0d5; }
-    .notice { margin-top: 22px; padding: 18px 22px; border-left: 3px solid var(--green); border-radius: 0 10px 10px 0; background: var(--soft); font-size: 14px; }
-    .notice strong { color: var(--green); }
-    .notice p { margin-top: 5px; }
-    .table-scroll { margin-top: 18px; overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; background: white; font-size: 13px; }
-    caption { padding-bottom: 10px; text-align: left; font-weight: 700; }
-    th, td { padding: 12px; border-bottom: 1px solid var(--line); vertical-align: top; text-align: left; }
-    th { font-weight: 600; }
-    thead { background: var(--soft); }
-    .template-table { min-width: 560px; }
-    .template-table td { height: 54px; color: var(--muted); }
-    footer { padding-block: 26px 40px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
-    .footer-line { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; }
-    .revision { margin-top: 20px; }
-    summary { cursor: pointer; }
-    .revision p { margin-top: 12px; }
-    .revision table { min-width: 560px; font-size: 12px; }
-    @media (max-width: 800px) {
-      .hero { grid-template-columns: 1fr; gap: 28px; padding-block: 44px; }
-      .concepts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .brand-name { display: none; }
-      nav { gap: 18px; }
-    }
-    @media (max-width: 520px) {
-      .wrap { width: calc(100% - 36px); }
-      .topbar-inner { min-height: 68px; gap: 16px; }
-      .brand-mark { width: 38px; height: 36px; font-size: 12px; }
-      .hero-lead { font-size: 16px; }
-      .section { padding-block: 36px; }
-      .section-heading { gap: 12px; margin-bottom: 22px; }
-      .concepts { grid-template-columns: 1fr; gap: 12px; }
-      .concept { padding: 22px; }
-      .system-flow { grid-template-columns: 1fr; gap: 30px; }
-      .flow-item + .flow-item::before { content: "↓"; left: 50%; top: -32px; transform: translateX(-50%); }
-      video { max-height: 520px; aspect-ratio: 9 / 13; }
-      .notice { padding: 16px; }
-    }
-    @media print {
-      body { background: white; font-size: 11pt; color: black; }
-      .wrap { width: 100%; }
-      .topbar, .skip-link { display: none; }
-      .hero { padding-block: 12px 24px; }
-      .section { padding-block: 24px; }
-      h1 { font-size: 28pt; }
-      h2 { font-size: 20pt; }
-      .concept, .table-scroll, figure { break-inside: avoid; }
-      video { max-height: 240px; }
-      .table-scroll { overflow: visible; }
-      .template-table, .revision table { min-width: 0; }
-      a { color: inherit; }
-    }
-  </style>
-</head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="SLAM 기초가 부족한 전공자를 위한 Unitree Go2 실습. Conda 설치, 새 지도 Mapping 또는 기존 지도 선택, RViz2 초기 위치 설정과 Nav2 주행을 안내합니다." name="description"/>
+<title>Go2 EDU — Conda · Mapping · Nav2 따라하기</title>
+<style>
+:root{
+  --ground:#f1f2ee; --surface:#ffffff; --surface-2:#e8eae3; --surface-3:#dee1d8;
+  --ink:#16191c; --ink-2:#49535e; --ink-3:#7a848e;
+  --rule:#d9ddd3; --rule-strong:#bcc2b4;
+  --accent:#0b6ca8; --accent-soft:#dceaf4;
+  --warm:#b8480f; --warm-soft:#f8e5da;
+  --src-p:#33478f; --src-p-bg:#dfe3f4;   /* 논문 */
+  --src-c:#1a6249; --src-c-bg:#d9ebe2;   /* 코드 */
+  --src-d:#845410; --src-d-bg:#f5e8d2;   /* 유도 */
+  --src-u:#96313d; --src-u-bg:#f6dee1;   /* 미확인 */
+  --shadow:0 1px 2px rgba(22,25,28,.05), 0 10px 26px -18px rgba(22,25,28,.30);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#101310; --surface:#181c1a; --surface-2:#1f2422; --surface-3:#262d2a;
+    --ink:#e8ebe5; --ink-2:#a6b0a8; --ink-3:#76807a;
+    --rule:#2b322e; --rule-strong:#3d4641;
+    --accent:#6fb6e0; --accent-soft:#122734;
+    --warm:#e58a55; --warm-soft:#331c10;
+    --src-p:#9aa6ea; --src-p-bg:#1b1f3d;
+    --src-c:#5cc39c; --src-c-bg:#102a20;
+    --src-d:#dda954; --src-d-bg:#30240e;
+    --src-u:#e5868f; --src-u-bg:#371b1f;
+    --shadow:0 1px 2px rgba(0,0,0,.45), 0 10px 26px -18px rgba(0,0,0,.85);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#101310; --surface:#181c1a; --surface-2:#1f2422; --surface-3:#262d2a;
+  --ink:#e8ebe5; --ink-2:#a6b0a8; --ink-3:#76807a;
+  --rule:#2b322e; --rule-strong:#3d4641;
+  --accent:#6fb6e0; --accent-soft:#122734;
+  --warm:#e58a55; --warm-soft:#331c10;
+  --src-p:#9aa6ea; --src-p-bg:#1b1f3d;
+  --src-c:#5cc39c; --src-c-bg:#102a20;
+  --src-d:#dda954; --src-d-bg:#30240e;
+  --src-u:#e5868f; --src-u-bg:#371b1f;
+  --shadow:0 1px 2px rgba(0,0,0,.45), 0 10px 26px -18px rgba(0,0,0,.85);
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--ground); color:var(--ink);
+  font-family:"IBM Plex Sans KR","Malgun Gothic",system-ui,sans-serif;
+  font-size:15px; line-height:1.7; -webkit-font-smoothing:antialiased;
+}
+code,.mono{font-family:"IBM Plex Mono",ui-monospace,Consolas,monospace}
+h1,h2,h3,h4{font-family:"Noto Serif KR",Georgia,serif;text-wrap:pretty;line-height:1.3;margin:0}
+a{color:var(--accent)}
+p{margin:0}
+
+.wrap{max-width:1440px;margin:0 auto;padding-inline:24px;padding-block:0 88px}
+.prose{max-width:none}
+
+/* masthead */
+header.top{border-bottom:1px solid var(--rule);background:var(--surface);}
+.top-inner{max-width:1440px;margin:0 auto;padding-inline:24px;padding-block:48px 30px;display:flex;flex-direction:column;gap:14px}
+.eyebrow{font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
+h1{font-size:clamp(26px,4.2vw,38px);font-weight:700;letter-spacing:-.015em}
+.standfirst{max-width:none;color:var(--ink-2);font-size:15.5px;font-weight:300}
+.meta-row{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12px;color:var(--ink-3);font-family:"IBM Plex Mono",monospace}
+
+/* badges */
+.badge{display:inline-flex;align-items:center;gap:5px;font-family:"IBM Plex Mono",monospace;font-size:10.5px;font-weight:600;letter-spacing:.05em;padding:2px 7px;border-radius:3px;white-space:nowrap;vertical-align:1px}
+.badge::before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor}
+.b-p{color:var(--src-p);background:var(--src-p-bg)}
+.b-c{color:var(--src-c);background:var(--src-c-bg)}
+.b-d{color:var(--src-d);background:var(--src-d-bg)}
+.b-u{color:var(--src-u);background:var(--src-u-bg)}
+.legend{display:flex;flex-wrap:wrap;gap:10px 18px;padding:14px 16px;background:var(--surface-2);border-radius:6px}
+.legend div{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink-2)}
+
+/* sections */
+section{margin-top:54px;display:flex;flex-direction:column;gap:18px}
+.sec-head{display:flex;align-items:baseline;gap:12px;border-bottom:2px solid var(--ink);padding-bottom:7px}
+.sec-num{font-family:"IBM Plex Mono",monospace;font-size:13px;font-weight:600;color:var(--accent)}
+.sec-head h2{font-size:20px;font-weight:600;letter-spacing:-.01em}
+
+/* spec cards */
+.spec{background:var(--surface);border:1px solid var(--rule);border-radius:6px;box-shadow:var(--shadow);overflow:hidden}
+.spec-head{display:flex;flex-wrap:wrap;align-items:center;gap:9px;padding:13px 20px;background:var(--surface-2);border-bottom:1px solid var(--rule)}
+.spec-id{font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:600;color:var(--ink-3)}
+.spec-head h3{font-size:15.5px;font-weight:600;flex:1;min-width:170px;font-family:"IBM Plex Sans KR",sans-serif}
+.spec-src{width:100%;font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--ink-3);margin-top:-2px}
+.spec-body{padding:18px 20px 20px;display:flex;flex-direction:column;gap:14px}
+.spec-body p{max-width:none;color:var(--ink-2)}
+.spec-body p strong,.spec-body li strong{color:var(--ink);font-weight:600}
+.spec-body ul{margin:0;padding-left:20px;color:var(--ink-2);display:flex;flex-direction:column;gap:6px}
+
+.mathrow{overflow-x:auto;padding-block:4px 8px}
+blockquote.quote{margin:0;padding:12px 18px;border-left:3px solid var(--rule-strong);background:var(--surface-2);font-size:13.5px;color:var(--ink-2);border-radius:0 4px 4px 0}
+.warn{border-left:3px solid var(--src-u);background:var(--src-u-bg);padding:13px 18px;border-radius:0 4px 4px 0;font-size:13.5px;color:var(--ink)}
+.warn b{color:var(--src-u)}
+.note{border-left:3px solid var(--accent);background:var(--accent-soft);padding:13px 18px;border-radius:0 4px 4px 0;font-size:13.5px;color:var(--ink)}
+.plain{border-left:3px solid var(--warm);background:var(--warm-soft);padding:14px 18px;border-radius:0 4px 4px 0;font-size:14px;color:var(--ink)}
+.plain b{color:var(--warm)}
+
+/* tables */
+.tscroll{overflow-x:auto;border:1px solid var(--rule);border-radius:6px;background:var(--surface);box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:9px 13px;text-align:left;vertical-align:top;border-bottom:1px solid var(--rule)}
+thead th{background:var(--surface-2);font-weight:600;font-size:12px;border-bottom:2px solid var(--rule-strong);white-space:nowrap}
+tbody tr:last-child td{border-bottom:none}
+tbody th{font-weight:500;color:var(--ink-2);background:var(--surface-2);white-space:nowrap;font-size:12.5px}
+td.num,th.num{font-variant-numeric:tabular-nums;text-align:right}
+.col-ours{background:var(--accent-soft)}
+thead th.col-ours{background:var(--accent-soft)}
+td em{font-style:normal;color:var(--src-u);font-weight:600}
+td b{font-weight:600}
+.win{color:var(--src-c);font-weight:600}
+
+/* cascade */
+.chain{display:flex;flex-direction:column;gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:6px;overflow:hidden}
+.chain-step{display:grid;grid-template-columns:34px 1fr;gap:0 16px;background:var(--surface);padding:14px 18px}
+.chain-n{font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:600;color:var(--accent);padding-top:3px}
+.chain-b{display:flex;flex-direction:column;gap:7px;min-width:0}
+.chain-t{font-size:13.5px;font-weight:600}
+.chain-d{font-size:13px;color:var(--ink-2)}
+.chain-src{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-3)}
+
+/* verdict */
+.verdict{background:var(--surface);border:1px solid var(--rule);border-left:4px solid var(--accent);border-radius:0 6px 6px 0;padding:18px 22px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px}
+.verdict h3{font-size:15px;font-weight:600;font-family:"IBM Plex Sans KR",sans-serif}
+.verdict ul{margin:0;padding-left:20px;color:var(--ink-2);font-size:14px;display:flex;flex-direction:column;gap:6px}
+.verdict li b{color:var(--ink)}
+
+/* two-col lists */
+.split{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px}
+.pane{background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:17px 19px;display:flex;flex-direction:column;gap:9px}
+.pane h4{font-size:14px;font-weight:600;font-family:"IBM Plex Sans KR",sans-serif}
+.pane ul{margin:0;padding-left:18px;font-size:13.5px;color:var(--ink-2);display:flex;flex-direction:column;gap:7px}
+.pane.good{border-top:3px solid var(--src-c)}
+.pane.bad{border-top:3px solid var(--src-u)}
+.pane.next{border-top:3px solid var(--accent)}
+
+/* refs */
+.refs{display:flex;flex-direction:column;gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:6px;overflow:hidden}
+.ref{display:grid;grid-template-columns:minmax(120px,auto) 1fr;gap:0 18px;background:var(--surface);padding:13px 18px}
+.ref-k{font-family:"IBM Plex Mono",monospace;font-size:11.5px;font-weight:600;color:var(--accent);padding-top:2px}
+.ref-b{font-size:13px;color:var(--ink-2)}
+.ref-b b{color:var(--ink);font-weight:600}
+.ref-why{display:block;margin-top:4px;color:var(--ink-3);font-size:12.5px}
+
+/* option cards */
+.opts{display:flex;flex-direction:column;gap:14px}
+.opt{background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:16px 19px;display:flex;flex-direction:column;gap:9px}
+.opt.pick{border-left:4px solid var(--warm)}
+.opt-h{display:flex;flex-wrap:wrap;align-items:center;gap:9px}
+.opt-t{font-size:14px;font-weight:600}
+.opt-q{font-size:13.5px;color:var(--ink);background:var(--surface-2);padding:11px 15px;border-radius:4px;font-style:italic}
+.opt-n{font-size:13px;color:var(--ink-2)}
+.tag{font-family:"IBM Plex Mono",monospace;font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:3px;background:var(--surface-3);color:var(--ink-2)}
+.tag.pickt{background:var(--warm-soft);color:var(--warm)}
+
+footer{margin-top:60px;padding-top:20px;border-top:1px solid var(--rule);font-size:12.5px;color:var(--ink-3);max-width:none;display:flex;flex-direction:column;gap:10px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (max-width:520px){
+  .chain-step{grid-template-columns:1fr;gap:6px}
+  .ref{grid-template-columns:1fr;gap:6px}
+}
+
+
+/* page-specific */
+.code{border:1px solid var(--rule);border-radius:6px;overflow:hidden;background:#0f1412}
+.code-h{display:flex;align-items:center;gap:8px;padding:7px 12px;background:#1b2320;color:#a6b0a8;font-family:"IBM Plex Mono",monospace;font-size:11.5px}
+.code-h .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.code-h button{font:600 11px "IBM Plex Mono",monospace;background:#2c3833;color:#e8ebe5;border:1px solid #3d4641;border-radius:4px;padding:3px 10px;cursor:pointer}
+.code-h button:hover{background:#3a4a43}
+.code pre{margin:0;padding:12px 14px;overflow-x:auto;color:#e1e8e2;font:12.5px/1.6 "IBM Plex Mono",ui-monospace,Consolas,monospace;tab-size:4}
+.code pre .c{color:#7f9a8a}
+.code.out{background:var(--surface-2)}
+.code.out .code-h{background:var(--surface-3);color:var(--ink-2)}
+.code.out pre{color:var(--ink)}
+details.file{border:1px solid var(--rule);border-radius:6px;background:var(--surface)}
+details.file>summary{cursor:pointer;padding:9px 14px;font:600 12.5px "IBM Plex Mono",monospace;color:var(--ink-2)}
+details.file[open]>summary{border-bottom:1px solid var(--rule)}
+details.file .code{border:none;border-radius:0}
+.term{display:inline-block;font:600 10.5px "IBM Plex Mono",monospace;padding:1px 7px;border-radius:3px;background:var(--accent-soft);color:var(--accent);margin-right:4px}
+.steps{counter-reset:s;display:flex;flex-direction:column;gap:12px;margin:0;padding:0;list-style:none}
+.steps>li{counter-increment:s;display:grid;grid-template-columns:28px 1fr;gap:0 12px}
+.steps>li::before{content:counter(s);font:600 12px "IBM Plex Mono",monospace;color:var(--accent);padding-top:2px}
+.steps>li>div{display:flex;flex-direction:column;gap:8px;min-width:0}
+.steps>li p{color:var(--ink-2)}
+.toc{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px}
+.toc a{text-decoration:none}
+.toc a:hover{text-decoration:underline}
+.diagram{overflow-x:auto;background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:14px}
+.diagram svg{display:block;min-width:720px;width:100%;height:auto}
+:not(pre)>code,details.file>summary{overflow-wrap:anywhere}
+.kbd{font:600 11.5px "IBM Plex Mono",monospace;border:1px solid var(--rule-strong);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--surface)}
+
+body{margin:0;overflow-wrap:anywhere;word-break:keep-all}a{text-underline-offset:3px}.wrap{width:100%}.top-inner{position:relative}.top-inner .tools{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.theme-button{font:inherit;background:var(--surface-2);color:var(--ink);border:1px solid var(--rule-strong);border-radius:4px;padding:5px 10px;cursor:pointer}.skip-link{position:absolute;top:-90px;left:20px;z-index:10;background:var(--surface);padding:10px}.skip-link:focus{top:10px}.hero{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:28px;align-items:center}.hero-lead{font-size:16px;color:var(--ink-2);margin:16px 0}.project-image{margin:0;background:white;border:1px solid var(--rule);border-radius:6px;overflow:hidden}.project-image img{width:100%;height:auto;display:block}.tags{display:flex;gap:8px;flex-wrap:wrap}.section-heading{display:flex;align-items:baseline;gap:12px;border-bottom:2px solid var(--ink);padding-bottom:8px}.section-number{font:600 13px ui-monospace,monospace;color:var(--accent);white-space:nowrap}h2{font-size:22px}h3{font-size:17px}.concepts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.concept{background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:20px}.concept h3{font-family:"IBM Plex Sans KR",sans-serif;font-size:16px}.concept .term{display:block;margin:8px 0 12px;font-size:11px;background:none;padding:0}.concept p{font-size:14px;color:var(--ink-2)}.notice{border-left:3px solid var(--accent);background:var(--accent-soft);padding:15px 18px}.notice p{margin-top:8px}.system-flow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.flow-item{background:var(--surface-2);border:1px solid var(--rule);padding:16px}.flow-item strong,.flow-item span{display:block}.flow-item span{font-size:13px;color:var(--ink-2)}.video-frame{border:1px solid var(--rule);background:#101710;border-radius:6px;overflow:hidden}video{width:100%;height:auto;max-height:540px;display:block;object-fit:contain}.table-scroll{overflow-x:auto;border:1px solid var(--rule);border-radius:6px;background:var(--surface)}table{min-width:620px}caption{text-align:left;padding:12px;font-weight:600}footer .wrap{padding-block:0}footer{margin:52px 24px 0;padding-bottom:30px}.revision{margin-top:16px}.revision>summary{cursor:pointer;font-weight:600}.revision p{margin:14px 0}.revision .table-scroll{margin-block:16px}.step-links{display:flex;flex-wrap:wrap;gap:8px}.step-links a{background:var(--surface-2);border:1px solid var(--rule);border-radius:4px;padding:7px 12px;text-decoration:none}.outcome{font-size:13px;color:var(--ink-2)}.code .copy-status{font-size:11px}.spec[id],section[id],tr[id]{scroll-margin-top:20px}.spec-head .badge{margin-left:auto}.spec-body p+p{margin-top:0}.code pre code{font:inherit;white-space:pre;overflow-wrap:normal}.spec-body h4{font-family:inherit;font-size:14px}.split>*{min-width:0}details.file .spec-body{padding-top:10px}.kbd{white-space:nowrap}section>*{min-width:0}nav{max-width:100%}.code pre{max-height:420px}.section-number{min-width:24px}
+@media(max-width:800px){.hero{grid-template-columns:1fr 210px}.concepts{grid-template-columns:repeat(2,minmax(0,1fr))}.system-flow{grid-template-columns:1fr}.spec-head{padding:12px 15px}.spec-body{padding:16px}}
+@media(max-width:520px){.wrap,.top-inner{padding-inline:18px}.hero{grid-template-columns:1fr}.project-image{max-width:280px;width:100%;justify-self:center}.concepts{grid-template-columns:1fr}.split{grid-template-columns:minmax(0,1fr)}.spec-head h3{min-width:0;flex-basis:100%}.code-h .t{white-space:normal}.sec-head,.section-heading{align-items:flex-start}footer{margin-inline:18px}h2{font-size:20px}.section-heading{gap:10px}.step-links{flex-direction:column}video{max-height:490px}}
+@media print{:root,:root[data-theme="dark"]{--ground:white;--surface:white;--surface-2:#f1f1f1;--ink:black;--ink-2:#333;--ink-3:#555;--rule:#bbb;--accent:#164f73;--accent-soft:#edf3f6}body{font-size:10pt;background:white;color:black}.wrap,.top-inner{max-width:none;padding:0}.top-inner{padding:16px 0}.tools,.skip-link,.code-h button,.copy-status{display:none!important}section{margin-top:26px}.hero{grid-template-columns:1fr 160px}.concepts{grid-template-columns:repeat(2,minmax(0,1fr))}.spec,.concept,.pane{box-shadow:none;break-inside:avoid}.code pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:none;font-size:9pt;color:black;background:#f5f5f5}.code-h{background:#eee;color:black}.table-scroll,.tscroll{overflow:visible;box-shadow:none}table{min-width:0;font-size:9pt}.revision table{font-size:8pt}video{max-height:230px}footer{margin:26px 0 0}.revision:not([open])>*:not(summary){display:block}.project-image{max-width:160px}a{color:inherit}.concept p{font-size:10pt}}
+
+/* Reading rhythm and explicit route selection. */
+.spec-body{gap:18px}.spec-body p,.concept p{line-height:1.85}.spec-body .outcome{font-size:14px}.code pre{font-size:13px;line-height:1.75}.route-choice{display:flex;flex-direction:column;gap:12px;padding-top:14px;border-top:1px solid var(--rule)}.route-choice>h3,.route-join>h3{font-family:"IBM Plex Sans KR",sans-serif;font-size:18px}.route-choice>p{color:var(--ink-2)}.route-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.route-option{display:flex;flex-direction:column;gap:6px;align-items:flex-start;text-align:left;padding:18px 20px;background:var(--surface);color:var(--ink);border:1px solid var(--rule-strong);border-radius:6px;font:inherit;cursor:pointer}.route-option strong{font-size:16px}.route-option span{font-size:13px;color:var(--ink-2)}.route-option[aria-expanded="true"]{border-color:var(--accent);background:var(--accent-soft);box-shadow:inset 3px 0 var(--accent)}.route-option:disabled{cursor:default}.route-status{font-size:13px;min-height:24px}.route-panel[hidden]{display:none}.route-panel{min-width:0}.route-panel .spec{border-left:3px solid var(--accent)}.route-next{display:block;width:fit-content;margin-top:12px;font-weight:600;text-decoration:none}.route-join{display:flex;flex-direction:column;gap:8px;margin-top:8px;padding:20px 0 8px;border-top:2px solid var(--ink)}.route-join p{color:var(--ink-2);font-size:14px}#step-view{margin-top:0}
+@media(max-width:520px){.route-controls{grid-template-columns:1fr}.route-option{padding:16px}.spec-body{gap:16px}.code pre{font-size:12.5px}}
+@media print{.route-controls,.route-status{display:none!important}.route-panel[hidden]{display:block!important}.route-panel{margin-top:16px}.route-next{color:black}.route-choice{break-after:avoid}.code pre{font-size:9pt}}
+</style></head>
 <body>
-  <a class="skip-link" href="#main">본문으로 바로가기</a>
-  <header class="topbar">
-    <div class="wrap topbar-inner">
-      <a class="brand" href="#project" aria-label="Go2 EDU 프로젝트 소개로 이동">
-        <span class="brand-mark" aria-hidden="true">Go2</span>
-        <span class="brand-name">EDU 자율주행 프로젝트</span>
-      </a>
-      <nav aria-label="문서 목차">
-        <a href="#project">소개</a>
-        <a href="#video">주행 영상</a>
-        <a href="#concepts">핵심 개념</a>
-        <a href="#terminal-commands">터미널 명령어</a>
-        <a href="#rviz">RViz2 조작</a>
-        <a href="#completed">완료한 작업</a>
-        <a href="#improvements">개선할 점</a>
-        <a href="#future">발전 방향</a>
-      </nav>
-    </div>
-  </header>
-
-  <main class="wrap" id="main">
-    <section class="hero" id="project" aria-labelledby="project-title">
-      <div>
-        <span class="eyebrow">01 · 프로젝트 소개</span>
-        <h1 id="project-title">Go2 EDU<br>SLAM · Nav2 자율주행</h1>
-        <p class="hero-lead">Unitree Go2 EDU 사족보행 로봇이 주변 지도를 만들고, 지도에서 자신의 위치를 찾으며, 지정한 목적지까지 이동하도록 하는 프로젝트입니다.</p>
-        <div class="tags" aria-label="프로젝트 주요 구성">
-          <span class="tag">Unitree Go2 EDU</span>
-          <span class="tag">ROS 2 Humble</span>
-          <span class="tag">RTAB-Map</span>
-          <span class="tag">Nav2</span>
-        </div>
-      </div>
-      <figure class="project-image">
-        <img src="images/go2-edu-hero.png" width="1254" height="1254" alt="흰 배경에 서 있는 회색 Unitree Go2 EDU 사족보행 로봇" decoding="async" fetchpriority="high">
-      </figure>
-    </section>
-
-    <section class="section" id="video" aria-labelledby="video-title">
-      <div class="section-heading">
-        <span class="section-number" aria-hidden="true">02</span>
-        <div>
-          <h2 id="video-title">주행영상</h2>
-        </div>
-      </div>
-      <figure>
-        <div class="video-frame">
-          <video id="go2-video" controls playsinline preload="metadata" width="720" height="1280" aria-label="Go2 기존 주행 기록 영상">
-            <source src="KakaoTalk_20261112_203846672_web.mp4" type="video/mp4">
+<a class="skip-link" href="#main">본문으로 바로가기</a>
+<header class="top"><div class="top-inner"><div class="eyebrow">BEGINNER TUTORIAL · UNITREE GO2 EDU</div><h1>Go2 EDU — Conda · Mapping · Nav2 따라하기</h1><p class="standfirst">SLAM 기초가 부족한 전공자가 환경을 준비하고, 조종기로 지도를 만든 뒤 저장 지도에서 Nav2 주행을 실습하는 안내입니다. 이미 지도가 있다면 Mapping을 건너뛰고 같은 주행 단계로 합류합니다.</p><div class="tools"><nav aria-label="문서 목차" class="toc"><a href="#project">01 소개</a><a href="#video">02 주행영상</a><a href="#concepts">03 기초 개념</a><a href="#terminal-commands">04 실습 명령어</a><a href="#rviz">05 RViz2 조작</a><a href="#completed">06 완료한 작업</a><a href="#improvements">07 개선할 점</a><a href="#future">08 발전 방향</a></nav><button aria-pressed="false" class="theme-button" id="theme-toggle" type="button">어두운 화면</button></div></div></header>
+<main class="wrap" id="main">
+<section aria-labelledby="project-title" class="hero" id="project">
+<div>
+<span class="eyebrow">01 · 프로젝트 소개</span>
+<h2 id="project-title">프로젝트 소개 — 지도 만들기에서 주행까지</h2>
+<p class="hero-lead">Unitree Go2 EDU의 L1 LiDAR와 D435i 관측, Go2가 제공하는 이동 정보를 실행 컴퓨터에서 처리합니다. RTAB-Map은 지도 작성과 저장 지도 위치 추정을, Nav2는 목적지까지의 경로와 이동 속도 계산을 담당합니다.</p>
+<div aria-label="프로젝트 주요 구성" class="tags">
+<span class="tag">Unitree Go2 EDU</span>
+<span class="tag">ROS 2 Humble</span>
+<span class="tag">RTAB-Map</span>
+<span class="tag">Nav2</span>
+</div>
+<p class="outcome">Mapping은 Go2 조종기로 이동하며 진행합니다. 저장된 지도에서는 RViz2로 위치를 맞추고 주행 목표를 지정합니다.</p></div>
+<figure class="project-image">
+<img alt="흰 배경에 서 있는 회색 Unitree Go2 EDU 사족보행 로봇" decoding="async" fetchpriority="high" height="1254" src="images/go2-edu-hero.png" width="1254"/>
+</figure>
+</section>
+<section aria-labelledby="video-title" class="section" id="video">
+<div class="section-heading">
+<span aria-hidden="true" class="section-number">02</span>
+<div>
+<h2 id="video-title">주행영상</h2>
+</div>
+</div>
+<figure>
+<div class="video-frame">
+<video aria-label="Go2 기존 주행 기록 영상" controls="" height="1280" id="go2-video" playsinline="" preload="metadata" width="720">
+<source src="KakaoTalk_20261112_203846672_web.mp4" type="video/mp4"/>
             동영상 재생을 지원하지 않는 브라우저입니다.
           </video>
-        </div>
-      </figure>
-    </section>
+</div>
+</figure>
+</section>
+<section aria-labelledby="concepts-title" class="section" id="concepts">
+<div class="section-heading">
+<span aria-hidden="true" class="section-number">03</span>
+<div>
+<h2 id="concepts-title">프로젝트 이해에 필요한 개념</h2>
+</div>
+</div>
+<div class="concepts">
+<article class="concept">
+<h3>프로그램 사이의 정보 전달</h3>
+<span class="term">ROS 2 · 노드 · 토픽</span>
+<p>ROS 2는 센서 처리, 위치 추정, 경로 계획 등 여러 프로그램을 연결합니다. 각각의 실행 단위를 노드라고 하며, 노드들은 토픽을 통해 센서 데이터나 이동 속도 같은 정보를 주고받습니다.</p>
+</article>
+<article class="concept">
+<h3>주변을 보는 센서</h3>
+<span class="term">L1 LiDAR · RealSense D435i</span>
+<p>Go2의 내장 L1 라이다는 주변 물체까지의 거리를 점들의 집합인 포인트클라우드로 제공합니다. D435i는 컬러 영상과 깊이 정보를 제공합니다. 지도 작성과 위치 추정, 장애물 인식에 이 정보를 사용합니다.</p>
+</article>
+<article class="concept">
+<h3>위치를 추정하며 지도 만들기</h3>
+<span class="term">SLAM · Mapping · RTAB-Map</span>
+<p>SLAM은 로봇의 위치 추정과 지도 작성을 함께 수행하는 기술입니다. 이 프로젝트는 RTAB-Map을 사용해 센서 관측과 이동 정보를 연결하고, 지도와 관련 관측을 DB 파일로 저장합니다.</p>
+</article>
+<article class="concept">
+<h3>저장된 지도에서 위치 찾기</h3>
+<span class="term">Localization · 초기 위치</span>
+<p>Localization은 저장된 지도와 현재 센서 관측을 비교해 로봇의 위치와 방향을 찾는 과정입니다. 자율주행은 기존 지도 기반 위치 추정 모드로 진행합니다. 지도 속 위치가 실제 로봇과 맞아야 경로와 장애물도 올바르게 해석할 수 있습니다.</p>
+</article>
+<article class="concept">
+<h3>이동 정보와 좌표 연결하기</h3>
+<span class="term">Odometry · TF · map → odom → base_link</span>
+<p>Odometry는 짧은 시간 동안 로봇이 얼마나 이동하고 회전했는지 추정한 정보입니다. 이 프로젝트는 Go2가 제공하는 이동 정보를 사용합니다. TF는 지도(map), 이동 기준(odom), 몸체(base_link), 센서의 좌표 관계를 연결해 서로 다른 데이터를 같은 위치에 표시합니다.</p>
+</article>
+<article class="concept">
+<h3>이동할 경로와 속도 정하기</h3>
+<span class="term">Nav2 · NavFn · DWB</span>
+<p>Nav2는 목적지까지의 경로 계획과 주행 제어를 담당합니다. NavFn은 지도에서 목적지까지의 전역 경로를 만들고, DWB는 가까운 장애물과 경로를 고려해 짧은 시간의 이동 후보를 평가하고 전진·회전 속도를 선택합니다.</p>
+</article>
+<article class="concept">
+<h3>지나갈 공간과 장애물 표현하기</h3>
+<span class="term">Costmap · Global / Local</span>
+<p>Costmap은 공간을 격자로 나누고 장애물과 주변 영역에 이동 비용을 부여한 지도입니다. Global Costmap은 전체 경로를 계획할 때, Local Costmap은 로봇 주변의 주행을 판단할 때 사용합니다. 실시간 센서 관측을 반영해 갱신합니다.</p>
+</article>
+<article class="concept">
+<h3>로봇 크기와 장애물 주변 여유</h3>
+<span class="term">Footprint · Inflation</span>
+<p>Footprint는 경로와 충돌을 판단할 때 사용하는 로봇의 평면 외곽 모델입니다. Inflation은 장애물 주변에도 비용을 부여해 여유를 두도록 유도합니다. 좁은 문이나 코너에서는 두 설정이 주행에 영향을 주며, 설정한 외곽과 실제 보행 중 다리가 차지하는 범위는 따로 확인해야 합니다.</p>
+</article>
+<article class="concept">
+<h3>지도와 주행 상태를 화면에서 보기</h3>
+<span class="term">RViz2 · 시각화</span>
+<p>RViz2는 지도, 센서 관측, 로봇 위치, Costmap, 계획 경로를 함께 보여주는 도구입니다. 초기 위치나 목적지를 입력할 때도 사용합니다. 화면에 경로가 표시되는 것과 실제 로봇이 목적지까지 주행을 완료하는 것은 별도의 확인 항목입니다.</p>
+</article>
+</div>
+<div aria-label="저장 지도 기반 주행 흐름: Go2와 카메라의 센서·이동 정보를 서버가 받아 위치와 경로·속도를 계산하고 Go2에 이동 명령을 전달합니다." class="system-flow" role="group">
+<div class="flow-item"><strong>Go2 EDU · 카메라</strong><span>센서 관측 · 이동 정보</span></div>
+<div class="flow-item server"><strong>연구실 서버</strong><span>RTAB-Map 위치 추정 → Nav2 경로·속도 계산</span></div>
+<div class="flow-item"><strong>Go2 EDU</strong><span>전달된 이동 명령에 따라 주행</span></div>
+</div>
+<aside aria-label="지도 작성과 자율주행 모드의 차이" class="notice"><strong>지도를 만들 때는 Mapping, 저장된 지도에서 주행할 때는 Localization을 사용합니다.</strong><p>주행 중에는 Nav2 Costmap이 현재 장애물을 반영합니다. 원본 지도 DB는 보존하고 주행에는 복사본을 사용합니다.</p></aside>
+</section>
+<section aria-labelledby="terminal-title" class="section" id="terminal-commands"><div class="section-heading">
+<span aria-hidden="true" class="section-number">04</span>
+<div><h2 id="terminal-title">환경 설정부터 Mapping·Nav2까지 — sh로 실습</h2></div>
+</div><div class="chain"><div class="chain-step"><span class="chain-n">공통</span><div class="chain-b"><b>공통 준비 · C0~C4</b><span class="chain-d">화면 준비 → 환경 설치·활성화 → 카메라·센서 확인</span></div></div><div class="chain-step"><span class="chain-n">분기</span><div class="chain-b"><b>지도 준비 · A 또는 B 중 하나</b><span class="chain-d">A. 조종기로 새 Mapping · B. 기존 지도 DB 선택</span></div></div><div class="chain-step"><span class="chain-n">합류</span><div class="chain-b"><b>공통 주행 · N1~N4</b><span class="chain-d">위치 확인 → 주행 시작 → 목표 지정 → 조종기 회전·복귀</span></div></div></div><article class="spec" id="step-screen"><div class="spec-head"><span class="spec-id">C0</span><h3>실습 장소와 화면을 준비합니다</h3></div><div class="spec-body"><p>Conda가 설치된 Ubuntu 22.04 x86_64 실행 컴퓨터와 프로젝트 저장소가 필요합니다. 아래 명령은 저장소가 <code>~/GH/unitree-go2-slam-nav2</code>에 있는 경우입니다. 다른 위치라면 <code>cd</code> 경로를 실제 저장소로 바꿉니다.</p><div class="split"><div class="pane"><h4>실행 컴퓨터 앞에서 직접 사용</h4><p>실행 컴퓨터의 데스크톱에 로그인하고 터미널 A와 B를 엽니다. RViz2도 그 모니터에 표시됩니다.</p></div><div class="pane"><h4>다른 노트북에서 원격 사용</h4><p>이미 구성된 원격 데스크톱으로 실행 컴퓨터에 접속한 뒤 그 화면에서 터미널 A와 B를 엽니다. SSH를 사용한다면 아래처럼 화면 전달을 허용하고, 연결된 셸에서 실습합니다. 접속을 받는 SSH 서버와 로컬 X 화면 전달은 사전에 준비돼 있어야 합니다.</p></div></div><div class="code"><div class="code-h"><span class="t">원격 사용 시 · 접속하는 노트북</span><button aria-label="원격 사용 시 · 접속하는 노트북 명령 복사" data-copy="command-1" type="button">복사</button></div><pre><code data-language="bash" id="command-1">read -r -p "실행 컴퓨터 SSH 대상(user@host): " GO2_RUN_HOST
+ssh -Y "$GO2_RUN_HOST"</code></pre></div><p class="outcome">RViz2를 실행할 셸에 <code>DISPLAY</code>가 설정돼 있어야 합니다. SSH 화면 전달이 준비되지 않았다면 원격 데스크톱을 사용합니다.</p></div></article><article class="spec" id="step-install"><div class="spec-head"><span class="spec-id">C1</span><h3>최초 한 번, 환경을 설치합니다</h3></div><div class="spec-body" id="conda-setup-r56"><p><code>environment.json</code>을 기준으로 기본 Conda envs 위치에 <code>go2_nav2</code>를 생성하고 의존성·Unitree 메시지·시각화·프로젝트를 설치·빌드·검증합니다. 설치는 실행 컴퓨터에서 수행합니다.</p><div class="code"><div class="code-h"><span class="t">실행 컴퓨터 · 설치 터미널</span><button aria-label="실행 컴퓨터 · 설치 터미널 명령 복사" data-copy="command-2" type="button">복사</button></div><pre><code data-language="bash" id="command-2">cd "$HOME/GH/unitree-go2-slam-nav2"
+bash scripts/install_student.sh</code></pre></div><div class="code out"><div class="code-h"><span class="t">모든 필수 단계 성공 시 마지막 출력</span></div><pre><code id="command-3">go2_nav2 환경 설정이 완료되었습니다.</code></pre></div><p>마지막 완료 문구를 확인한 뒤 C2로 진행합니다. 오류가 나면 원인을 해결하고 설치 sh를 다시 실행합니다. 설치 계획만 확인할 때는 <code>bash scripts/install_student.sh plan</code>을 사용합니다.</p></div></article><article class="spec" id="step-environment"><div class="spec-head"><span class="spec-id">C2</span><h3>터미널 A와 B에 같은 실행 환경을 준비합니다</h3></div><div class="spec-body"><p>아래 블록을 <b>터미널 A와 B에서 각각</b> 실행합니다. 인터페이스 이름은 <code>ip -brief link</code>에서 Go2에 연결한 항목을 선택하고, ROS Domain ID는 Go2 센서와 같은 값을 입력합니다.</p><div class="code"><div class="code-h"><span class="t">실행 컴퓨터 · 터미널 A와 B 각각</span><button aria-label="실행 컴퓨터 · 터미널 A와 B 각각 명령 복사" data-copy="command-4" type="button">복사</button></div><pre><code data-language="bash" id="command-4">cd "$HOME/GH/unitree-go2-slam-nav2"
+conda activate go2_nav2
+export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp ROS_LOCALHOST_ONLY=0
+ip -brief link
+read -r -p "Go2에 연결한 인터페이스 이름: " GO2_NET_IFACE
+read -r -p "Go2와 동일한 ROS_DOMAIN_ID: " ROS_DOMAIN_ID
+export GO2_NET_IFACE ROS_DOMAIN_ID
+export CYCLONEDDS_URI="&lt;CycloneDDS&gt;&lt;Domain&gt;&lt;General&gt;&lt;Interfaces&gt;&lt;NetworkInterface name=\"$GO2_NET_IFACE\"/&gt;&lt;/Interfaces&gt;&lt;/General&gt;&lt;/Domain&gt;&lt;/CycloneDDS&gt;"</code></pre></div><div class="code"><div class="code-h"><span class="t">실행 컴퓨터 · 터미널 B</span><button aria-label="실행 컴퓨터 · 터미널 B 명령 복사" data-copy="command-5" type="button">복사</button></div><pre><code data-language="bash" id="command-5">bash scripts/student_session.sh check</code></pre></div><p class="outcome"><b>정상 출력:</b> <code>INSTALL CHECK PASS</code></p></div></article><article class="spec" id="step-camera"><div class="spec-head"><span class="spec-id">C3</span><h3>카메라를 준비하고 터미널 A를 유지합니다</h3></div><div class="spec-body"><p>Go2에는 기존 <code>~/ros2_realsense_456_ws/activate.bash</code>가 준비돼 있어야 합니다. 카메라가 이미 정상 송출 중이면 중복 실행하지 않고 C4로 진행합니다. 새로 시작할 때만 실제 Go2 접속 대상을 입력합니다.</p><div class="code"><div class="code-h"><span class="t">실행 컴퓨터 · 터미널 A</span><button aria-label="실행 컴퓨터 · 터미널 A 명령 복사" data-copy="command-6" type="button">복사</button></div><pre><code data-language="bash" id="command-6">read -r -p "Go2 카메라 SSH 대상(user@host): " GO2_SSH_TARGET
+export GO2_SSH_TARGET
+bash scripts/student_session.sh camera</code></pre></div><p class="outcome">카메라를 실행한 <b>터미널 A는 실습 종료까지 열어 둡니다.</b> 나머지 단계는 터미널 B에서 진행합니다.</p></div></article><article class="spec" id="step-sensors"><div class="spec-head"><span class="spec-id">C4</span><h3>센서 수신을 확인한 뒤 분기합니다</h3></div><div class="spec-body"><p>RGB·정렬 깊이·카메라 정보·L1 포인트클라우드·odometry 수신을 확인합니다.</p><div class="code"><div class="code-h"><span class="t">실행 PC · 터미널 B</span><button aria-label="실행 PC · 터미널 B 명령 복사" data-copy="command-7" type="button">복사</button></div><pre><code data-language="bash" id="command-7">bash scripts/student_session.sh sensors</code></pre></div><p class="outcome"><b>정상 출력:</b> <code>status: PASS</code>. <code>BLOCKED</code>이면 표시된 누락 토픽이나 중복 실행 노드를 확인합니다.</p></div></article><div class="route-choice" id="route-choice"><h3>지도를 준비하는 방법을 선택하세요</h3><p>두 경로 중 <b>한 가지만</b> 진행합니다. 완료 후 같은 터미널 B에서 N1로 이어집니다.</p><div aria-label="지도 준비 경로 선택" class="route-controls" role="group"><button aria-controls="route-new" aria-expanded="false" class="route-option" data-route="new" disabled="" type="button"><strong>A. 새 지도 만들기</strong><span>지도가 없거나 새로 Mapping할 때</span></button><button aria-controls="route-existing" aria-expanded="false" class="route-option" data-route="existing" disabled="" type="button"><strong>B. 기존 지도 사용하기</strong><span>사용할 지도 DB가 이미 있을 때</span></button></div><p aria-live="polite" class="route-status" id="route-status" role="status">A 또는 B를 선택하면 해당 절차가 표시됩니다.</p><noscript><p>A의 Mapping 또는 B의 지도 선택 중 한 경로만 수행한 뒤 N1로 이동하세요.</p></noscript></div><div aria-labelledby="route-new-title" class="route-panel" data-route-panel="new" id="route-new" role="region"><article class="spec" id="step-map"><div class="spec-head"><span class="spec-id">M1 · 새 Mapping</span><h3 id="route-new-title">A. 새 지도 만들기</h3></div><div class="spec-body"><p>새 DB 파일을 만들고 Mapping을 시작합니다. RViz2·rtabmap_viz에서 지도가 그려지는지 확인하며 <b>Go2 조종기</b>로 이동합니다. 화면 조작은 <a href="#rviz">5번 M1</a>을 참고합니다.</p><div class="code"><div class="code-h"><span class="t">실행 PC · 터미널 B</span><button aria-label="실행 PC · 터미널 B 명령 복사" data-copy="command-8" type="button">복사</button></div><pre><code data-language="bash" id="command-8">export GO2_TEST_MAP="$HOME/go2_maps/practice_$(date +%Y%m%d_%H%M%S).db"
+bash scripts/student_session.sh map "$GO2_TEST_MAP"</code></pre></div><p>원하는 구간을 기록했으면 <span class="kbd">Ctrl+C</span>를 한 번 누르고 프로세스 종료·저장 검사가 끝날 때까지 기다립니다. <code>quick_check: ok</code>, 1개 이상의 <code>nodes</code>, <code>Saved map DB:</code>와 이번 DB 경로를 확인합니다. DB 내용의 실제 지도 품질은 화면에서 별도로 확인합니다.</p><div class="note"><b>저장 성공 후:</b> 같은 터미널 B에서 이번 지도로 Nav2를 실행합니다. 저장 검사가 실패했다면 여기서 중단합니다.<a class="route-next" href="#step-view">새 지도로 Nav2 시작 → N1</a></div></div></article></div><div aria-labelledby="route-existing-title" class="route-panel" data-route-panel="existing" id="route-existing" role="region"><article class="spec" id="step-existing"><div class="spec-head"><span class="spec-id">E1 · DB 선택</span><h3 id="route-existing-title">B. 기존 지도 사용하기</h3></div><div class="spec-body"><p>현재 장소에 해당하는 원본 지도 DB의 절대 경로를 입력합니다.</p><div class="code"><div class="code-h"><span class="t">실행 PC · 터미널 B</span><button aria-label="실행 PC · 터미널 B 명령 복사" data-copy="command-9" type="button">복사</button></div><pre><code data-language="bash" id="command-9">read -e -r -p "기존 지도 DB의 절대 경로: " GO2_TEST_MAP
+export GO2_TEST_MAP
+printf "선택한 지도: %s\n" "$GO2_TEST_MAP"</code></pre></div><p class="outcome">입력한 지도 경로를 확인한 뒤 공통 주행 단계로 이동합니다.<a class="route-next" href="#step-view">선택한 지도로 Nav2 시작 → N1</a></p></div></article></div><div class="route-join" id="route-join"><span class="spec-id">공통 주행 · N1~N4</span><h3>준비한 지도로 Nav2 주행을 시작합니다</h3><p id="route-join-text">A에서 저장한 지도 또는 B에서 선택한 지도를 그대로 사용합니다.</p></div><article class="spec" id="step-view"><div class="spec-head"><span class="spec-id">N1 · 두 분기 합류</span><h3>선택한 지도에서 위치부터 확인합니다</h3></div><div class="spec-body"><p><code>GO2_TEST_MAP</code>에 지정된 지도로 Localization·Nav2·RViz2를 실행합니다. 새 Mapping을 했다면 종료·저장이 끝난 상태에서 진행합니다.</p><div class="code"><div class="code-h"><span class="t">실행 PC · 터미널 B</span><button aria-label="실행 PC · 터미널 B 명령 복사" data-copy="command-10" type="button">복사</button></div><pre><code data-language="bash" id="command-10">bash scripts/student_session.sh view "$GO2_TEST_MAP"</code></pre></div><p class="outcome"><b>정상 출력:</b> <code>Original map</code>과 <code>Nav session map copy</code>. 원본과 주행용 복사본 경로를 확인합니다. <a href="#rviz">5번 N1~N2</a>에 따라 초기 위치를 맞춥니다.</p></div></article><article class="spec" id="step-health"><div class="spec-head"><span class="spec-id">N2</span><h3>위치·TF·Costmap을 확인합니다</h3></div><div class="spec-body"><p>RViz2의 로봇 위치·방향, 센서가 그리는 벽과 지도 벽, 장애물과 Costmap이 맞는지 확인합니다. 상태를 추가로 볼 때는 C2와 같은 환경을 준비한 별도 점검 터미널에서 실행합니다.</p><div class="code"><div class="code-h"><span class="t">실행 컴퓨터 · 별도 점검 터미널</span><button aria-label="실행 컴퓨터 · 별도 점검 터미널 명령 복사" data-copy="command-11" type="button">복사</button></div><pre><code data-language="bash" id="command-11">bash scripts/student_session.sh health</code></pre></div><p class="outcome">로봇 위치·방향, 지도 벽과 센서 벽, 장애물과 Costmap이 맞으면 N3로 진행합니다. 어긋나거나 센서가 끊겨 있다면 먼저 원인을 해결합니다.</p></div></article><article class="spec" id="step-drive"><div class="spec-head"><span class="spec-id">N3</span><h3>운영자가 실제 주행 모드로 시작합니다</h3></div><div class="spec-body"><p>위치를 확인했으면 터미널 B에서 <span class="kbd">Ctrl+C</span>로 view를 종료하고, 아래 명령으로 주행 모드를 시작합니다.</p><div class="code"><div class="code-h"><span class="t">운영자만 실행 · 터미널 B</span><button aria-label="운영자만 실행 · 터미널 B 명령 복사" data-copy="command-12" type="button">복사</button></div><pre><code data-language="bash" id="command-12">GO2_ENABLE_MOTION=true bash scripts/run_nav.sh "$GO2_TEST_MAP"</code></pre></div><p><b>Nav2가 다시 시작되므로 목표 지정 전에 초기 위치·방향과 Costmap을 다시 확인합니다.</b> 그다음 RViz2에서 작은 목표를 하나씩 지정하고 도착을 확인합니다. 현재 소스의 상한은 전진 0.5 m/s, 회전 1.8 rad/s이며, 0.5 m/s 동적 보행 외곽·제동거리 검증은 남아 있습니다. 운영자가 조종기를 준비한 상태에서 실습합니다.</p></div></article><article class="spec" id="step-return"><div class="spec-head"><span class="spec-id">N4</span><h3>도착·조종기 회전·복귀·종료를 수행합니다</h3></div><div class="spec-body"><p>기존 지도 예시는 연구실 → 교수님 방 문앞입니다. 현재 확인된 방식대로 소구간 목표를 반복 지정합니다. 도착 후 Nav2의 180° 회전은 성공이 확인되지 않았으므로 자동 방향 전환으로 안내하지 않습니다.</p><ol class="steps"><li><div>터미널 B의 Nav2를 <span class="kbd">Ctrl+C</span>로 종료하고 정지를 확인합니다.</div></li><li><div>운영자가 <b>Go2 조종기</b>로 180° 회전합니다.</div></li><li><div>N3의 주행 sh를 같은 지도에 다시 실행합니다. 현재 위치·방향을 다시 맞춘 뒤 소구간 목표로 복귀합니다.</div></li><li><div>연구실에 복귀하면 B를 종료합니다. 이번 실습에서 A로 카메라를 시작했다면 마지막에 A도 <span class="kbd">Ctrl+C</span>로 종료합니다.</div></li></ol><p class="outcome">주행용 DB 복사본과 로그는 <code>~/go2_maps/nav_sessions/</code>에 저장됩니다.</p></div></article><details class="file"><summary>문제가 생겼을 때 — 증상별로 돌아갈 단계</summary><div class="spec-body"><div aria-label="실습 문제 해결" class="table-scroll" role="region" tabindex="0"><table><thead><tr><th scope="col">증상</th><th scope="col">확인·대응</th><th scope="col">돌아갈 단계</th></tr></thead><tbody><tr><th scope="row">완료 문구가 없음</th><td>설치 로그의 첫 오류 확인. 설치 성공을 가정하지 말고 원인 해결 후 설치 sh 재실행.</td><td>C1</td></tr><tr><th scope="row">환경을 활성화하라는 오류</th><td>현재 터미널에서 go2_nav2 활성화와 저장소 경로 확인. 시스템 /opt/ros overlay를 섞지 않음.</td><td>C2</td></tr><tr><th scope="row">Offline interface / 센서 BLOCKED</th><td>실제 연결 인터페이스, Go2와 같은 Domain ID, 카메라 터미널과 누락 토픽 확인.</td><td>C2~C4</td></tr><tr><th scope="row">RViz2 창이 안 열림</th><td>직접 데스크톱 또는 원격 GUI 연결과 DISPLAY 확인. SSH 화면 전달이 없으면 원격 데스크톱 사용.</td><td>C0</td></tr><tr><th scope="row">DB already exists / 저장 검사 실패</th><td>기존 DB 보존. 새 파일명으로 다시 Mapping하고 저장 성공을 확인.</td><td>M1</td></tr><tr><th scope="row">목표를 지정해도 움직이지 않음</th><td>view는 주행 비활성. 위치 확인을 마친 뒤 운영자가 N3을 실행했는지 확인.</td><td>N1~N3</td></tr><tr><th scope="row">지도와 로봇 위치가 어긋남</th><td>목표를 지정하기 전에 2D Pose Estimate와 센서·TF 정합 재확인.</td><td>5번 N1~N2</td></tr><tr><th scope="row">도착 후 180° 회전 실패</th><td>현재 알려진 한계. 조종기 회전과 복귀 절차 사용.</td><td>N4</td></tr></tbody></table></div></div></details></section>
+<section aria-labelledby="rviz-title" class="section" id="rviz"><div class="section-heading">
+<span aria-hidden="true" class="section-number">05</span>
+<div><h2 id="rviz-title">RViz2에서 눌러야 할 버튼과 조작 순서</h2></div>
+</div><p>4번의 단계 번호와 연결해서 봅니다. 기본 RViz 설정은 <a href="../go2_slam_nav/config/nav.rviz">nav.rviz</a>이며 초기 위치와 Nav2 목표 도구를 포함합니다.</p><div aria-label="RViz2 실습 순서" class="table-scroll" role="region" tabindex="0"><table><thead><tr><th scope="col">단계</th><th scope="col">화면·도구</th><th scope="col">조작</th><th scope="col">확인할 결과</th></tr></thead><tbody><tr><th scope="row">C0</th><td>직접 / 원격 화면</td><td>실행 컴퓨터의 데스크톱 또는 GUI 전달 화면에서 창이 열리는지 확인.</td><td>단순 SSH 셸만 열고 RViz2 화면을 기대하지 않음.</td></tr><tr><th scope="row">M1</th><td>Mapping 화면</td><td>조종기로 이동하며 로봇 이동과 새 벽·공간이 지도에 반영되는지 확인. rtabmap_viz는 Mapping용 별도 GUI.</td><td>저장 직전 지도 내용과 실제 공간 비교. Ctrl+C 저장 후 N1로 이동.</td></tr><tr><th scope="row">N1</th><td>Fixed Frame / 지도</td><td>Displays의 Global Options에서 Fixed Frame이 map인지 확인. 지도가 현재 장소인지 확인.</td><td>설정 파일은 map 사용. 좌표·지도 오류가 있으면 주행 보류.</td></tr><tr><th scope="row">N1</th><td>2D Pose Estimate</td><td>실제 위치를 지도에서 누른 뒤 Go2가 바라보는 방향으로 드래그하고 놓음. 현재 운용에 포함된 수동 보정.</td><td>표시된 로봇 위치·방향이 실제와 맞는지 확인.</td></tr><tr><th scope="row">N2</th><td>센서 / TF / Costmap</td><td>지도 벽과 센서 벽, map → odom → base_link 연결, 가까운 장애물의 위치를 비교.</td><td>초기 위치 정합과 좁은 문 통과 가능성을 별도로 판단.</td></tr><tr><th scope="row">N3</th><td>실제 주행 모드 재시작</td><td>N3 sh 실행 후 초기 위치와 Costmap을 다시 확인. 이후 Nav2 Goal 도구로 가까운 목표 위치와 방향 지정.</td><td>목표 성공을 확인한 뒤 다음 작은 목표 지정. 계획 경로 표시만으로 주행 성공으로 기록하지 않음.</td></tr><tr><th scope="row">N4</th><td>도착 / 조종기 회전 / 복귀</td><td>도착 후 Nav2 종료·정지 확인 → Go2 조종기로 수동180° 회전 → 같은 지도 Nav2 재실행 → 초기 위치 재확인 → 복귀 목표 지정.</td><td>현재 개입이 필요한 절차를 기록. 무개입 자동 왕복으로 표현하지 않음.</td></tr></tbody></table></div></section>
+<section aria-labelledby="completed-title" class="section" id="completed"><div class="section-heading">
+<span aria-hidden="true" class="section-number">06</span>
+<div><h2 id="completed-title">현재 완료한 작업과 확인 근거</h2></div>
+</div><div aria-label="현재 작업 상태" class="table-scroll" id="revision-history" role="region" tabindex="0"><table><thead><tr><th scope="col">항목</th><th scope="col">현재 상태</th><th scope="col">실습에서 알아둘 점</th></tr></thead><tbody><tr><th scope="row">창학관 3층 지도</th><td>사용 가능</td><td>사전에 작성한 지도를 사용합니다.</td></tr><tr><th scope="row">연구실 → 교수님 방 문앞</th><td>주행 가능</td><td>초기 위치를 맞춘 뒤 작은 목표를 반복 지정합니다.</td></tr><tr><th scope="row">교수님 방 문앞 → 연구실</th><td>수동 회전 후 가능</td><td>Go2 조종기로 180° 회전한 뒤 작은 목표로 복귀합니다.</td></tr><tr><th scope="row">Conda 환경</th><td>설치 sh 준비</td><td>실제 설치·소스 빌드·GUI 실행 검증이 남아 있습니다.</td></tr><tr><th scope="row">전체 자동 왕복</th><td>개선 필요</td><td>초기 위치·목표 지정·180° 회전에 수동 개입이 필요합니다.</td></tr></tbody></table></div></section>
+<section aria-labelledby="improvements-title" class="section" id="improvements"><div class="section-heading">
+<span aria-hidden="true" class="section-number">07</span>
+<div><h2 id="improvements-title">개선해야 할 점</h2></div>
+</div><div aria-label="남은 문제와 확인 기준" class="table-scroll" role="region" tabindex="0"><table><thead><tr><th scope="col">항목</th><th scope="col">현재 상태</th><th scope="col">개선·확인 방향</th><th scope="col">확인 기준</th></tr></thead><tbody><tr><th scope="row">Conda 실제 배포</th><td>새 환경의 컴파일·GUI 실행은 미검증</td><td>설치 sh를 실제 실행하고 환경 내부 패키지·GUI·센서를 순서대로 확인.</td><td>설치 성공 로그와 실제 실행 관측</td></tr><tr><th scope="row">초기 위치 자동 정합</th><td>현재 2D Pose Estimate 수동 보정 사용</td><td>센서·시각·map → odom → base_link를 독립적으로 분석.</td><td>수동 초기 위치 없이 실제 위치·방향 정합</td></tr><tr><th scope="row">180° 회전</th><td>도착 후 Nav2 회전 실패, 원인 미확정</td><td>실제 관측·Costmap·TF·후보 궤적과 명령을 비교.</td><td>동일 위치에서 운영자 감독 하 반복 성공</td></tr><tr><th scope="row">문 통과 여유</th><td>70×36cm Footprint, 1cm padding, Local20/Global30cm inflation은 축소 설정</td><td>실제 다리 스윕·회전·제동 외곽과 90cm 문 여유 확인.</td><td>0.5m/s 동적 외곽의 실물 근거</td></tr><tr><th scope="row">연결·복구</th><td>카메라 단절·재연결 반복 복구는 남은 확인</td><td>수신·시각·위치 회복과 세션 로그 비교.</td><td>반복 시험에서 복구 조건과 실패 기록 확보</td></tr></tbody></table></div></section>
+<section aria-labelledby="future-title" class="section" id="future"><div class="section-heading">
+<span aria-hidden="true" class="section-number">08</span>
+<div><h2 id="future-title">추가적으로 발전시킬 수 있는 부분</h2></div>
+</div><div aria-label="향후 발전 방향" class="table-scroll" role="region" tabindex="0"><table><thead><tr><th scope="col">아이디어</th><th scope="col">기대 효과</th><th scope="col">필요한 조건</th></tr></thead><tbody><tr><th scope="row">초보자 실습 진입점 통합</th><td>단계별 명령과 터미널 조작 부담 감소</td><td>현재 저장·실패·중복 실행 조건을 보존하면서 별도 sh 변경 논의</td></tr><tr><th scope="row">초기 위치·방향 전환 개입 감소</th><td>운영자 개입 없는 전체 미션에 접근</td><td>위치 자동 정합과180° 회전 원인의 독립 검증</td></tr><tr><th scope="row">Waypoint 미션 구성</th><td>소구간 목표를 묶어 반복 실험</td><td>개별 목표·회전 검증 후 실패 시 중단·취소 동작 확인</td></tr><tr><th scope="row">직접·원격 실습 결과 비교</th><td>다른 실행 컴퓨터에서도 절차 재현</td><td>GUI 전달·네트워크·센서 지연과 실제 실행 근거 확보</td></tr></tbody></table></div></section>
+</main>
 
-    <section class="section" id="concepts" aria-labelledby="concepts-title">
-      <div class="section-heading">
-        <span class="section-number" aria-hidden="true">03</span>
-        <div>
-          <h2 id="concepts-title">프로젝트 이해에 필요한 개념</h2>
-        </div>
-      </div>
-      <div class="concepts">
-        <article class="concept">
-          <h3>프로그램 사이의 정보 전달</h3>
-          <span class="term">ROS 2 · 노드 · 토픽</span>
-          <p>ROS 2는 센서 처리, 위치 추정, 경로 계획 등 여러 프로그램을 연결합니다. 각각의 실행 단위를 노드라고 하며, 노드들은 토픽을 통해 센서 데이터나 이동 속도 같은 정보를 주고받습니다.</p>
-        </article>
-        <article class="concept">
-          <h3>주변을 보는 센서</h3>
-          <span class="term">L1 LiDAR · RealSense D435i</span>
-          <p>Go2의 내장 L1 라이다는 주변 물체까지의 거리를 점들의 집합인 포인트클라우드로 제공합니다. D435i는 컬러 영상과 깊이 정보를 제공합니다. 지도 작성과 위치 추정, 장애물 인식에 이 정보를 사용합니다.</p>
-        </article>
-        <article class="concept">
-          <h3>위치를 추정하며 지도 만들기</h3>
-          <span class="term">SLAM · Mapping · RTAB-Map</span>
-          <p>SLAM은 로봇의 위치 추정과 지도 작성을 함께 수행하는 기술입니다. 이 프로젝트는 RTAB-Map을 사용해 센서 관측과 이동 정보를 연결하고, 지도와 관련 관측을 DB 파일로 저장합니다.</p>
-        </article>
-        <article class="concept">
-          <h3>저장된 지도에서 위치 찾기</h3>
-          <span class="term">Localization · 초기 위치</span>
-          <p>Localization은 저장된 지도와 현재 센서 관측을 비교해 로봇의 위치와 방향을 찾는 과정입니다. 자율주행은 기존 지도 기반 위치 추정 모드로 진행합니다. 지도 속 위치가 실제 로봇과 맞아야 경로와 장애물도 올바르게 해석할 수 있습니다.</p>
-        </article>
-        <article class="concept">
-          <h3>이동 정보와 좌표 연결하기</h3>
-          <span class="term">Odometry · TF · map → odom → base_link</span>
-          <p>Odometry는 짧은 시간 동안 로봇이 얼마나 이동하고 회전했는지 추정한 정보입니다. 이 프로젝트는 Go2가 제공하는 이동 정보를 사용합니다. TF는 지도(map), 이동 기준(odom), 몸체(base_link), 센서의 좌표 관계를 연결해 서로 다른 데이터를 같은 위치에 표시합니다.</p>
-        </article>
-        <article class="concept">
-          <h3>이동할 경로와 속도 정하기</h3>
-          <span class="term">Nav2 · NavFn · DWB</span>
-          <p>Nav2는 목적지까지의 경로 계획과 주행 제어를 담당합니다. NavFn은 지도에서 목적지까지의 전역 경로를 만들고, DWB는 가까운 장애물과 경로를 고려해 짧은 시간의 이동 후보를 평가하고 전진·회전 속도를 선택합니다.</p>
-        </article>
-        <article class="concept">
-          <h3>지나갈 공간과 장애물 표현하기</h3>
-          <span class="term">Costmap · Global / Local</span>
-          <p>Costmap은 공간을 격자로 나누고 장애물과 주변 영역에 이동 비용을 부여한 지도입니다. Global Costmap은 전체 경로를 계획할 때, Local Costmap은 로봇 주변의 주행을 판단할 때 사용합니다. 실시간 센서 관측을 반영해 갱신합니다.</p>
-        </article>
-        <article class="concept">
-          <h3>로봇 크기와 장애물 주변 여유</h3>
-          <span class="term">Footprint · Inflation</span>
-          <p>Footprint는 경로와 충돌을 판단할 때 사용하는 로봇의 평면 외곽 모델입니다. Inflation은 장애물 주변에도 비용을 부여해 여유를 두도록 유도합니다. 좁은 문이나 코너에서는 두 설정이 주행에 영향을 주며, 설정한 외곽과 실제 보행 중 다리가 차지하는 범위는 따로 확인해야 합니다.</p>
-        </article>
-        <article class="concept">
-          <h3>지도와 주행 상태를 화면에서 보기</h3>
-          <span class="term">RViz2 · 시각화</span>
-          <p>RViz2는 지도, 센서 관측, 로봇 위치, Costmap, 계획 경로를 함께 보여주는 도구입니다. 초기 위치나 목적지를 입력할 때도 사용합니다. 화면에 경로가 표시되는 것과 실제 로봇이 목적지까지 주행을 완료하는 것은 별도의 확인 항목입니다.</p>
-        </article>
-      </div>
-      <div class="system-flow" role="group" aria-label="저장 지도 기반 주행 흐름: Go2와 카메라의 센서·이동 정보를 서버가 받아 위치와 경로·속도를 계산하고 Go2에 이동 명령을 전달합니다.">
-        <div class="flow-item"><strong>Go2 EDU · 카메라</strong><span>센서 관측 · 이동 정보</span></div>
-        <div class="flow-item server"><strong>연구실 서버</strong><span>RTAB-Map 위치 추정 → Nav2 경로·속도 계산</span></div>
-        <div class="flow-item"><strong>Go2 EDU</strong><span>전달된 이동 명령에 따라 주행</span></div>
-      </div>
-      <aside class="notice" aria-label="지도 작성과 자율주행 모드의 차이">
-        <strong>지도 작성과 저장 지도 기반 주행은 구분합니다.</strong>
-        <p>Mapping 단계에서 지도를 만들고, 자율주행 단계에서는 저장된 지도를 기준으로 위치를 추정합니다. 주행 중에는 Nav2의 Costmap이 실시간 장애물을 반영하며, RTAB-Map의 저장 지도를 계속 확장하는 방식은 아닙니다. 원본 DB는 보존하고 주행에는 복사본을 사용합니다.</p>
-      </aside>
-    </section>
+<div aria-live="polite" class="copy-status" id="copy-status" role="status"></div><script>
+(function(){
+ async function copy(text){if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(text);return;}var field=document.createElement('textarea');field.value=text;field.style.position='fixed';field.style.opacity='0';document.body.appendChild(field);field.select();var ok=document.execCommand('copy');field.remove();if(!ok)throw new Error('copy');}
+ document.addEventListener('click',async function(event){var button=event.target.closest('button[data-copy]');if(!button)return;var source=document.getElementById(button.dataset.copy);try{await copy(source.textContent);button.textContent='복사됨';document.getElementById('copy-status').textContent='명령을 복사했습니다. 표시된 터미널에서 실행하세요.';setTimeout(function(){button.textContent='복사';},1500);}catch(error){button.textContent='직접 선택';document.getElementById('copy-status').textContent='복사를 허용하지 않는 화면입니다. 코드 내용을 직접 선택해 복사하세요.';var selection=window.getSelection();var range=document.createRange();range.selectNodeContents(source);selection.removeAllRanges();selection.addRange(range);}});
+ var toggle=document.getElementById('theme-toggle');toggle.addEventListener('click',function(){var current=document.documentElement.dataset.theme||(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');var dark=current!=='dark';document.documentElement.dataset.theme=dark?'dark':'light';toggle.textContent=dark?'밝은 화면':'어두운 화면';toggle.setAttribute('aria-pressed',String(dark));});
+})();
 
-    <section class="section" id="terminal-commands" aria-labelledby="terminal-title" data-template="terminal-commands">
-      <div class="section-heading">
-        <span class="section-number" aria-hidden="true">04</span>
-        <div><h2 id="terminal-title">서버 컴퓨터에서 실행할 터미널 명령어</h2></div>
-      </div>
-      <div class="table-scroll" role="region" aria-label="터미널 명령어 표" tabindex="0">
-        <table class="template-table">
-          <thead><tr><th scope="col">순서</th><th scope="col">터미널</th><th scope="col">실행 목적</th><th scope="col">명령어</th><th scope="col">확인할 결과</th></tr></thead>
-          <tbody><tr><td></td><td></td><td></td><td></td><td></td></tr></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="section" id="rviz" aria-labelledby="rviz-title" data-template="rviz">
-      <div class="section-heading">
-        <span class="section-number" aria-hidden="true">05</span>
-        <div><h2 id="rviz-title">RViz2에서 눌러야 할 버튼과 조작 순서</h2></div>
-      </div>
-      <div class="table-scroll" role="region" aria-label="RViz2 조작 표" tabindex="0">
-        <table class="template-table">
-          <thead><tr><th scope="col">순서</th><th scope="col">화면 · 메뉴</th><th scope="col">누를 버튼</th><th scope="col">조작 방법</th><th scope="col">확인할 결과</th></tr></thead>
-          <tbody><tr><td></td><td></td><td></td><td></td><td></td></tr></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="section" id="completed" aria-labelledby="completed-title" data-template="completed">
-      <div class="section-heading">
-        <span class="section-number" aria-hidden="true">06</span>
-        <div><h2 id="completed-title">현재 완료한 작업</h2></div>
-      </div>
-      <div class="table-scroll" role="region" aria-label="완료 작업 표" tabindex="0">
-        <table class="template-table">
-          <thead><tr><th scope="col">작업</th><th scope="col">완료 내용</th><th scope="col">확인 근거</th></tr></thead>
-          <tbody><tr><td></td><td></td><td></td></tr></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="section" id="improvements" aria-labelledby="improvements-title" data-template="improvements">
-      <div class="section-heading">
-        <span class="section-number" aria-hidden="true">07</span>
-        <div><h2 id="improvements-title">개선해야 할 점</h2></div>
-      </div>
-      <div class="table-scroll" role="region" aria-label="개선 사항 표" tabindex="0">
-        <table class="template-table">
-          <thead><tr><th scope="col">항목</th><th scope="col">현재 문제</th><th scope="col">개선 방향</th><th scope="col">확인 기준</th></tr></thead>
-          <tbody><tr><td></td><td></td><td></td><td></td></tr></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="section" id="future" aria-labelledby="future-title" data-template="future">
-      <div class="section-heading">
-        <span class="section-number" aria-hidden="true">08</span>
-        <div><h2 id="future-title">추가적으로 발전시킬 수 있는 부분</h2></div>
-      </div>
-      <div class="table-scroll" role="region" aria-label="발전 방향 표" tabindex="0">
-        <table class="template-table">
-          <thead><tr><th scope="col">아이디어</th><th scope="col">기대 효과</th><th scope="col">필요한 조건</th><th scope="col">우선순위</th></tr></thead>
-          <tbody><tr><td></td><td></td><td></td><td></td></tr></tbody>
-        </table>
-      </div>
-    </section>
-  </main>
-
-  <footer>
-    <div class="wrap">
-      <div class="footer-line"><span>Unitree Go2 EDU · SLAM · Nav2 자율주행 프로젝트</span></div>
-      <details class="revision" id="revision-history">
-        <summary>문서 관리 기록 · R56 · 2026-11-13</summary>
-        <p>R51의 소개·영상·개념·실습 순서 4개 구성을 요청한 8개 항목으로 변경했습니다. 소개에 Go2 EDU와 기존 노트북에서 연구실 서버로 이어가는 목표를 명시하고, 핵심 개념 6개를 9개로 보강했습니다. 기존 실습 절차는 비워 둔 명령어·RViz2·완료 작업·개선점·발전 방향 템플릿 5개로 변경했습니다.</p>
-        <p>R53에서는 모바일 항목 번호가 두 줄로 나뉘던 표시를 한 줄로 보정하고, R52의 검사 예정 상태를 실제 문서 검사 결과로 갱신했습니다. <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/fe8cbc14d7f37d617a1e129b3183b6cc0761ce8c">8개 항목 개편 커밋</a>과 이번 검증 기록을 구분합니다.</p>
-        <p>R54: 소개 우측 요약 카드 → 사용자 제공 사진의 1254×1254 보정본, 소개 이관 문단·2/3번 부연 문구 → 삭제, 4–8번 안내·배지·작성 양식 제목 → 컬럼명과 빈 표만 유지, 영상 설명·길이·다운로드 링크 → 영상 재생창만 유지. <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/183b1bc">이미지 자산 커밋</a>. 기본 imagegen 도구에 “원본 로봇 형태·자세·구도·흰 배경을 유지하고 해상도와 선명도만 개선”을 요청했습니다. 이전 R53은 <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/blob/8d18bf5/docs/go2_navigation_validation.html">개편 전 문서</a>에 보존합니다.</p>
-        <p>R55: <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/47c00c4">화면 간소화 커밋</a> 검증 완료. HTML5 오류·중복 ID·깨진 앵커 0, 개념 9개와 표 컬럼명 유지. Chrome 390/768/1440px에서 본문 가로 넘침 0, 1254×1254 이미지 로드와 영상 재생, 표 내부 스크롤·키보드 포커스·인쇄 스타일을 확인했습니다.</p>
-        <p>이전 기록은 <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/blob/d460841/docs/go2_navigation_validation.html">R51 문서</a>와 <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/blob/7fb55e3fbd7fe29b0808c1e663e8e1ba59cbc91e/docs/go2_navigation_validation.html">개편 전 검증·실험 이력</a>에서 확인할 수 있습니다. 기술 설명은 <a href="../go2_slam_nav/launch/l1_rgbd.launch.py">L1·RGB-D 실행 소스</a>, <a href="../go2_slam_nav/config/nav2_params.yaml">Nav2 설정</a>, <a href="../scripts/run_nav.sh">저장 지도 실행 스크립트</a>와 대조했습니다.</p>
-        <div class="table-scroll" role="region" aria-label="문서 개정 검증 기록" tabindex="0">
-          <table>
-            <caption>이번 문서 개정의 검증 범위</caption>
-            <thead><tr><th scope="col">항목</th><th scope="col">상태</th><th scope="col">근거 · 범위</th></tr></thead>
-            <tbody>
-              <tr><th scope="row">T00 소스 · 브랜치</th><td>PASS</td><td>git ls-remote·fetch와 gh pr view로 원격 HEAD·Draft PR #1/#2를 확인. 최신 원격 문서 이력과 기존 로컬 문서를 함께 보존.</td></tr>
-              <tr><th scope="row">T01 대상 서버 실행</th><td>NOT TESTED</td><td>연구실 서버에서 프로젝트 실행 검사 미실행.</td></tr>
-              <tr><th scope="row">T02 센서 · TF</th><td>NOT TESTED</td><td>서버와 Go2의 실시간 센서 검사 미실행.</td></tr>
-              <tr><th scope="row">T03 Mapping · DB</th><td>NOT TESTED</td><td>새 지도 생성 및 DB 검사 미실행.</td></tr>
-              <tr><th scope="row">T04 저장 지도</th><td>NOT TESTED</td><td>저장 지도 로드 미실행.</td></tr>
-              <tr><th scope="row">T05 실효 파라미터</th><td>NOT TESTED</td><td>실행 중 파라미터 확인 미실행.</td></tr>
-              <tr><th scope="row">T06 위치 정합</th><td>NOT TESTED</td><td>RViz2와 실제 위치의 정합 검사 미실행.</td></tr>
-              <tr><th scope="row">T07 통과 계획</th><td>NOT TESTED</td><td>문 통과 계획 검사 미실행.</td></tr>
-              <tr><th scope="row">T08 편도 주행</th><td>NOT TESTED</td><td>실제 이동 시험 미실행.</td></tr>
-              <tr><th scope="row">T09 왕복 주행</th><td>NOT TESTED</td><td>실제 왕복 주행 시험 미실행.</td></tr>
-              <tr><th scope="row">T10 문서 · 증거</th><td>PASS</td><td>정적: HTML5 오류·중복 ID·깨진 앵커 0, 8개 항목·9개 개념·컬럼명 유지, 요청 문구·영상 설명·다운로드 링크 삭제 확인. 브라우저: Chrome 390/768/1440px에서 본문 가로 넘침 0, 고해상도 이미지 로드·영상 재생·표 내부 스크롤·인쇄 CSS 확인.</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <p>브라우저 검사는 실제 화면 폭을 지정하고 영상 재생 시간이 증가하는지 확인했습니다. 초기 CLI 검사는 화면 폭 제한과 가상시간 재생값 때문에 판정에 사용하지 않았습니다. 새 ROS 실행·RViz2 평가·실물 주행은 위 문서 검사와 구분합니다.</p>
-        <h3 id="conda-setup-r56">R56 · 현재 PC용 Conda 설치와 주행 현황 기록</h3>
-        <p>기준 PC는 Ubuntu 22.04.5 x86_64입니다. 이번 설치 대상은 연구실 서버가 아니라 현재 PC입니다. 아래 기록은 R55의 문서·브라우저 검사와 별개이며, 본문의 8개 항목·9개 개념·빈 표 5개와 이미지·영상은 유지합니다.</p>
-        <div class="table-scroll" role="region" aria-label="R56 환경 관리 변경" tabindex="0">
-          <table>
-            <caption>환경 관리 변경과 이유</caption>
-            <thead><tr><th scope="col">대상</th><th scope="col">이전 → 현재 · 이유 · 커밋</th></tr></thead>
-            <tbody>
-              <tr><th scope="row">환경 정의</th><td>스크립트에 분산된 설치 목록 → 루트 <a href="../environment.json">environment.json</a>에 채널·버전·외부 SHA·빌드·검증 설정 통합. 기존 ROS 메타데이터의 의존성도 대조합니다. Python 3.14.7은 현재 RoboStack Humble 패키지 해석 결과와 맞춥니다. <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/a9bc64a">정의</a>, <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/3ecd719">장치 설정 제외</a>, <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/c4ce32f">설치 경로 설정 제거</a>.</td></tr>
-              <tr><th scope="row">설치 진입점</th><td>시스템 apt·별도 설치 폴더 → <code>bash scripts/install_student.sh</code> 한 명령으로 기존 Conda의 기본 envs 위치에 <code>--name go2_nav2</code> 생성, 의존성 설치, 임시 소스 빌드, 환경 내부 설치, 검증. 전 단계 성공 뒤에만 <code>go2_nav2 환경 설정이 완료되었습니다.</code> 출력. 읽기 전용 <code>plan</code> 유지. <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/543b24f">설치 구현</a>, <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/151a589">기존 sh 교체</a>.</td></tr>
-              <tr><th scope="row">시각화 · 소스</th><td>Unitree의 이동하는 main 참조 → SHA 고정. Mapping에서 사용한 <code>rtabmap_viz</code> 유지: Conda 바이너리가 없어 RTAB-Map 0.23.13 대응 소스를 고정하여 빌드합니다. <code>dependencies.repo</code>는 독립 설정 대신 JSON의 생성물로 변경합니다. <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/32a825a">호환 목록</a>.</td></tr>
-              <tr><th scope="row">실행 환경</th><td>활성 Conda에서도 시스템 ROS를 불러오던 경로 → 선택된 Conda Python·ROS·패키지만 검증 후 사용. 설치에는 로봇 SSH·NIC·지도 경로·주행 설정을 추가하지 않습니다. <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/f040eaf">환경 로더</a>, <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/5521daf">실행 진입점</a>.</td></tr>
-              <tr><th scope="row">검사 · 문서 · 규칙</th><td>시스템 설치 전제 검사 → Conda 설치 단계 실패·기존 환경 보호·실행 진입 검사 21개. README에 주행 개입과 설치 절차 명시. AGENTS에 JSON 단일 관리·기본 Conda 위치·미확정 사항 사전 논의 규칙 기록. <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/afb7913">설치 검사 13개</a>, <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/f2182d8">진입 검사 8개</a>, <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/a77efd8">주행 현황</a>, <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/d6f5a03">설치 안내</a>, <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/841df2d">환경 규칙</a>, <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/b368249">논의 규칙</a>, <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/613cb08">기본 envs 경로</a>.</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <p>시각화 사용 근거: <code>/home/cvr/.ros/log/rtabmap_viz_2602935_1794210091239.log</code>의 2026-11-09 16:41:31 시작·ROS 파라미터 417개 읽기와 해당 launch 로그의 정상 종료. <a href="../scripts/run_mapping.sh">Mapping 진입점</a>은 <code>use_rtabmapviz:=true</code>를 전달합니다. RViz2는 별도 노드이며 <code>rtabmap_viz</code>의 존재를 RViz2 실행의 필수 조건으로 설명하지 않습니다.</p>
-        <div class="table-scroll" role="region" aria-label="R56 T00부터 T10 검증" tabindex="0">
-          <table>
-            <caption>R56 검증 범위 · 새 Conda 실제 설치는 미실행</caption>
-            <thead><tr><th scope="col">항목</th><th scope="col">상태</th><th scope="col">근거 · 한계</th></tr></thead>
-            <tbody>
-              <tr><th scope="row">T00 소스 · 브랜치</th><td>PASS</td><td>원격 fetch 후 최신 작업 브랜치와 Draft PR #1/#2 확인. 파일별 commit·일반 push. main 쓰기·Merge·auto-merge·Actions 없음. 원격의 문서 개편과 기존 기록 보존.</td></tr>
-              <tr><th scope="row">T01 설치 · 정적 검사</th><td>PASS / NOT TESTED</td><td>PASS: 선언 58개로 Conda dry-run 927개 패키지 해석, Python 3.14.7. shell 10개 bash -n, Python 60개 ast.parse, JSON·ROS 메타데이터 validate. 설치·진입 단위 검사 21개 포함 기존 native ROS를 불러온 전체 소스 회귀 126개 통과. NOT TESTED: 새 Conda 환경 생성·실제 패키지 설치·소스 컴파일·GUI 실행. 모의 설치 검사는 실제 설치 성공의 증거가 아닙니다.</td></tr>
-              <tr><th scope="row">T02 센서 · TF</th><td>NOT TESTED</td><td>이번 환경 수정 후 실시간 센서·TF 검사 미실행. 노드 시작 없음.</td></tr>
-              <tr><th scope="row">T03 Mapping · DB</th><td>NOT TESTED</td><td>이번 작업에서 Mapping·DB 쓰기 없음. 기존 원본 보존.</td></tr>
-              <tr><th scope="row">T04 저장 지도</th><td>NOT TESTED</td><td>새 Conda에서 저장 지도 로드 미실행. 기존 운영자 지도는 창학관 3층 사전 Mapping 결과.</td></tr>
-              <tr><th scope="row">T05 실효 파라미터</th><td>NOT TESTED</td><td>새 Conda의 실행 중 파라미터 미확인. Footprint·Inflation·Planner·Controller 설정 변경 없음.</td></tr>
-              <tr><th scope="row">T06 위치 정합</th><td>NOT TESTED</td><td>새 검사는 없음. 운영자는 기존 실행에서 초기 위치 자동 설정이 불안정하여 RViz2 2D Pose Estimate로 보정했다고 보고.</td></tr>
-              <tr><th scope="row">T07 통과 계획</th><td>NOT TESTED</td><td>새 Conda 경로 계획·동적 보행 외곽·90 cm 문 여유 미검증.</td></tr>
-              <tr><th scope="row">T08 편도 주행</th><td>NOT TESTED</td><td>이번 작업에서 이동 없음. 기존 운영자 보고: 작은 목표를 반복 지정하여 연구실 → 교수님 방 문앞 주행 가능. 2026-11-12 로그에는 FollowWaypoints의 첫 지점 성공과 둘째 지점 취소, 이후 개별 목표 교체가 기록됨.</td></tr>
-              <tr><th scope="row">T09 자동 왕복</th><td>FAIL / NOT TESTED</td><td>기존 운영자 보고 기준 FAIL: 도착 후 Nav2 180° 회전 불가, 원인 미확정. 수동 180° 회전 후 개별 목표로 복귀 가능하다고 보고. 로그상 21:27:12–21:29:05 복귀 목표와 최종 SUCCEEDED 확인. 초기 위치·목표·회전 개입 없는 자동 왕복은 미달성. 새 Conda 주행은 NOT TESTED.</td></tr>
-              <tr><th scope="row">T10 문서 · 증거</th><td>PASS</td><td>R56 HTML5 오류·중복 ID·깨진 내부 앵커·누락 로컬 링크 0. 본문 8개 항목·9개 개념·빈 표 5개, 스타일·이미지·영상 유지. 새 브라우저 시험은 미실행이며 R55 결과와 구분. 실제 설치와 소스 검사, 과거 운용 증거를 분리.</td></tr>
-            </tbody>
-          </table>
-        </div>
-        <p>실패 이력: Python 3.11/3.12 지정 dry-run은 현재 RoboStack ABI와 맞지 않아 실패했고, <code>rtabmap_viz</code> 바이너리 검색도 실패했습니다. 호환 Python과 고정 소스 빌드로 설치 계획을 수정했으며 실제 컴파일은 남아 있습니다. 전체 pytest 첫 실행은 ROS 미로딩 import 오류, 다음 실행은 기본 ROS 로그 디렉터리 쓰기 제한으로 실패했습니다. 기존 native ROS와 Unitree/project overlay를 불러오고 <code>ROS_LOG_DIR</code>를 임시 경로로 지정한 소스 검사는 126개 통과했습니다. 이 native 테스트 환경을 새 Conda 설치 결과와 혼동하지 않습니다.</p>
-        <p>운용 로그: <code>/home/cvr/go2_maps/nav_sessions/20261112_194202_3012154/diagnostics/20261112_211808_7a89824a/events.jsonl.gz</code>. 21:22:39 FollowWaypoints 시작, 21:22:51 첫 지점 성공, 21:23:46 두 번째 취소. 이후 목표 교체·일부 중단을 모두 제어기 실패로 판정하지 않습니다. 수동 회전은 운영자 보고이며 이 로그만으로 물리 동작을 증명하지 않습니다. 후속 확인은 실제 Conda 소스 빌드·시각화, 초기 위치 자동 정합과 180° 회전 실패 원인의 독립 분석입니다.</p>
-      </details>
-    </div>
-  </footer>
-</body>
+(function(){
+ var controls=Array.from(document.querySelectorAll('button[data-route]')),panels=Array.from(document.querySelectorAll('[data-route-panel]')),status=document.getElementById('route-status');
+ function selectRoute(name){var chosen=panels.find(function(panel){return panel.dataset.routePanel===name;});if(!chosen)return;panels.forEach(function(panel){panel.hidden=panel!==chosen;});controls.forEach(function(button){button.setAttribute('aria-expanded',String(button.dataset.route===name));});status.textContent=name==='new'?'A 선택 · Mapping을 마치고 저장한 뒤 N1로 이동하세요.':'B 선택 · 기존 지도 DB를 선택한 뒤 N1로 이동하세요.';document.getElementById('route-join-text').textContent=name==='new'?'A에서 새로 저장한 지도를 같은 터미널 B에서 사용합니다.':'B에서 선택한 지도를 같은 터미널 B에서 사용합니다.';}
+ function routeForHash(){var name=location.hash==='#step-map'?'new':location.hash==='#step-existing'?'existing':null;if(name){selectRoute(name);setTimeout(function(){var target=document.getElementById(location.hash.slice(1));if(target)target.scrollIntoView({block:'start'});},0);}return name;}
+ controls.forEach(function(button){button.disabled=false;button.addEventListener('click',function(){selectRoute(button.dataset.route);});});panels.forEach(function(panel){panel.hidden=true;});routeForHash();window.addEventListener('hashchange',routeForHash);
+})();
+</script></body>
 </html>

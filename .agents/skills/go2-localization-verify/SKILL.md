@@ -9,7 +9,7 @@ description: Check RTAB-Map localization from a saved DB, ICP odometry, map-to-o
 Do not modify or re-map an existing RTAB-Map database while solving a Nav2 startup problem.
 
 ## Procedure
-1. Read `AGENTS.md`, `scripts/run_nav.sh`, and the `database_path` logic in all launch files.
+1. Read `AGENTS.md`, `run_nav.sh`, and the `database_path` logic in all launch files.
 2. Confirm the original DB is copied into a session path. Ensure `restart_map:=false`, `localize_only:=true` and `Mem/IncrementalMemory=false`.
 3. Confirm `/rslidar_points`, ICP Odometry, `/odom`, `map → odom → base_link`, and `base_link → base_laser` sources and timestamps.
 4. Check the robot's position and yaw against the RViz map; map visualization alone is not localization success.

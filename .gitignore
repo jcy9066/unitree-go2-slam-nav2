@@ -10,3 +10,4 @@ log/
 *.db-journal
 *.db-shm
 *.db-wal
+!maps/**/*.db.zst

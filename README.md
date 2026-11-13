@@ -9,8 +9,9 @@ Unitree Go2의 내장 L1 LiDAR, D435i, native odometry를 이용하는 ROS 2 Hum
 | 파일 | 역할과 현재 상태 |
 |---|---|
 | [environment.json](environment.json) | 의존성·채널·버전·외부 소스 SHA·빌드·검증 설정의 단일 기준 |
-| [scripts/install_student.sh](scripts/install_student.sh) | 기존 Conda에서 `go2_nav2` 생성부터 설치·빌드·검증까지 수행하는 진입점 |
-| [검증 HTML](docs/go2_navigation_validation.html) | 프로젝트 소개·주행영상·개념과 검증 기록. 4~8번의 명령어·RViz2·완료 작업·개선점·발전 방향 표는 아직 비어 있음 |
+| [install_student.sh](install_student.sh) | 기존 Conda에서 `go2_nav2` 생성부터 설치·빌드·검증까지 수행하는 진입점 |
+| [setup_maps.sh](setup_maps.sh) | 지도 DB의 무손실 압축·복원·검증. Git 공유는 사용자가 수행 |
+| [검증 HTML](docs/go2_navigation_validation.html) | 프로젝트 소개·주행영상·개념·루트 실행 명령과 지도 준비 절차 |
 | [환경 검증 R56](docs/go2_navigation_validation.html#conda-setup-r56) | 현재 PC용 설치 구현, 과거 운용 근거, 검증 범위와 미실행 항목 |
 | [고정 과거 기록 R50](https://github.com/jcy9066/unitree-go2-slam-nav2/blob/7aa21b2/docs/go2_navigation_validation.html) | HTML 개편 전 튜토리얼과 R1~R50의 실험·실패 이력 |
 
@@ -42,7 +43,7 @@ Unitree Go2의 내장 L1 LiDAR, D435i, native odometry를 이용하는 ROS 2 Hum
 저장소 루트에서 기존 설치 스크립트 한 번으로 환경 생성부터 시작합니다.
 
 ```bash
-bash scripts/install_student.sh
+bash install_student.sh
 ```
 
 스크립트는 `conda create --name go2_nav2`로 **기존 Conda의 기본 envs 경로**에 환경을 생성합니다. 저장소 안에 가상환경이나 별도 설치 폴더를 만들지 않습니다. 선언한 의존성을 설치하고, Unitree 메시지·`rtabmap_viz`·프로젝트 패키지를 임시 작업 폴더에서 빌드해 해당 Conda 환경에 설치합니다. 원본 로봇 연결·망 설정·지도·주행 설정은 이 설치 명령에서 다루지 않습니다.
@@ -57,12 +58,12 @@ go2_nav2 환경 설정이 완료되었습니다.
 
 ```bash
 conda activate go2_nav2
-bash scripts/install_student.sh verify
+bash install_student.sh verify
 ```
 
-설치 동작 없이 목록만 확인하려면 `bash scripts/install_student.sh plan`, 명세와 ROS 메타데이터를 대조하려면 `bash scripts/install_student.sh validate`를 사용합니다. 설치 기록·해결된 패키지 목록·빌드 로그는 선택된 Conda 환경의 `.go2_nav2_setup/`에 저장됩니다. 기존에 직접 만든 `go2_nav2`가 있으면 자동 덮어쓰지 않고 중단합니다. 이 설치기로 만든 환경을 다시 설치할 때도 검증이 끝나기 전에는 완료 상태로 기록하지 않습니다.
+설치 동작 없이 목록만 확인하려면 `bash install_student.sh plan`, 명세와 ROS 메타데이터를 대조하려면 `bash install_student.sh validate`를 사용합니다. 설치 기록·해결된 패키지 목록·빌드 로그는 선택된 Conda 환경의 `.go2_nav2_setup/`에 저장됩니다. 기존에 직접 만든 `go2_nav2`가 있으면 자동 덮어쓰지 않고 중단합니다. 이 설치기로 만든 환경을 다시 설치할 때도 검증이 끝나기 전에는 완료 상태로 기록하지 않습니다.
 
-설치 후의 Conda 실행 진입점은 [scripts/student_session.sh](scripts/student_session.sh)입니다. `conda activate go2_nav2` 후 `bash scripts/student_session.sh check`로 노드를 시작하지 않고 패키지를 확인할 수 있습니다. 실시간 센서·Mapping·저장 지도 실행에는 운영자가 지정한 별도 실행 설정이 필요하며, 아래의 기존 시스템 ROS 실험 명령을 Conda 셸에 그대로 섞어 사용하지 않습니다.
+설치 후 `conda activate go2_nav2`와 `bash run_nav.sh check`로 노드를 시작하지 않고 패키지를 확인할 수 있습니다. 실시간 실행에는 운영자가 `GO2_NET_IFACE`를 지정합니다. 새 Conda 셸에 기존 시스템 ROS overlay를 섞어 사용하지 않습니다.
 
 `rtabmap_viz`는 RViz2와 별도 GUI입니다. 2026-11-05/09의 실행 기록과 현재 Mapping 스크립트의 사용을 확인해 유지합니다. Conda 채널에 해당 바이너리가 없어 현재 PC와 같은 **0.23.13의 공식 소스 commit**으로 빌드합니다. Nav2 주행은 이 GUI를 끄고 RViz2를 사용합니다.
 
@@ -79,33 +80,101 @@ bash scripts/install_student.sh verify
 
 실제 설치 성공 여부는 설치 명령의 검증과 완료 문구로 확인해야 합니다. 소스 회귀와 모의 설치 검사는 새 Conda 환경의 컴파일·GUI·실물 주행 성공을 증명하지 않습니다.
 
-## 기존 노트북 실행 경로
+## 지도 공유: `setup_maps.sh`
 
-아래는 기존 시스템 ROS 환경의 실험 재현 기록입니다. 새 Conda 설치는 위 절차를 사용하며 두 환경의 overlay를 섞지 않습니다.
+지도는 `maps/<지도 이름>/`에서 관리합니다. Git LFS에는 `*.db.zst`, 일반 Git에는 함께 생성된 `*.db.zst.json`을 올립니다. 원본 `.db`와 SQLite 임시 파일은 Git에서 제외합니다. 압축 도구·Git LFS 의존성과 압축 설정은 `environment.json`에 선언합니다.
 
-새 지도를 만들 때는 노트북에서 다음 한 줄을 실행합니다. 카메라 재사용/SSH 시작 → 센서 수신 확인 → 새 DB Mapping·RViz → Ctrl+C 후 저장 검사를 묶었습니다. 로봇 이동은 운영자가 수행합니다.
-
-```bash
-bash /home/cvr/GH/unitree-go2-slam-nav2/scripts/laptop_slam.sh
+```text
+maps/창학관 3층/
+├── rtabmap.db           # 로컬 원본 또는 복원본, Git 제외
+├── rtabmap.db.zst       # 무손실 압축본, Git LFS
+└── rtabmap.db.zst.json  # 자동 생성한 크기·SHA256·관측 지점 수
 ```
 
-먼저 설치만 확인하려면 끝에 `check`, 아무것도 시작하지 않고 계획만 보려면 `plan`을 붙입니다. 실제 Go2에서의 새 SSH·Mapping 전체 실행은 아직 검증하지 않았습니다. 기존 시스템 ROS용 준비·예상 출력·저장·문제 해결은 [개편 전 튜토리얼의 고정 기록](https://github.com/jcy9066/unitree-go2-slam-nav2/blob/7aa21b2/docs/go2_navigation_validation.html#tutorial-start)에 보존합니다. 현재 HTML의 실행 안내 표는 아직 작성 전입니다.
+현재 창학관 3층 지도 원본은 사용자가 넣은 상태이며, **실제 지도 압축·업로드는 아직 수행하지 않았습니다.** 아래 Git 공유가 완료된 뒤에 다른 PC에서 Mapping 없이 복원할 수 있습니다.
 
-현재 노트북에서는 아래 명령을 사용합니다. 저장소와 실제 `~/GH/unitree_go2_pr1_ws` 설치를 연결해 두었습니다.
+| 명령 | 동작 |
+|---|---|
+| `bash setup_maps.sh plan` | 파일을 만들지 않고 처리 예정 지도만 표시 |
+| `bash setup_maps.sh` | 전체 지도 처리: 압축본이 있으면 복원·기존 DB 확인, DB만 있으면 압축 |
+| `bash setup_maps.sh pack "창학관 3층"` | 지정 지도 압축 및 왕복 무결성 검사 |
+| `bash setup_maps.sh restore "창학관 3층"` | 지정 지도 복원. 기존 DB와 내용이 다르면 보존하고 중단 |
+| `bash setup_maps.sh verify "창학관 3층"` | 압축본·DB 크기와 SHA256, SQLite 무결성 검사 |
+
+지도 이름을 생략하면 `maps/` 아래 모든 지도 폴더를 처리합니다. 스크립트 경로를 지정하면 다른 작업 디렉터리에서도 실행할 수 있습니다. `setup_maps.sh`는 로컬 파일만 처리하고 Git 명령이나 ROS 노드를 실행하지 않습니다.
+
+새 지도를 공유하는 PC에서는 Mapping을 정상 종료한 독립 DB를 지도 폴더에 넣고 `pack`을 실행합니다. `-journal`, `-wal`, `-shm`이 있거나 WAL 모드인 DB는 자동 수정하지 않고 중단합니다. 부수 파일을 임의로 지우지 말고 저장 상태를 확인하세요. 기존 압축본 갱신은 `pack --replace-archive "창학관 3층"`으로 명시하며 원본 DB는 변경하지 않습니다.
+
+이후 **사용자가** 해당 작업 브랜치에서 압축본과 생성 메타데이터를 함께 공유합니다.
 
 ```bash
-cd ~/GH/unitree-go2-slam-nav2
-bash scripts/laptop_nav.sh check   # 설치 확인, 노드 시작 안 함
-bash scripts/laptop_nav.sh view    # Go2/카메라 시작 후 지도·위치 확인, Sport bridge 없음
+git add -- "maps/창학관 3층/rtabmap.db.zst" "maps/창학관 3층/rtabmap.db.zst.json"
+git commit -m "map: 창학관 3층 지도 공유"
+git push
 ```
 
-위 `view`를 Ctrl+C로 종료하고 위치 정합을 확인한 뒤, 운영자만 `bash scripts/laptop_nav.sh drive`로 주행 bridge를 켭니다. Goal도 운영자가 지정합니다. 두 번째 인자로 다른 `.db`를 선택할 수 있습니다. Ethernet `eno1`에 연결이 없으면 `view`/`drive`는 ROS 기동 전에 중단합니다.
+다른 PC에서는 Git LFS 설치 후 저장소를 clone하고 `go2_nav2` 환경을 준비합니다. Git LFS가 설치된 일반 clone은 압축본도 내려받습니다. 포인터만 내려왔거나 다운로드를 건너뛴 경우 다음을 실행합니다. 이미 clone한 PC에서는 먼저 사용자가 `git pull`로 작업 브랜치를 갱신합니다.
 
-현재 소스의 navigation 설정은 두 문 허용(`GO2_FIRST_DOOR_ONLY=false`), Footprint 70×36cm와 양쪽 padding 1cm(검사 72×38cm), Local inflation 20cm / Global inflation 30cm입니다. 0.5m/s에서 실제 다리 스윕과 제동거리는 미검증입니다. `aligned_visual` Localization은 RGB-D odometry의 상대 방향으로 native Go2 yaw drift를 제한하고 센서 원본 취득 시각을 보존합니다. 기존 Mapping/legacy 모드의 카메라 시각 재표기와 구분합니다. 정지 yaw와 동결 경로의 과거 비교는 [고정 R37 기록](https://github.com/jcy9066/unitree-go2-slam-nav2/blob/7aa21b2/docs/go2_navigation_validation.html#heading-fix-r37), 복귀·바닥 필터·진척 검사 변경은 [고정 R47 기록](https://github.com/jcy9066/unitree-go2-slam-nav2/blob/7aa21b2/docs/go2_navigation_validation.html#known-space-return-r47)을 참조하세요.
+```bash
+git lfs pull
+conda activate go2_nav2
+bash setup_maps.sh restore "창학관 3층"
+```
 
-2026-11-10 기존 시스템 ROS 설치 점검: 실제 작업공간 빌드 PASS, 기존 DB 복사본 quick_check `ok` / 4,516 keyframes, 로봇과 분리한 ROS 기동에서 1131×1537 지도 로드 PASS. Live 센서·초기 위치 정합·실제 문 통과는 Go2 전원 OFF로 NOT TESTED. 자세한 기록은 [고정 과거 문서](https://github.com/jcy9066/unitree-go2-slam-nav2/blob/7aa21b2/docs/go2_navigation_validation.html)의 R6에 있습니다. 이 결과는 새 Conda 설치 검증에 해당하지 않습니다.
+완료 시 `RESTORE OK` 또는 같은 DB가 이미 있으면 `REUSE DB`가 표시됩니다. 복원된 경로는 `maps/창학관 3층/rtabmap.db`입니다. Nav2 실행 시 이 경로를 지정하고 기존처럼 주행용 복사본을 사용합니다. 기존 DB가 다르면 덮어쓰지 않으므로 다른 지도 폴더에 보관한 뒤 진행하세요.
 
-This fork adapts Hossein Naderi's Go2 SLAM/Nav2 demo to the **current laptop + stock Go2** experiment: ROS 2 Humble on the laptop, Go2 native odometry, internal L1 LiDAR, and the head-mounted D435i. The original RoboSense launch files remain as legacy references; the default Mapping/Navigation scripts do not start RoboSense or ICP odometry.
+검증: 가짜 SQLite DB로 PC 간 압축본 전달·복원, 원본 보존, 손상 거부, 로컬 Git LFS 포인터 생성 등 23개 검사 PASS. 실제 지도 압축·GitHub LFS 업로드·다른 PC Nav2 실행은 NOT TESTED입니다.
+
+## 실행용 sh: 루트 4개와 내부 공통 1개
+
+모든 명령은 저장소 루트 기준입니다. 다른 위치에서는 sh의 절대 경로를 지정합니다.
+
+| 파일 | 기능 |
+|---|---|
+| `install_student.sh` | Conda 환경 생성·설치·빌드·검증 |
+| `setup_maps.sh` | 지도 압축·복원·검증 |
+| `run_mapping.sh` | `start`, `check`, `plan`, `sensors` 및 새 DB 경로 입력 |
+| `run_nav.sh` | `view`, `drive`, `check`, `plan`, `health`, `bridge`, `shell`, `aligned`, `reference` |
+| `scripts/_env.sh` | 두 실행 파일이 사용하는 내부 공통 환경·프로세스 함수 |
+
+기존 `laptop_slam.sh`, `laptop_nav.sh`, `student_session.sh`, `nav_health.sh`, `localization_compare.sh`는 위 실행 파일로 통합했습니다. `go2_camera_session.sh`는 제거했습니다. 카메라는 별도 SSH 터미널에서 Go2 명령으로 실행하며, **Go2에 저장소를 clone하지 않습니다.**
+
+PC에서 환경을 활성화한 뒤 실제 로봇 연결 인터페이스를 지정합니다. 현재 PC에서는 `eno1`을 사용했으며 다른 PC에서는 해당 장치 이름을 사용합니다.
+
+```bash
+conda activate go2_nav2
+export GO2_NET_IFACE=eno1  # 현재 PC 예시
+bash run_nav.sh check
+```
+
+카메라를 아래 Go2 터미널에서 먼저 실행한 뒤 PC에서는 둘 중 하나를 선택합니다.
+
+```bash
+# 새 지도: Go2 조종기로 이동하며 Mapping. 기존 파일은 거부합니다.
+bash run_mapping.sh "maps/새 지도/rtabmap.db"
+# 또는 이미 복원한 지도로 Nav2·RViz2 시작. 주행 bridge는 비활성입니다.
+bash run_nav.sh view "maps/창학관 3층/rtabmap.db"
+```
+
+Mapping은 Ctrl+C로 종료하고 저장 검사가 완료될 때까지 기다립니다. 기본 새 지도 경로는 `maps/go2_<날짜>_<PID>/rtabmap.db`입니다. 명시적 DB 경로와 `GO2_MAP_DIR` 재정의도 지원합니다. 저장 성공 후 `.last_map`을 기록하므로 `bash run_nav.sh view`로 최근 작성 지도를 선택할 수도 있습니다. 복원만 한 지도는 경로를 직접 입력합니다.
+
+`bash run_mapping.sh plan`과 `bash run_nav.sh plan "maps/창학관 3층/rtabmap.db"`는 환경 로딩·빌드·노드 시작·파일 생성을 하지 않습니다. `check`는 환경만 확인합니다. `sensors`는 Mapping 시작 전 실시간 센서 수신을 확인합니다.
+
+Nav2 원본 DB는 보존하고 `maps/nav_sessions/<날짜_PID>/rtabmap.db`에 복사해 사용합니다. `GO2_MAP_DIR`를 지정하면 세션도 그 아래에 생성합니다. `view`는 이전 `GO2_ENABLE_MOTION=true`가 남아 있어도 주행을 비활성으로 시작합니다. 운영자는 RViz2 위치·방향과 Costmap을 확인하고 view를 종료한 뒤 `bash run_nav.sh drive "maps/창학관 3층/rtabmap.db"`를 명시적으로 선택합니다. Goal과 실제 이동은 운영자가 수행합니다.
+
+진단과 비교 기능은 다음과 같이 유지합니다.
+
+```bash
+bash run_nav.sh health --seconds 4
+bash run_nav.sh aligned "maps/창학관 3층/rtabmap.db"
+bash run_nav.sh reference "maps/비교 지도/rtabmap.db"
+# 또는 view에서 직접 선택
+bash run_nav.sh view "maps/창학관 3층/rtabmap.db" --profile aligned_visual
+```
+
+비교 명령은 각각 `aligned_visual`, `reference_visual`을 선택하며 주행은 비활성입니다. 서로 다른 지도 좌표를 혼용하지 않도록 비교 DB 경로는 필수입니다. 일반 실행의 기존 기본 프로필 `legacy`와 `GO2_LOCALIZATION_PROFILE` 설정은 유지합니다. `bridge`는 중복 bridge를 거부하고 비활성 상태로만 시작합니다. `shell`은 현재 ROS 환경의 별도 셸을 엽니다.
+
+루트 통합 검증: 가짜 ROS·DB로 Mapping 13개, Nav2 11개, 설치 진입·공통 환경 9개, 지도 23개, 환경 13개, hook 보호 16개, **총 85개 PASS**. 실제 Conda 설치·카메라·센서·RViz2·물리 주행은 이번 정리에서 NOT TESTED입니다. 기존 주행 범위는 위 운영 기록을 참고합니다.
 
 ## Current data and control routes
 
@@ -135,7 +204,7 @@ source install/setup.bash
 
 In this native ROS path, scripts source the existing Unitree setup at `~/unitree_ros2/cyclonedds_ws/install/setup.bash`; override its location with `GO2_UNITREE_SETUP`. The Conda path installs the declared packages from `environment.json` and does not reuse this system-built workspace.
 
-## 기존 노트북 실험: 운영자의 Go2 카메라 시작
+## 카메라: Go2 SSH 터미널에서 명령어로 실행
 
 On the laptop, open **terminal 1** and connect to the powered robot:
 
@@ -147,6 +216,7 @@ At `ros:foxy(1) ...`, choose `1`. Then run **on Go2**:
 
 ```bash
 source ~/ros2_realsense_456_ws/activate.bash
+export ROS_DOMAIN_ID=0 ROS_LOCALHOST_ONLY=0 RMW_IMPLEMENTATION=rmw_fastrtps_cpp
 ros2 launch realsense2_camera rs_launch.py \
   camera_namespace:=/ camera_name:=camera \
   depth_module.depth_profile:=640x480x30 rgb_camera.color_profile:=640x480x15 \
@@ -156,44 +226,7 @@ ros2 launch realsense2_camera rs_launch.py \
   depth_module.emitter_enabled:=1 depth_module.emitter_on_off:=false
 ```
 
-## 기존 노트북 실험: 저장 지도에서 주행 비활성 상태로 시작
-
-On the **laptop, terminal 2**:
-
-```bash
-cd ~/GH/unitree-go2-slam-nav2
-export GO2_WS_ROOT="$HOME/GH/unitree_go2_pr1_ws"
-export RMW_IMPLEMENTATION=rmw_cyclonedds_cpp
-export ROS_DOMAIN_ID=0
-export ROS_LOCALHOST_ONLY=0
-export CYCLONEDDS_URI='<CycloneDDS><Domain><General><Interfaces><NetworkInterface name="eno1"/></Interfaces></General></Domain></CycloneDDS>'
-bash scripts/run_nav.sh "$HOME/GH/go2_l1_nav2_ws/analysis/saved_map_fix_20261109/navigation_map.db"
-```
-
-`eno1`, domain 0, and the DB above are the current laptop's experiment settings. The Ethernet link and camera must be active. The command copies the original DB into `~/go2_maps/nav_sessions/`; it does not modify the original. To inspect the separate 2026-11-10 left-door map candidate, explicitly supply `~/GH/go2_l1_nav2_ws/analysis/left_door_repair_20261110/navigation_map.db` instead. That candidate has not passed a physical door traversal.
-
-The default has **no Sport bridge**. Verify `map → odom → base_link`, initial position/yaw, the actual doorway, both Costmaps, and the real moving leg envelope. A loaded map or a successful build does not establish localization or collision safety.
-
-Only the **operator**, after completing these checks, may stop that session with Ctrl+C and opt in to the motion bridge:
-
-```bash
-GO2_ENABLE_MOTION=true bash scripts/run_nav.sh \
-  "$HOME/GH/go2_l1_nav2_ws/analysis/saved_map_fix_20261109/navigation_map.db"
-```
-
-The operator sends any RViz2 navigation goal and controls the supervised test. Maximum translation is `0.50m/s` (raised from `0.30m/s` at the operator’s request); maximum turn rate is `1.8rad/s`. The higher cap requires a new operator-supervised trial; it is not physically validated. The Sport timeout remains `0.25s`; zero/invalid/stale commands use StopMove (`1003`). No stand-up, dance, or other motion services are exposed by this navigation bridge.
-
-## 기존 노트북 실험: 새 DB Mapping
-
-With the same camera/network/workspace environment and Navigation stopped:
-
-```bash
-bash scripts/run_mapping.sh
-# Or choose a new, nonexistent filename:
-bash scripts/run_mapping.sh "$HOME/go2_maps/lab_new.db"
-```
-
-Mapping refuses an existing DB path. Stop with Ctrl+C to flush it. Navigation uses Localization only; only Nav2 Costmaps update with current obstacles.
+카메라 터미널은 실행한 채 유지합니다. Go2의 `ROS_DOMAIN_ID`는 PC와 같게 맞춥니다. 기존 카메라 환경 활성화 명령을 사용하며, 이 저장소의 sh나 새 파일을 Go2로 보내지 않습니다. 카메라를 종료할 때는 해당 터미널에서 Ctrl+C를 누릅니다.
 
 ## Current geometry and verification
 
@@ -212,7 +245,7 @@ The footprint is a configuration baseline, **not a measured dynamic leg boundary
 Local checks:
 
 ```bash
-bash -n scripts/_env.sh scripts/run_mapping.sh scripts/run_nav.sh
+bash -n scripts/_env.sh run_mapping.sh run_nav.sh
 # After sourcing the built workspace:
 python3 -m pytest -q tests
 ```
@@ -232,7 +265,7 @@ A read-only recorder starts automatically with `view` and `drive`. It sends no m
 Each session has a unique directory:
 
 ```text
-~/go2_maps/nav_sessions/<session>/diagnostics/<run>/
+maps/nav_sessions/<session>/diagnostics/<run>/
   metadata.json
   events.jsonl.gz
   summary.json
@@ -249,7 +282,7 @@ saved-map walls, sensor projection and stale marking, enable the optional raw
 capture when starting a fresh **view** session:
 
 ```bash
-GO2_RECORD_OBSTACLE_SENSORS=true bash scripts/laptop_nav.sh view "$GO2_TEST_MAP"
+GO2_RECORD_OBSTACLE_SENSORS=true bash run_nav.sh view "$GO2_TEST_MAP"
 ```
 
 This keeps motion disabled. It records `/cloud_base_synced` and
@@ -285,7 +318,7 @@ the second door out of both Costmaps and stops at a failed waypoint:
 ```bash
 export GO2_TEST_MAP="$HOME/GH/go2_l1_nav2_ws/analysis/left_door_repair_20261110/navigation_map.db"
 GO2_FIRST_DOOR_ONLY=true GO2_RECORD_OBSTACLE_SENSORS=true \
-  bash scripts/laptop_nav.sh view "$GO2_TEST_MAP"
+  bash run_nav.sh view "$GO2_TEST_MAP"
 ```
 
 This is still **view**, with no motion bridge. The route mask is a virtual
@@ -309,9 +342,7 @@ used Foxy Fast DDS 2.1.4. The same log text exists in Fast DDS discovery-data
 deserialization; the exact offending packet was not identified.
 
 The tested camera backend remains `rmw_fastrtps_cpp`. A Cyclone DDS comparison
-crashed this device's camera node and was reverted. The payload exposes
-`GO2_CAMERA_RMW_IMPLEMENTATION` for explicit separate experiments, not as a
-recommendation to switch this device. Stream profiles and the laptop RMW are
+crashed this device's camera node and was reverted. The manual Go2 launch command explicitly selects `rmw_fastrtps_cpp`; the repository no longer sends a camera shell payload. Stream profiles and the laptop RMW are
 unchanged. The SSH payload disables interactive job control so `setsid` retains
 the owned launch PID/group for cleanup. See [R34](https://github.com/jcy9066/unitree-go2-slam-nav2/blob/7aa21b2/docs/go2_navigation_validation.html#camera-dds-r34)
 for before/failure/restoration evidence and the remaining limitations.

@@ -1,0 +1,1 @@
+maps/**/*.db.zst filter=lfs diff=lfs merge=lfs -text

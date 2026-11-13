@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # One command: create go2_nav2, install dependencies, build and verify.
-# All installation configuration comes from ../environment.json.
+# All installation configuration comes from environment.json.
 set -Eeuo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 BOOTSTRAP_PYTHON="${GO2_BOOTSTRAP_PYTHON:-/usr/bin/python3}"
@@ -10,4 +10,4 @@ BOOTSTRAP_PYTHON="${GO2_BOOTSTRAP_PYTHON:-/usr/bin/python3}"
 }
 # The bootstrap imports only the standard library. Conda itself is already installed.
 exec env -u PYTHONHOME -u PYTHONPATH \
-    "$BOOTSTRAP_PYTHON" "$SCRIPT_DIR/environment.py" "$@"
+    "$BOOTSTRAP_PYTHON" "$SCRIPT_DIR/scripts/environment.py" "$@"
