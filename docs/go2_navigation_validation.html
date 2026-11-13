@@ -251,12 +251,35 @@
         <span class="section-number" aria-hidden="true">04</span>
         <div><h2 id="terminal-title">서버 컴퓨터에서 실행할 터미널 명령어</h2></div>
       </div>
+      <h3 id="saved-maps">저장 지도로 시작하기 · 지도 압축본 공유하기</h3>
+      <p>환경 설치 후 저장소 루트에서 실행합니다. 지도는 <code>maps/&lt;지도 이름&gt;/</code>에 둡니다. 이미 공유된 지도로 주행하려면 <strong>복원</strong> 단계로 바로 진행합니다. 새로 Mapping한 DB를 공유하려면 Mapping을 정상 종료한 뒤 <strong>압축</strong> 단계를 선택합니다.</p>
+      <p>압축·복원은 <a href="../scripts/setup_maps.sh">setup_maps.sh</a>가 처리합니다. Git pull/push는 사용자가 수행하며, 실제 창학관 3층 지도 압축본의 업로드는 아직 진행하지 않았습니다. 공유 대상은 LFS 압축본 <code>rtabmap.db.zst</code>와 자동 생성한 <code>rtabmap.db.zst.json</code>입니다. 원본 DB와 부수 파일은 Git에 올리지 않습니다.</p>
       <div class="table-scroll" role="region" aria-label="터미널 명령어 표" tabindex="0">
         <table class="template-table">
           <thead><tr><th scope="col">순서</th><th scope="col">터미널</th><th scope="col">실행 목적</th><th scope="col">명령어</th><th scope="col">확인할 결과</th></tr></thead>
-          <tbody><tr><td></td><td></td><td></td><td></td><td></td></tr></tbody>
+          <tbody>
+            <tr><th scope="row">공통 준비</th><td>지도 작업 PC</td><td>설치된 프로젝트 환경 사용</td><td><code>conda activate go2_nav2</code></td><td>환경 의존성은 <a href="../environment.json">environment.json</a>으로 관리합니다.</td></tr>
+            <tr><th scope="row">기존 지도 · 다운로드</th><td>받는 PC</td><td>공유 압축본 받기</td><td><code>git lfs pull</code></td><td>사용자가 먼저 작업 브랜치를 clone하거나 pull합니다. LFS 포인터 대신 압축본이 있어야 합니다.</td></tr>
+            <tr><th scope="row">기존 지도 · 복원</th><td>받는 PC</td><td>Mapping 없이 DB 준비</td><td><code>bash scripts/setup_maps.sh restore "창학관 3층"</code></td><td><code>RESTORE OK</code> 또는 <code>REUSE DB</code>. 결과: <code>maps/창학관 3층/rtabmap.db</code>. 이후 Nav2에서 이 지도의 복사본을 사용합니다.</td></tr>
+            <tr><th scope="row">새 지도 · 압축</th><td>만든 PC</td><td>정상 저장된 DB 공유 준비</td><td><code>bash scripts/setup_maps.sh pack "창학관 3층"</code></td><td><code>PACK OK</code> 또는 <code>REUSE 압축본</code>. 원본은 보존합니다. 사용자가 압축본과 메타데이터를 함께 commit/push합니다.</td></tr>
+            <tr><th scope="row">검증</th><td>어느 PC든</td><td>크기·SHA256·DB 무결성 확인</td><td><code>bash scripts/setup_maps.sh verify "창학관 3층"</code></td><td><code>VERIFY OK</code>. 기존 DB가 다르거나 손상이 있으면 중단합니다.</td></tr>
+            <tr><th scope="row">계획만 확인</th><td>어느 PC든</td><td>파일 생성 없이 대상 확인</td><td><code>bash scripts/setup_maps.sh plan</code></td><td>지도별 압축 또는 복원 예정 경로만 표시합니다.</td></tr>
+          </tbody>
         </table>
       </div>
+      <p>모드를 생략한 <code>bash scripts/setup_maps.sh</code>는 전체 지도에서 압축본이 있으면 복원·기존 DB 확인, DB만 있으면 압축합니다. 서로 다른 기존 DB는 덮어쓰지 않습니다. 기존 압축본만 갱신하려면 <code>pack --replace-archive "창학관 3층"</code>을 명시합니다. WAL 모드이거나 <code>-journal</code>, <code>-wal</code>, <code>-shm</code>이 있는 DB는 자동 수정하지 않습니다. <a href="../README.md">Git 공유와 상세 사용법</a>을 확인하세요.</p>
+      <!-- R57 · 2026-11-13 · map-setup verification
+           T00 PASS: chore/map-lfs checked against current repository remote; per-file commits/pushes.
+           T01 PASS: bash -n, Python AST, environment validate; 47 offline pytest PASS (23 new map tests).
+           T02 NOT TESTED: no sensors/TF started.
+           T03 PASS (synthetic DB only): readonly source, zstd roundtrip, corruption and WAL/sidecar refusal,
+               source-change-before-publication, consumer restore, local LFS pointer staging.
+               Actual Mapping and operator-map compression NOT TESTED.
+           T04 NOT TESTED: remote LFS map upload/download and restored-map Nav2 runtime.
+           T05-T09 NOT TESTED: no parameter runtime, localization, planning or physical movement tests.
+           T10: command/anchor/local-file checks recorded in this docs commit and task Draft PR.
+           Previous records remain below. No additional document-management panel.
+      -->
     </section>
 
     <section class="section" id="rviz" aria-labelledby="rviz-title" data-template="rviz">
