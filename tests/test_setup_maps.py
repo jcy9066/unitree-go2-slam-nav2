@@ -212,10 +212,10 @@ def test_wrapper_works_outside_repository(producer, tmp_path):
     app, db = producer
     scripts = app.root / 'scripts'
     scripts.mkdir()
-    for filename in ['setup_maps.sh', 'map_archives.py']:
-        shutil.copyfile(ROOT / 'scripts' / filename, scripts / filename)
+    shutil.copyfile(ROOT / 'setup_maps.sh', app.root / 'setup_maps.sh')
+    shutil.copyfile(ROOT / 'scripts/map_archives.py', scripts / 'map_archives.py')
     env = dict(os.environ, PYTHONDONTWRITEBYTECODE='1')
-    result = subprocess.run(['bash', str(scripts / 'setup_maps.sh'), 'pack', '창학관 3층'],
+    result = subprocess.run(['bash', str(app.root / 'setup_maps.sh'), 'pack', '창학관 3층'],
                             cwd=tmp_path, env=env, text=True, capture_output=True)
     assert result.returncode == 0, result.stderr
     assert 'PACK OK' in result.stdout
