@@ -113,8 +113,7 @@
     }
   ],
   "paths": {
-    "prefix": ".local/share/go2_nav2",
-    "data_root": "go2_nav2_data"
+    "prefix": ".local/share/go2_nav2"
   },
   "build": {
     "jobs": 2,
@@ -124,28 +123,6 @@
       "-DPython_FIND_VIRTUALENV=ONLY",
       "-DPython3_FIND_VIRTUALENV=ONLY"
     ]
-  },
-  "runtime": {
-    "interface": "lo",
-    "environment": {
-      "GO2_SKIP_BUILD": "1",
-      "GO2_ENABLE_MOTION": "false",
-      "GO2_LOCALIZATION_PROFILE": "aligned_visual",
-      "GO2_FIRST_DOOR_ONLY": "false",
-      "GO2_RECORD_DIAGNOSTICS": "true",
-      "GO2_RECORD_OBSTACLE_SENSORS": "true",
-      "GO2_SSH_TARGET": "",
-      "GO2_CAMERA_RMW_IMPLEMENTATION": "rmw_fastrtps_cpp",
-      "ROS_DOMAIN_ID": "0",
-      "ROS_LOCALHOST_ONLY": "0",
-      "RMW_IMPLEMENTATION": "rmw_cyclonedds_cpp",
-      "PYTHONNOUSERSITE": "1",
-      "OPENBLAS_NUM_THREADS": "2",
-      "OMP_NUM_THREADS": "2",
-      "CUDA_VISIBLE_DEVICES": "",
-      "LIBGL_ALWAYS_SOFTWARE": "1",
-      "QT_X11_NO_MITSHM": "1"
-    }
   },
   "verification": {
     "ros_packages": [
@@ -197,5 +174,11 @@
     "python3-numpy": "numpy",
     "python3-pytest": "pytest"
   },
-  "completion_message": "go2_nav2 환경 설정이 완료되었습니다."
+  "completion_message": "go2_nav2 환경 설정이 완료되었습니다.",
+  "activation": {
+    "environment": {
+      "RMW_IMPLEMENTATION": "rmw_cyclonedds_cpp",
+      "PYTHONNOUSERSITE": "1"
+    }
+  }
 }
