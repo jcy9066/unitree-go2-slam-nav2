@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Unitree Go2 EDU의 SLAM·Nav2 자율주행 프로젝트 소개, 기존 주행 영상, 핵심 개념과 후속 문서 템플릿입니다.">
+  <meta name="description" content="Unitree Go2 EDU의 SLAM·Nav2 자율주행 프로젝트 소개, 기존 주행 영상, 핵심 개념, 두 가지 지도 활용 방법, 서버 실행·RViz2 조작과 작업 현황을 설명합니다.">
   <title>Go2 EDU | SLAM · Nav2 자율주행 프로젝트</title>
   <style>
     /* 드론_PX4_TuTo의 문서 양식: 회색 바탕, 파란 강조, 명조 제목, 6px 테두리. */
@@ -191,6 +191,77 @@
       thead th { white-space: normal; }
       a { color: inherit; }
     }
+
+    /* 참고 문서의 설명 구조: spec → 단계 → 명령 → 이유 → 다음 단계 판정. */
+    .section > * + * { margin-top: 18px; }
+    .section > .section-heading { margin-top: 0; }
+    .section-heading h2 { min-width: 0; }
+    .plain, .note { padding: 13px 18px; border-left: 3px solid var(--accent); border-radius: 0 4px 4px 0; background: var(--accent-soft); font-size: 13.5px; }
+    .plain { border-color: var(--warm); background: var(--warm-soft); }
+    .route-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 18px; }
+    .spec { min-width: 0; overflow: hidden; border: 1px solid var(--rule); border-radius: 6px; background: var(--surface); box-shadow: var(--shadow); }
+    .spec-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 9px; padding: 13px 20px; border-bottom: 1px solid var(--rule); background: var(--surface-2); }
+    .spec-id { color: var(--ink-3); font: 600 12px var(--mono); }
+    .spec-head h3 { flex: 1; min-width: min(220px, 100%); font-family: var(--sans); }
+    .spec-body { display: flex; flex-direction: column; gap: 14px; padding: 18px 20px 20px; }
+    .spec-body p { color: var(--ink-2); }
+    .spec-body p + p { margin-top: 0; }
+    .spec-src { font-size: 12px; }
+    .chain { overflow: hidden; border: 1px solid var(--rule); border-radius: 6px; }
+    .chain-step { display: grid; grid-template-columns: 38px 1fr; gap: 16px; padding: 14px 18px; background: var(--surface); }
+    .chain-step + .chain-step { border-top: 1px solid var(--rule); }
+    .chain-n { color: var(--accent); font: 600 12px/1.7 var(--mono); }
+    .chain-step p { margin-top: 6px; font-size: 13px; }
+    .steps { display: flex; flex-direction: column; gap: 18px; margin: 0; padding: 0; list-style: none; counter-reset: step; }
+    .steps > li { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 12px; counter-increment: step; }
+    .steps > li::before { content: counter(step); padding-top: 2px; color: var(--accent); font: 600 12px/1.7 var(--mono); }
+    .steps > li > div { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+    .steps h3 { font-family: var(--sans); }
+    .steps p { color: var(--ink-2); }
+    .steps p + p { margin-top: 0; }
+    .compact-list { margin: 0; padding-left: 22px; }
+    .compact-list li + li { margin-top: 8px; }
+    .verdict { padding: 18px 22px; border: 1px solid var(--rule); border-left: 4px solid var(--accent); border-radius: 0 6px 6px 0; background: var(--surface); box-shadow: var(--shadow); }
+    .verdict ul { margin: 10px 0 0; padding-left: 20px; color: var(--ink-2); }
+    .verdict li + li { margin-top: 6px; }
+    .code { overflow: hidden; border: 1px solid var(--rule); border-radius: 6px; background: #0f1412; }
+    .code-h { display: flex; align-items: center; gap: 8px; padding: 7px 12px; background: #1b2320; color: #bdc9c1; font: 500 11.5px/1.6 var(--mono); }
+    .code-h .t { flex: 1; min-width: 0; }
+    .code-h button { flex-shrink: 0; padding: 3px 10px; border: 1px solid #59685d; border-radius: 4px; background: #2c3833; color: #eef3ef; cursor: pointer; font: 600 11px/1.6 var(--mono); }
+    .code-h button:hover { background: #3a4a43; }
+    .code pre { margin: 0; padding: 12px 14px; overflow-x: auto; color: #e1e8e2; font: 12.5px/1.65 var(--mono); tab-size: 4; }
+    .code pre code { font-size: inherit; white-space: pre; overflow-wrap: normal; }
+    .code.out { background: var(--surface-2); }
+    .code.out .code-h { color: var(--ink-2); background: var(--surface-3); }
+    .code.out pre { color: var(--ink); }
+    .tutorial-table { min-width: 780px; table-layout: fixed; }
+    .tutorial-table td { overflow-wrap: anywhere; }
+    .tutorial-table tbody th { white-space: normal; }
+    details.file { border: 1px solid var(--rule); border-radius: 6px; background: var(--surface); }
+    details.file > summary { padding: 10px 14px; color: var(--ink-2); font-size: 13px; }
+    .detail-body { padding: 0 14px 14px; }
+    kbd { padding: 0 5px; border: 1px solid var(--rule-strong); border-bottom-width: 2px; border-radius: 4px; background: var(--surface); color: var(--ink); font: 600 11.5px/1.7 var(--mono); }
+    .copy-status { position: fixed; right: 18px; bottom: 18px; max-width: calc(100% - 36px); padding: 10px 16px; border-radius: 6px; color: var(--ink); background: var(--surface); box-shadow: var(--shadow); z-index: 10; }
+    .copy-status:empty { display: none; }
+    @media (max-width: 850px) { .route-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 520px) {
+      .spec-head { padding: 12px 14px; }
+      .spec-body { padding: 14px; }
+      .steps > li { grid-template-columns: 20px minmax(0, 1fr); gap: 8px; }
+      .chain-step { grid-template-columns: 1fr; gap: 8px; padding: 14px; }
+      .plain, .note, .verdict { padding: 13px 14px; }
+    }
+    @media print {
+      .route-grid { grid-template-columns: 1fr; }
+      .tutorial-table { min-width: 0; table-layout: auto; }
+      .tutorial-table th, .tutorial-table td { font-size: 9pt; }
+      .code-h button, .copy-status { display: none; }
+      .code, .code-h, .code pre { background: white; color: black; }
+      .code pre code { white-space: pre-wrap; overflow-wrap: anywhere; }
+      .spec, .table-scroll { break-inside: auto; }
+      .spec-head, .steps h3 { break-after: avoid; }
+      tr, .code, .note, .verdict { break-inside: avoid; }
+    }
   </style>
 </head>
 <body>
@@ -205,6 +276,7 @@
         <a href="#project">소개</a>
         <a href="#video">주행 영상</a>
         <a href="#concepts">핵심 개념</a>
+        <a href="#methods">진행 방법</a>
         <a href="#terminal-commands">터미널 명령어</a>
         <a href="#rviz">RViz2 조작</a>
         <a href="#completed">완료한 작업</a>
@@ -250,133 +322,48 @@
     </section>
 
     <section class="section" id="concepts" aria-labelledby="concepts-title">
-      <div class="section-heading">
-        <span class="section-number" aria-hidden="true">03</span>
-        <div>
-          <h2 id="concepts-title">프로젝트 이해에 필요한 개념</h2>
-        </div>
-      </div>
-      <div class="concepts">
-        <article class="concept">
-          <h3>프로그램 사이의 정보 전달</h3>
-          <span class="term">ROS 2 · 노드 · 토픽</span>
-          <p>ROS 2는 센서 처리, 위치 추정, 경로 계획 등 여러 프로그램을 연결합니다. 각각의 실행 단위를 노드라고 하며, 노드들은 토픽을 통해 센서 데이터나 이동 속도 같은 정보를 주고받습니다.</p>
-        </article>
-        <article class="concept">
-          <h3>주변을 보는 센서</h3>
-          <span class="term">L1 LiDAR · RealSense D435i</span>
-          <p>Go2의 내장 L1 라이다는 주변 물체까지의 거리를 점들의 집합인 포인트클라우드로 제공합니다. D435i는 컬러 영상과 깊이 정보를 제공합니다. 지도 작성과 위치 추정, 장애물 인식에 이 정보를 사용합니다.</p>
-        </article>
-        <article class="concept">
-          <h3>위치를 추정하며 지도 만들기</h3>
-          <span class="term">SLAM · Mapping · RTAB-Map</span>
-          <p>SLAM은 로봇의 위치 추정과 지도 작성을 함께 수행하는 기술입니다. 이 프로젝트는 RTAB-Map을 사용해 센서 관측과 이동 정보를 연결하고, 지도와 관련 관측을 DB 파일로 저장합니다.</p>
-        </article>
-        <article class="concept">
-          <h3>저장된 지도에서 위치 찾기</h3>
-          <span class="term">Localization · 초기 위치</span>
-          <p>Localization은 저장된 지도와 현재 센서 관측을 비교해 로봇의 위치와 방향을 찾는 과정입니다. 자율주행은 기존 지도 기반 위치 추정 모드로 진행합니다. 지도 속 위치가 실제 로봇과 맞아야 경로와 장애물도 올바르게 해석할 수 있습니다.</p>
-        </article>
-        <article class="concept">
-          <h3>이동 정보와 좌표 연결하기</h3>
-          <span class="term">Odometry · TF · map → odom → base_link</span>
-          <p>Odometry는 짧은 시간 동안 로봇이 얼마나 이동하고 회전했는지 추정한 정보입니다. 이 프로젝트는 Go2가 제공하는 이동 정보를 사용합니다. TF는 지도(map), 이동 기준(odom), 몸체(base_link), 센서의 좌표 관계를 연결해 서로 다른 데이터를 같은 위치에 표시합니다.</p>
-        </article>
-        <article class="concept">
-          <h3>이동할 경로와 속도 정하기</h3>
-          <span class="term">Nav2 · NavFn · DWB</span>
-          <p>Nav2는 목적지까지의 경로 계획과 주행 제어를 담당합니다. NavFn은 지도에서 목적지까지의 전역 경로를 만들고, DWB는 가까운 장애물과 경로를 고려해 짧은 시간의 이동 후보를 평가하고 전진·회전 속도를 선택합니다.</p>
-        </article>
-        <article class="concept">
-          <h3>지나갈 공간과 장애물 표현하기</h3>
-          <span class="term">Costmap · Global / Local</span>
-          <p>Costmap은 공간을 격자로 나누고 장애물과 주변 영역에 이동 비용을 부여한 지도입니다. Global Costmap은 전체 경로를 계획할 때, Local Costmap은 로봇 주변의 주행을 판단할 때 사용합니다. 실시간 센서 관측을 반영해 갱신합니다.</p>
-        </article>
-        <article class="concept">
-          <h3>로봇 크기와 장애물 주변 여유</h3>
-          <span class="term">Footprint · Inflation</span>
-          <p>Footprint는 경로와 충돌을 판단할 때 사용하는 로봇의 평면 외곽 모델입니다. Inflation은 장애물 주변에도 비용을 부여해 여유를 두도록 유도합니다. 좁은 문이나 코너에서는 두 설정이 주행에 영향을 주며, 설정한 외곽과 실제 보행 중 다리가 차지하는 범위는 따로 확인해야 합니다.</p>
-        </article>
-        <article class="concept">
-          <h3>지도와 주행 상태를 화면에서 보기</h3>
-          <span class="term">RViz2 · 시각화</span>
-          <p>RViz2는 지도, 센서 관측, 로봇 위치, Costmap, 계획 경로를 함께 보여주는 도구입니다. 초기 위치나 목적지를 입력할 때도 사용합니다. 화면에 경로가 표시되는 것과 실제 로봇이 목적지까지 주행을 완료하는 것은 별도의 확인 항목입니다.</p>
-        </article>
-      </div>
-      <div class="system-flow" role="group" aria-label="저장 지도 기반 주행 흐름: Go2와 카메라의 센서·이동 정보를 서버가 받아 위치와 경로·속도를 계산하고 Go2에 이동 명령을 전달합니다.">
-        <div class="flow-item"><strong>Go2 EDU · 카메라</strong><span>센서 관측 · 이동 정보</span></div>
-        <div class="flow-item server"><strong>연구실 서버</strong><span>RTAB-Map 위치 추정 → Nav2 경로·속도 계산</span></div>
-        <div class="flow-item"><strong>Go2 EDU</strong><span>전달된 이동 명령에 따라 주행</span></div>
-      </div>
-      <aside class="notice" aria-label="지도 작성과 자율주행 모드의 차이">
-        <strong>지도 작성과 저장 지도 기반 주행은 구분합니다.</strong>
-        <p>Mapping 단계에서 지도를 만들고, 자율주행 단계에서는 저장된 지도를 기준으로 위치를 추정합니다. 주행 중에는 Nav2의 Costmap이 실시간 장애물을 반영하며, RTAB-Map의 저장 지도를 계속 확장하는 방식은 아닙니다. 원본 DB는 보존하고 주행에는 복사본을 사용합니다.</p>
-      </aside>
+      <div class="section-heading"><span class="section-number" aria-hidden="true">03</span><h2 id="concepts-title">프로젝트 이해에 필요한 개념 — 무엇이고, 왜 쓰고, 언제 쓰나</h2></div>
+      <div class="note"><b>역할부터 구분합니다.</b> Go2 내부 제어기는 균형과 걸음을 담당하고, 서버는 센서로 위치를 찾고 갈 길을 계산합니다. ROS 2는 이 사이의 정보를 전달하며 RViz2는 그 상태를 보여줍니다.</div><div class="table-scroll" role="region" aria-label="핵심 개념: 무엇인지, 필요한 이유, 사용하는 단계" tabindex="0"><table class="tutorial-table"><thead><tr><th scope="col">이름</th><th scope="col">무엇인가</th><th scope="col">왜 필요한가</th><th scope="col">어디서 쓰나</th></tr></thead><tbody><tr><th scope="row">ROS 2 · 노드 · 토픽</th><td>여러 로봇 프로그램이 정보를 주고받는 통신 구조입니다. 프로그램 하나를 <b>노드</b>, 데이터가 오가는 통로를 <b>토픽</b>이라고 부릅니다.</td><td>카메라·위치 추정·경로 계획을 별도 프로그램으로 실행해도 같은 센서와 명령을 공유할 수 있습니다.</td><td>05절에서 여러 터미널의 노드를 연결합니다.</td></tr><tr><th scope="row">L1 LiDAR · D435i</th><td>Go2의 내장 라이다는 거리 측정점인 <b>포인트클라우드</b>를, D435i는 컬러 영상과 깊이를 제공합니다.</td><td>벽의 위치, 영상 특징, 가까운 장애물을 알아내는 재료입니다.</td><td>지도 작성 전 센서 수신 확인, 주행 중 장애물 반영.</td></tr><tr><th scope="row">SLAM · RTAB-Map</th><td>움직이면서 자신의 위치와 주변 지도를 함께 추정하는 과정입니다. 이 프로젝트에서는 RTAB-Map이 담당합니다.</td><td>지도가 없는 공간에서 기준 지도를 만들고, 관측 정보와 함께 <code>.db</code>에 저장합니다.</td><td>04-A와 05절의 <code>map</code> 단계.</td></tr><tr><th scope="row">Localization</th><td>저장된 지도와 지금의 센서 관측을 비교해 위치·방향을 찾는 과정입니다.</td><td>지도를 불러온 것만으로는 실제 Go2가 그 지도 어디에 있는지 정해지지 않습니다.</td><td>두 방법 모두 Nav2 실행 후 06절에서 초기 위치를 맞춥니다.</td></tr><tr><th scope="row">Odometry · TF</th><td>Odometry는 짧은 시간의 이동·회전 추정입니다. TF는 <code>map → odom → base_link</code>와 센서 좌표를 연결합니다.</td><td>센서 점과 로봇 위치를 같은 좌표에 겹쳐 보려면 이동 정보와 좌표 관계가 모두 필요합니다.</td><td>Go2 native odometry를 사용하며, 지도·벽·로봇이 어긋날 때 먼저 확인합니다.</td></tr><tr><th scope="row">Nav2 · NavFn · DWB</th><td>Nav2는 길을 계획하고 속도를 정합니다. NavFn은 전체 경로를, DWB는 가까운 구간의 전진·회전 명령을 계산합니다.</td><td>지도에 그린 선을 실제 로봇이 장애물을 보며 따라가게 합니다.</td><td>05절의 <code>view</code>와 06절의 목적지 지정.</td></tr><tr><th scope="row">Global / Local Costmap</th><td>장애물과 주변 공간에 이동 비용을 붙인 격자입니다. Global은 전체 길, Local은 로봇 주변을 판단하는 데 씁니다.</td><td>저장 지도에 없던 물체도 실시간 센서로 반영할 수 있습니다.</td><td>RViz2의 <b>Global costmap</b>·<b>Local costmap</b>. 주행 중 갱신되는 것은 이 지도입니다.</td></tr><tr><th scope="row">Footprint · Inflation</th><td>Footprint는 평면에서 본 로봇 외곽 모델, Inflation은 장애물 주변의 이동 비용입니다.</td><td>중심점만 통과하는 길과 몸체가 통과할 수 있는 길을 구분하고 벽 옆에 여유를 둡니다.</td><td>좁은 문·코너를 확인할 때 사용합니다. 모델 크기와 실제 걷는 다리의 범위는 따로 검증합니다.</td></tr><tr><th scope="row">RViz2</th><td>지도·센서·TF·경로를 함께 표시하고 초기 위치와 목적지를 입력하는 화면입니다.</td><td>화면의 위치가 실물과 맞는지 확인하고, 원하는 지점과 도착 방향을 지정합니다.</td><td>06절의 <b>2D Pose Estimate</b>·<b>Nav2 Goal</b>·<b>Cancel</b>.</td></tr></tbody></table></div><article class="spec" id="03-a"><div class="spec-head"><span class="spec-id">03-A</span><h3>지도 작성과 자율주행은 서로 다른 모드입니다</h3></div><div class="spec-body"><div class="chain"><div class="chain-step"><span class="chain-n">지도</span><div><strong>센서 + 이동 정보 → RTAB-Map → 새 지도 DB</strong><p>처음 가는 공간을 기록합니다. 운영자가 조종기로 Go2를 이동시키며 지도를 만듭니다.</p></div></div><div class="chain-step"><span class="chain-n">주행</span><div><strong>저장 DB + 현재 센서 → 위치 추정 → Nav2 → Go2 이동</strong><p>주행은 <code>localize_only=true</code>, <code>Mem/IncrementalMemory=false</code>입니다. RTAB-Map의 저장 지도를 계속 확장하지 않으며, Nav2 Costmap이 현재 장애물을 반영합니다.</p></div></div></div><p class="spec-src">근거: <a href="../go2_slam_nav/launch/l1_rgbd.launch.py">L1·RGB-D 실행 소스</a> · <a href="../scripts/run_nav.sh">저장 지도 실행</a></p></div></article>
     </section>
 
-    <section class="section" id="terminal-commands" aria-labelledby="terminal-title" data-template="terminal-commands">
-      <div class="section-heading">
-        <span class="section-number" aria-hidden="true">04</span>
-        <div><h2 id="terminal-title">서버 컴퓨터에서 실행할 터미널 명령어</h2></div>
-      </div>
-      <div class="table-scroll" role="region" aria-label="터미널 명령어 표" tabindex="0">
-        <table class="template-table">
-          <thead><tr><th scope="col">순서</th><th scope="col">터미널</th><th scope="col">실행 목적</th><th scope="col">명령어</th><th scope="col">확인할 결과</th></tr></thead>
-          <tbody><tr><td></td><td></td><td></td><td></td><td></td></tr></tbody>
-        </table>
-      </div>
+    <section class="section" id="methods" aria-labelledby="methods-title">
+      <div class="section-heading"><span class="section-number" aria-hidden="true">04</span><h2 id="methods-title">두 가지 진행 방법 — 새 지도 작성 / 기존 지도 사용</h2></div>
+      <div id="tutorial-start" class="route-grid"><article class="spec" id="04-a"><div class="spec-head"><span class="spec-id">04-A</span><h3>방법 A · 직접 Mapping한 뒤 그 지도로 주행</h3></div><div class="spec-body"><ol class="steps"><li><div><p><b>처음 지도를 그릴 공간에서 시작합니다.</b> Go2를 출발 위치에 두고, 새 DB 이름을 정합니다. 기존 파일 이름은 사용하지 않습니다.</p></div></li><li><div><p><b>카메라와 센서 수신을 확인합니다.</b> 05절에서 터미널 A를 켜고 터미널 B의 센서 검사를 통과합니다.</p></div></li><li><div><p><b>Mapping을 시작합니다.</b> 터미널 B에서 <a href="#cmd-map">새 지도 명령</a>을 실행합니다. 운영자가 조종기로 천천히 움직이며 복도·방·문 주변을 관측합니다.</p><div class="note"><b>왜 천천히 움직이나:</b> RTAB-Map은 앞뒤 영상과 이동 정보를 연결합니다. 빠른 회전이나 센서 끊김은 서로 맞지 않는 벽이나 겹친 지도로 이어질 수 있습니다. 이미 본 지점도 다시 관측해 지도 연결을 확인합니다.</div></div></li><li><div><p><b>지도를 확인하고 저장합니다.</b> RViz2에서 벽과 통로가 실제 구조와 맞는지 본 뒤, 터미널 B에서 <kbd>Ctrl</kbd>+<kbd>C</kbd>를 누르고 저장 검사가 끝날 때까지 기다립니다.</p></div></li><li><div><p><b>저장한 DB로 Nav2를 시작합니다.</b> <code>.last_map</code>에서 방금 저장한 DB 경로를 읽고 <a href="#cmd-view">공통 Nav2 명령</a>을 실행합니다. Mapping과 Nav2는 동시에 실행하지 않습니다.</p></div></li></ol></div></article><article class="spec" id="04-b"><div class="spec-head"><span class="spec-id">04-B</span><h3>방법 B · 기존에 만든 지도로 바로 주행</h3></div><div class="spec-body"><ol class="steps"><li><div><p><b>지도와 현재 공간이 같은지 확인합니다.</b> 기존 실험 지도는 창학관 3층을 사전에 Mapping한 DB입니다. 다른 층이나 다른 건물이라면 방법 A로 그 공간의 지도를 만듭니다.</p></div></li><li><div><p><b>기존 RTAB-Map DB를 서버에서 선택합니다.</b> 다른 노트북에 있던 원본은 보존하고, 전달받은 <code>.db</code> 파일의 서버 내 절대 경로를 준비합니다. 저장소에 지도 DB가 포함돼 있다고 가정하지 않습니다.</p></div></li><li><div><p><b>DB와 센서를 확인합니다.</b> 05절의 <a href="#cmd-select-map">기존 지도 선택</a>으로 파일을 검사하고, 터미널 A의 카메라와 터미널 B의 센서 검사를 확인합니다.</p></div></li><li><div><p><b>Nav2를 시작합니다.</b> <a href="#cmd-view">공통 Nav2 명령</a>을 실행합니다. 스크립트가 원본을 <code>nav_sessions</code> 아래로 복사한 뒤 복사본으로 실행합니다.</p><div class="note"><b>왜 DB를 쓰나:</b> 이 실행 경로는 RTAB-Map의 저장 관측을 이용해 현재 위치를 찾습니다. 지도 그림인 PNG나 YAML 파일만으로 같은 Localization 절차를 대신할 수는 없습니다.</div></div></li><li><div><p><b>실제 위치와 지도를 맞춥니다.</b> 06절에서 초기 위치를 지정하고 센서의 벽이 저장 지도와 겹치는지 확인한 뒤 주행 단계로 넘어갑니다.</p></div></li></ol></div></article></div><div class="table-scroll" role="region" aria-label="두 방법의 차이" tabindex="0"><table class="tutorial-table"><thead><tr><th scope="col">구분</th><th scope="col">방법 A · 새 지도</th><th scope="col">방법 B · 기존 지도</th></tr></thead><tbody><tr><th scope="row">시작 조건</th><td>현재 공간의 지도가 없거나 새로 작성하려는 경우</td><td>현재 공간과 맞는 기존 RTAB-Map DB가 있는 경우</td></tr><tr><th scope="row">지도 파일</th><td>새 이름으로 생성. 기존 DB 경로는 덮어쓰기 거부</td><td>전달받은 DB 선택. Nav2는 세션 복사본 사용</td></tr><tr><th scope="row">운영자 역할</th><td>조종기로 공간을 돌아보며 지도 작성 후 종료·검사</td><td>지도 파일과 실제 공간을 확인하고 초기 위치 지정</td></tr><tr><th scope="row">공통 다음 단계</th><td>05절 Nav2 실행 → 06절 위치 정합 → 운영자 주행</td><td>05절 Nav2 실행 → 06절 위치 정합 → 운영자 주행</td></tr></tbody></table></div><div class="verdict"><h3>04절에서 결정할 것</h3><ul><li>방법 A 또는 B 중 하나를 선택합니다.</li><li>방법 A는 지도 작성·저장을 끝낸 뒤 주행합니다. 방법 B는 Mapping을 시작하지 않습니다.</li><li>두 경로 모두 초기 위치를 확인한 다음 운영자가 이동을 허용합니다.</li></ul></div>
     </section>
 
-    <section class="section" id="rviz" aria-labelledby="rviz-title" data-template="rviz">
-      <div class="section-heading">
-        <span class="section-number" aria-hidden="true">05</span>
-        <div><h2 id="rviz-title">RViz2에서 눌러야 할 버튼과 조작 순서</h2></div>
-      </div>
-      <div class="table-scroll" role="region" aria-label="RViz2 조작 표" tabindex="0">
-        <table class="template-table">
-          <thead><tr><th scope="col">순서</th><th scope="col">화면 · 메뉴</th><th scope="col">누를 버튼</th><th scope="col">조작 방법</th><th scope="col">확인할 결과</th></tr></thead>
-          <tbody><tr><td></td><td></td><td></td><td></td><td></td></tr></tbody>
-        </table>
-      </div>
+    <section class="section" id="terminal-commands" aria-labelledby="terminal-commands-title">
+      <div class="section-heading"><span class="section-number" aria-hidden="true">05</span><h2 id="terminal-commands-title">서버 컴퓨터에서 실행할 터미널 명령어</h2></div>
+      <div class="plain"><b>서버 터미널 4개를 사용합니다.</b> A는 카메라, B는 지도·Nav2·RViz2, C는 주행 명령 연결, D는 상태 확인·이동 허용을 담당합니다. 명령은 서버의 프로젝트 폴더에서 실행합니다. A의 카메라 명령도 서버에서 입력하며, 스크립트가 Go2로 SSH 접속합니다.</div><div class="table-scroll" role="region" aria-label="서버 터미널별 실행 순서" tabindex="0"><table class="tutorial-table"><thead><tr><th scope="col">순서</th><th scope="col">터미널</th><th scope="col">실행 목적</th><th scope="col">명령어 위치</th><th scope="col">확인할 결과</th></tr></thead><tbody><tr><th scope="row">0</th><td>A·B·C·D</td><td>준비된 실행 환경 확인</td><td><a href="#cmd-common">공통 명령</a></td><td>INSTALL CHECK PASS</td></tr><tr><th scope="row">1</th><td>A</td><td>카메라 스트림 유지</td><td><a href="#cmd-camera">카메라 시작</a></td><td>B의 검사에서 RGB·깊이·CameraInfo 수신</td></tr><tr><th scope="row">2</th><td>B</td><td>센서 5종 확인</td><td><a href="#cmd-sensors">센서 검사</a></td><td>status: PASS</td></tr><tr><th scope="row">3-A</th><td>B</td><td>새 지도 생성·저장</td><td><a href="#cmd-map">방법 A</a></td><td>Saved map DB와 DB 검사 통과</td></tr><tr><th scope="row">3-B</th><td>B</td><td>기존 DB 선택·검사</td><td><a href="#cmd-select-map">방법 B</a></td><td>quick_check: ok, nodes ≥ 1</td></tr><tr><th scope="row">4</th><td>B</td><td>저장 지도·Nav2·RViz2 시작</td><td><a href="#cmd-view">두 방법 공통</a></td><td>지도 표시. 06절에서 실물 위치와 대조</td></tr><tr><th scope="row">5</th><td>C</td><td>비활성 bridge 준비</td><td><a href="#cmd-bridge">주행 연결</a></td><td>enabled=false</td></tr><tr><th scope="row">6</th><td>D</td><td>센서·TF·Nav2 상태 확인</td><td><a href="#cmd-health">상태 검사</a></td><td>HEALTHY와 실제 위치 정합을 각각 확인</td></tr><tr><th scope="row">7</th><td>D·RViz2</td><td>이동 허용·목표 지정</td><td><a href="#rviz">06절</a></td><td>운영자가 Goal 도달·실제 정지 확인</td></tr></tbody></table></div><article class="spec" id="05-0"><div class="spec-head"><span class="spec-id">05-0</span><h3>새 터미널마다 먼저 실행합니다</h3></div><div class="spec-body"><p>연구실에서 준비한 <code>go2_nav2</code>와 로봇 통신값을 사용합니다. A–D는 같은 로봇·같은 ROS 통신 설정이어야 하고, B에서는 RViz2 창을 볼 수 있어야 합니다. 접속 주소와 인터페이스를 노트북 값으로 임의 지정하지 않습니다.</p><div class="code"><div class="code-h"><span class="t">모든 터미널 · 프로젝트 폴더와 실행 환경 확인</span><button type="button" data-copy="cmd-common" aria-label="모든 터미널 · 프로젝트 폴더와 실행 환경 확인 명령어 복사">복사</button></div><pre tabindex="0" aria-label="모든 터미널 · 프로젝트 폴더와 실행 환경 확인"><code id="cmd-common" data-language="bash">conda activate go2_nav2
+read -e -r -p &quot;프로젝트 폴더의 절대 경로: &quot; GO2_PROJECT_DIR
+cd -- &quot;$GO2_PROJECT_DIR&quot; &amp;&amp; bash scripts/student_session.sh check</code></pre></div><div class="code out"><div class="code-h"><span class="t">통과할 때 확인할 문구 · 스크립트에 정의된 출력</span></div><pre><code>INSTALL CHECK PASS: Conda Python, ROS packages, messages and plugins.</code></pre></div><p><b>다음으로 갈 조건:</b> 위 문구가 포함된 출력과 정상 종료를 확인합니다. 오류가 나면 이후 실행을 멈추고 해당 메시지를 확인합니다.</p><div class="note"><b>새 터미널 주의:</b> 한 창에서 지정한 셸 변수는 다른 창으로 자동 전달되지 않습니다. 연구실에서 준비한 실행값에는 <code>GO2_NET_IFACE</code>, 카메라용 <code>GO2_SSH_TARGET</code> 등이 포함됩니다. 이 절은 이미 준비된 실행 환경을 사용하는 절차입니다.</div><p class="spec-src">근거: <a href="../scripts/student_session.sh">student_session.sh</a> · <a href="../scripts/environment.py">check의 확인 항목</a></p></div></article><article class="spec" id="05-1"><div class="spec-head"><span class="spec-id">05-1</span><h3>터미널 A · 카메라를 켜고 창을 유지합니다</h3></div><div class="spec-body"><div class="code"><div class="code-h"><span class="t">터미널 A · Go2 카메라 시작</span><button type="button" data-copy="cmd-camera" aria-label="터미널 A · Go2 카메라 시작 명령어 복사">복사</button></div><pre tabindex="0" aria-label="터미널 A · Go2 카메라 시작"><code id="cmd-camera" data-language="bash">bash scripts/student_session.sh camera</code></pre></div><p>SSH 비밀번호나 처음 접속하는 호스트의 확인 창이 나오면 연구실에서 안내한 접속 정보로 처리합니다. 카메라 로그가 흐르는 동안 이 창을 닫지 않습니다. 이미 같은 카메라가 실행 중이라면 기존 A 창을 유지합니다.</p><div class="note"><b>왜 별도 창인가:</b> D435i의 컬러·정렬 깊이 영상을 계속 공급해야 RTAB-Map과 장애물 처리가 작동합니다. 카메라를 중복 실행하지 않습니다.</div><p class="spec-src">근거: <a href="../scripts/go2_camera_session.sh">Go2 카메라 실행 내용</a></p></div></article><article class="spec" id="05-2"><div class="spec-head"><span class="spec-id">05-2</span><h3>터미널 B · Mapping 또는 Nav2를 켜기 전에 센서를 검사합니다</h3></div><div class="spec-body"><div class="code"><div class="code-h"><span class="t">터미널 B · 센서 수신 검사</span><button type="button" data-copy="cmd-sensors" aria-label="터미널 B · 센서 수신 검사 명령어 복사">복사</button></div><pre tabindex="0" aria-label="터미널 B · 센서 수신 검사"><code id="cmd-sensors" data-language="bash">bash scripts/student_session.sh sensors</code></pre></div><p><code>status</code>가 <code>PASS</code>이고 컬러 영상·정렬 깊이·CameraInfo·L1 점군·Go2 odometry 5개 토픽이 모두 <code>received</code>에 나타나는지 확인합니다.</p><div class="note"><b>언제 쓰나:</b> 이 검사는 다른 SLAM·Nav2 세션이 없는 시작 전용 검사입니다. 이미 <code>map</code>이나 <code>view</code>가 실행 중이면 중복 실행을 막기 위해 BLOCKED가 나올 수 있습니다. 주행 세션을 켠 뒤에는 D의 <code>health</code>를 사용합니다.</div><p class="spec-src">근거: <a href="../scripts/mapping_preflight.py">센서·중복 노드 검사</a></p></div></article><article class="spec" id="05-3a"><div class="spec-head"><span class="spec-id">05-3A</span><h3>방법 A만 · 새 지도를 만들고 저장합니다</h3></div><div class="spec-body"><div class="code"><div class="code-h"><span class="t">터미널 B · 새 파일로 Mapping 시작</span><button type="button" data-copy="cmd-map" aria-label="터미널 B · 새 파일로 Mapping 시작 명령어 복사">복사</button></div><pre tabindex="0" aria-label="터미널 B · 새 파일로 Mapping 시작"><code id="cmd-map" data-language="bash">GO2_NEW_MAP=&quot;${GO2_MAP_DIR:-$HOME/go2_maps}/lab_$(date +%Y%m%d_%H%M%S)_$$.db&quot;
+printf &#x27;새 지도 경로: %s\n&#x27; &quot;$GO2_NEW_MAP&quot;
+bash scripts/student_session.sh map &quot;$GO2_NEW_MAP&quot;</code></pre></div><p><code>[go2] Mapping new DB:</code> 뒤의 파일 경로를 확인합니다. 운영자가 조종기로 이동하면서 RViz2의 지도에 벽과 통로가 이어지는지 봅니다. 이 단계에서 Nav2 Goal을 보내지 않습니다.</p><p>지도 작성이 끝나면 <b>B에서 <kbd>Ctrl</kbd>+<kbd>C</kbd></b>를 한 번 누르고 종료를 기다립니다. <code>[go2] Saved map DB:</code>가 나온 뒤에만 아래 명령을 실행합니다.</p><div class="code"><div class="code-h"><span class="t">터미널 B · 방금 저장한 지도 선택·검사</span><button type="button" data-copy="cmd-last-map" aria-label="터미널 B · 방금 저장한 지도 선택·검사 명령어 복사">복사</button></div><pre tabindex="0" aria-label="터미널 B · 방금 저장한 지도 선택·검사"><code id="cmd-last-map" data-language="bash">IFS= read -r GO2_TEST_MAP &lt; &quot;${GO2_MAP_DIR:-$HOME/go2_maps}/.last_map&quot;
+python scripts/mapping_preflight.py validate-db &quot;$GO2_TEST_MAP&quot;
+printf &#x27;Nav2에 사용할 지도: %s\n&#x27; &quot;$GO2_TEST_MAP&quot;</code></pre></div><p><b>통과 조건:</b> DB 검사에서 <code>quick_check</code>는 <code>ok</code>, <code>nodes</code>는 1 이상이어야 합니다. 표시된 경로가 방금 만든 <code>GO2_NEW_MAP</code>과 같은지도 확인합니다.</p><div class="note"><b>왜 경로를 다시 확인하나:</b> <code>.last_map</code>은 정상 저장·검사 후에만 갱신됩니다. 저장이 실패하면 이전 지도를 가리킬 수 있습니다. 그 경우 파일을 지우지 말고 B의 오류를 확인합니다. DB 무결성 통과와 실제 벽 위치가 정확한지는 별도입니다.</div><p class="spec-src">근거: <a href="../scripts/run_mapping.sh">DB 덮어쓰기 차단·저장 검사</a></p></div></article><article class="spec" id="05-3b"><div class="spec-head"><span class="spec-id">05-3B</span><h3>방법 B만 · 전달받은 기존 지도를 선택합니다</h3></div><div class="spec-body"><p>서버에 있는 RTAB-Map <code>.db</code>의 절대 경로를 입력합니다. 입력할 때 경로 양옆에 따옴표를 붙이지 않습니다. 이 명령은 입력받은 DB를 읽기 전용으로 검사합니다.</p><div class="code"><div class="code-h"><span class="t">터미널 B · 기존 지도 경로 입력·검사</span><button type="button" data-copy="cmd-select-map" aria-label="터미널 B · 기존 지도 경로 입력·검사 명령어 복사">복사</button></div><pre tabindex="0" aria-label="터미널 B · 기존 지도 경로 입력·검사"><code id="cmd-select-map" data-language="bash">read -e -r -p &quot;기존 RTAB-Map DB의 절대 경로: &quot; GO2_TEST_MAP
+python scripts/mapping_preflight.py validate-db &quot;$GO2_TEST_MAP&quot;</code></pre></div><p><b>통과 조건:</b> 파일이 존재하고 <code>quick_check: ok</code>, <code>nodes ≥ 1</code>을 확인합니다. 다른 노트북의 <code>/home/cvr/…</code> 경로를 서버에서 그대로 사용할 수 있다고 가정하지 않습니다.</p><p class="spec-src">근거: <a href="../scripts/mapping_preflight.py">읽기 전용 DB 검사</a></p></div></article><article class="spec" id="05-4"><div class="spec-head"><span class="spec-id">05-4</span><h3>두 방법 공통 · 터미널 B에서 Nav2와 RViz2를 시작합니다</h3></div><div class="spec-body"><div class="code"><div class="code-h"><span class="t">터미널 B · 저장 지도 기반 Nav2 시작</span><button type="button" data-copy="cmd-view" aria-label="터미널 B · 저장 지도 기반 Nav2 시작 명령어 복사">복사</button></div><pre tabindex="0" aria-label="터미널 B · 저장 지도 기반 Nav2 시작"><code id="cmd-view" data-language="bash">bash scripts/student_session.sh view &quot;$GO2_TEST_MAP&quot;</code></pre></div><p>콘솔에서 <code>Original map (unchanged):</code>와 <code>Nav session map copy:</code> 경로를 확인합니다. RViz2가 열리면 <a href="#rviz">06절의 1–4단계</a>로 지도와 실제 위치를 먼저 맞춥니다.</p><div class="note"><b>왜 아직 움직이지 않나:</b> <code>view</code>는 이동 연결을 켜지 않습니다. RTAB-Map·Nav2·RViz2를 확인한 뒤 C에서 bridge를 별도로 준비합니다. 이 상태에서 Goal을 넣으면 계획이 생길 수 있지만 실물 주행 성공을 뜻하지 않습니다.</div><details class="file"><summary>실행 옵션과 지도 호환성</summary><div class="detail-body"><p><code>GO2_LOCALIZATION_PROFILE</code>이 없으면 <code>legacy</code>입니다. 기존 실험에는 <code>aligned_visual</code> 비교·운용 기록도 있습니다. 지도 작성 시의 카메라 모델·장착 위치와 연구실에서 확인한 프로파일을 사용하고, 이 문서만 보고 비교 모드로 바꾸지 않습니다. 임의의 새 지도에 첫 문 전용 마스크를 적용하지 않습니다.</p></div></details><p class="spec-src">근거: <a href="../scripts/run_nav.sh">원본 DB 복사·Localization 실행</a> · <a href="../go2_slam_nav/launch/nav.launch.py">Nav2 실행 구성</a></p></div></article><article class="spec" id="05-5"><div class="spec-head"><span class="spec-id">05-5</span><h3>터미널 C · 주행 명령 연결을 비활성 상태로 시작합니다</h3></div><div class="spec-body"><div class="code"><div class="code-h"><span class="t">터미널 C · 비활성 bridge 시작</span><button type="button" data-copy="cmd-bridge" aria-label="터미널 C · 비활성 bridge 시작 명령어 복사">복사</button></div><pre tabindex="0" aria-label="터미널 C · 비활성 bridge 시작"><code id="cmd-bridge" data-language="bash">bash scripts/student_session.sh bridge</code></pre></div><p><code>Starting DISABLED bridge</code> 문구를 확인하고 C를 열어 둡니다. Nav2의 <code>/go2_nav/cmd_vel</code>을 Go2 Sport 요청으로 전달하는 노드이며, 시작할 때 <code>enabled=false</code>입니다.</p><div class="note"><b>중복 실행을 막는 이유:</b> <code>sport_ctrl already exists</code>가 나오면 기존 C 창을 찾습니다. 새 bridge를 추가로 만들지 않습니다.</div><p class="spec-src">근거: <a href="../scripts/student_session.sh">bridge 시작 옵션</a> · <a href="../go2_cmd_processor/go2_cmd_processor/sport_ctrl.py">명령 전달과 enable 처리</a></p></div></article><article class="spec" id="05-6"><div class="spec-head"><span class="spec-id">05-6</span><h3>터미널 D · 주행 전 상태를 확인합니다</h3></div><div class="spec-body"><div class="code"><div class="code-h"><span class="t">터미널 D · 센서·TF·Nav2 준비 상태 검사</span><button type="button" data-copy="cmd-health" aria-label="터미널 D · 센서·TF·Nav2 준비 상태 검사 명령어 복사">복사</button></div><pre tabindex="0" aria-label="터미널 D · 센서·TF·Nav2 준비 상태 검사"><code id="cmd-health" data-language="bash">bash scripts/student_session.sh health</code></pre></div><div class="code"><div class="code-h"><span class="t">터미널 D · 이동 비활성·지도 모드 확인</span><button type="button" data-copy="cmd-state" aria-label="터미널 D · 이동 비활성·지도 모드 확인 명령어 복사">복사</button></div><pre tabindex="0" aria-label="터미널 D · 이동 비활성·지도 모드 확인"><code id="cmd-state" data-language="bash">ros2 param get /sport_ctrl enabled
+ros2 param get /rtabmap Mem/IncrementalMemory</code></pre></div><p><code>health</code>가 <code>HEALTHY</code>이고 이동 허가는 <code>false</code>, RTAB-Map의 IncrementalMemory도 <code>false</code>인지 확인합니다. <code>NOT READY</code>이면 <code>failures</code>의 토픽·서비스·서버 이름부터 확인합니다.</p><div class="note"><b>HEALTHY가 확인하는 범위:</b> 센서 최신성·TF·Nav2 활성 상태와 일부 파라미터입니다. 화면 속 로봇과 실제 로봇이 일치하는지, 다리가 문틀을 피하는지는 판정하지 않습니다. 06절의 육안 확인을 함께 마칩니다.</div><p class="spec-src">근거: <a href="../scripts/nav_health.py">health의 실제 판정 항목</a></p></div></article><article class="spec" id="05-7"><div class="spec-head"><span class="spec-id">05-7</span><h3>종료 · 목표 취소와 실제 정지를 먼저 확인합니다</h3></div><div class="spec-body"><ol class="compact-list"><li>RViz2의 <b>Cancel</b>로 현재 목표를 취소하고 운영자가 실제 정지를 확인합니다. 필요하면 조종기로 정지합니다.</li><li>D에서 아래 명령으로 이동 허가를 끕니다.</li><li>C에서 <kbd>Ctrl</kbd>+<kbd>C</kbd>, B에서 <kbd>Ctrl</kbd>+<kbd>C</kbd>, 마지막으로 A에서 <kbd>Ctrl</kbd>+<kbd>C</kbd>를 누릅니다.</li></ol><div class="code"><div class="code-h"><span class="t">터미널 D · 실제 정지 확인 후 이동 허가 해제</span><button type="button" data-copy="cmd-disable" aria-label="터미널 D · 실제 정지 확인 후 이동 허가 해제 명령어 복사">복사</button></div><pre tabindex="0" aria-label="터미널 D · 실제 정지 확인 후 이동 허가 해제"><code id="cmd-disable" data-language="bash" data-operator-motion="true">ros2 param set /sport_ctrl enabled false
+ros2 param get /sport_ctrl enabled</code></pre></div><div class="note"><b>enabled=false는 비상정지 명령이 아닙니다.</b> 이 값은 이후 명령 전달을 막습니다. 먼저 목표를 취소하고 실제 정지를 확인한 뒤 사용합니다. 카메라는 마지막에 종료해 주행 노드보다 먼저 센서가 끊기지 않게 합니다.</div></div></article><article class="spec" id="05-help"><div class="spec-head"><span class="spec-id">05-HELP</span><h3>실행이 멈추면 · 오류가 나온 단계에서 확인합니다</h3></div><div class="spec-body"><div class="table-scroll" role="region" aria-label="오류 메시지별 확인" tabindex="0"><table class="tutorial-table"><thead><tr><th scope="col">보이는 메시지·현상</th><th scope="col">뜻</th><th scope="col">다음 확인</th></tr></thead><tbody><tr><th scope="row">activate the project environment first</th><td>다른 Python·Conda 환경에서 실행</td><td>모든 터미널이 준비된 go2_nav2를 쓰는지 확인</td></tr><tr><th scope="row">Offline interface selected / Set GO2_SSH_TARGET</th><td>실행용 연결값이 없거나 비어 있음</td><td>연구실에서 준비한 연결값을 확인. 노트북의 NIC·주소를 임의 복사하지 않음</td></tr><tr><th scope="row">BLOCKED · active_nodes</th><td>다른 Mapping·Nav2가 실행 중</td><td>기존 세션 창을 확인하고 정상 종료 후 한 번만 실행</td></tr><tr><th scope="row">BLOCKED · missing_or_stale</th><td>필수 센서의 새 데이터가 부족</td><td>A 카메라 연결과 로봇 센서 수신을 확인</td></tr><tr><th scope="row">refusing overwrite / already exists</th><td>새 지도 이름이 기존 파일과 겹침</td><td>새 파일명 사용. 기존 DB를 삭제해 재시도하지 않음</td></tr><tr><th scope="row">RViz needs a desktop/X11 DISPLAY</th><td>B에서 GUI 화면을 사용할 수 없음</td><td>연구실에서 준비한 서버 화면 접속으로 실행</td></tr><tr><th scope="row">health: NOT READY</th><td>센서·TF·서버·파라미터 중 미충족</td><td>failures에 나온 원인을 해결하고 RViz2 위치도 다시 확인</td></tr></tbody></table></div></div></article>
     </section>
 
-    <section class="section" id="completed" aria-labelledby="completed-title" data-template="completed">
-      <div class="section-heading">
-        <span class="section-number" aria-hidden="true">06</span>
-        <div><h2 id="completed-title">현재 완료한 작업</h2></div>
-      </div>
-      <div class="table-scroll" role="region" aria-label="완료 작업 표" tabindex="0">
-        <table class="template-table">
-          <thead><tr><th scope="col">작업</th><th scope="col">완료 내용</th><th scope="col">확인 근거</th></tr></thead>
-          <tbody><tr><td></td><td></td><td></td></tr></tbody>
-        </table>
-      </div>
+    <section class="section" id="rviz" aria-labelledby="rviz-title">
+      <div class="section-heading"><span class="section-number" aria-hidden="true">06</span><h2 id="rviz-title">RViz2 조작 — 위치 맞추기부터 목표 취소까지</h2></div>
+      <ol class="steps"><li><div><h3>서버에서 열린 RViz2의 기준 좌표를 확인합니다.</h3><p><b>Displays → Global Options → Fixed Frame</b>을 펼쳐 <code>map</code>인지 봅니다. <code>Map</code>은 <code>/map</code>을 표시합니다. 창이 작으면 Displays와 Navigation 2 패널을 펼칩니다.</p></div></li><li><div><h3>지도와 TF가 보이는지 확인합니다.</h3><p>저장 지도에 벽·통로가 나타나고 <code>TF</code>의 <code>base_link</code> 축이 보여야 합니다. 지도가 비어 있거나 TF 오류가 계속되면 초기 위치나 목적지를 찍기 전에 B의 로그를 확인합니다.</p><div class="note"><b>선이 있다고 같은 것은 아닙니다:</b> <code>Trajectory</code>의 <code>/mapPath</code>는 RTAB-Map의 이동 이력이고, 초록색 <code>Nav2 plan</code>의 <code>/plan</code>이 목적지로 갈 계획 경로입니다.</div></div></li><li><div><h3>2D Pose Estimate로 실제 위치와 방향을 입력합니다.</h3><p>상단 <b>2D Pose Estimate</b>를 누릅니다. 지도에서 Go2가 실제 서 있는 위치를 마우스 왼쪽 버튼으로 누른 뒤, <b>코가 향한 방향으로 드래그하고 놓습니다.</b> 점만 맞추지 말고 방향도 맞춥니다. 이 도구는 <code>/initialpose</code>를 입력합니다.</p><p>센서로 본 벽이 저장 지도 벽과 겹치는지, <code>base_link</code> 축 방향이 실제 로봇과 같은지 비교합니다. 한쪽 벽만 보지 말고 문틀·복도 모서리처럼 구분되는 구조도 봅니다.</p></div></li><li><div><h3>두 Costmap과 통로의 실제 여유를 확인합니다.</h3><p><b>Local costmap</b>·<b>Global costmap</b>을 켜고 갈 방향에 장애물 셀이 있는지 봅니다. 현재 설정 파일에는 두 표시가 포함돼 있습니다. 필요하면 <b>Add → By topic → /local_costmap/published_footprint</b>의 Polygon 표시를 추가해 외곽 모델을 확인합니다.</p><div class="note"><b>위치 정합이 먼저입니다:</b> 지도·센서가 어긋난 상태에서 Inflation이나 Footprint를 줄여 통로를 열지 않습니다. 먼저 TF·센서 시각·초기 위치를 확인합니다.</div></div></li><li><div><h3>운영자가 이동을 허용합니다.</h3><p>05절의 D 검사와 위치 확인을 마치고, 기존 Goal이 남아 있으면 <b>Cancel</b>합니다. 운영자가 로봇 옆에서 조종기를 준비한 상태로 <b>D에서만</b> 아래 명령을 실행합니다.</p><div class="code"><div class="code-h"><span class="t">터미널 D · 운영자 확인 후 이동 허용</span><button type="button" data-copy="cmd-enable" aria-label="터미널 D · 운영자 확인 후 이동 허용 명령어 복사">복사</button></div><pre tabindex="0" aria-label="터미널 D · 운영자 확인 후 이동 허용"><code id="cmd-enable" data-language="bash" data-operator-motion="true">ros2 param set /sport_ctrl enabled true
+ros2 param get /sport_ctrl enabled</code></pre></div><p>반환값이 <code>true</code>인지 확인합니다. 이 단계부터 이후 Goal이 실제 주행으로 이어질 수 있습니다.</p></div></li><li><div><h3>Nav2 Goal로 가까운 목적지 한 곳을 지정합니다.</h3><p>상단 <b>Nav2 Goal</b>을 누릅니다. 지도에서 목적지를 누른 상태로 <b>도착했을 때 로봇이 바라볼 방향으로 드래그하고 놓습니다.</b> 단일 목표 모드에서는 놓는 순간 목표가 전달됩니다. 처음에는 운영자가 확인한 짧은 구간 한 곳부터 시작합니다.</p><p>초록색 <code>Nav2 plan</code>, 로봇 위치, 실물 이동을 함께 봅니다. 도착 여부는 경로 표시만으로 판정하지 않고 Goal 결과와 실제 정지를 확인합니다.</p></div></li><li><div><h3>중단할 때는 Cancel을 누르고 실제 정지를 확인합니다.</h3><p><b>Navigation 2 → Cancel</b>로 목표를 취소합니다. 화면 조작만으로 멈추지 않거나 접촉 위험이 보이면 로봇 옆 운영자가 조종기로 정지합니다. 이후 <a href="#05-7">05절 종료 순서</a>를 따릅니다.</p></div></li></ol><div class="table-scroll" role="region" aria-label="RViz2 표시 이름과 실제 토픽" tabindex="0"><table class="tutorial-table"><thead><tr><th scope="col">표시·도구</th><th scope="col">무엇을 보나</th><th scope="col">토픽·기준</th></tr></thead><tbody><tr><th scope="row">Map</th><td>RTAB-Map에서 불러온 지도</td><td><code>/map</code>, Fixed Frame=<code>map</code></td></tr><tr><th scope="row">TF</th><td>지도·이동 기준·몸체의 좌표 관계</td><td><code>map → odom → base_link</code></td></tr><tr><th scope="row">L1 Lidar (assembled)</th><td>누적한 L1 점군</td><td><code>/assembled_cloud</code>. Mapping/legacy 구성에 해당; 프로파일에 따라 이 누적 토픽이 없을 수 있음</td></tr><tr><th scope="row">Global / Local costmap</th><td>전역 계획·근거리 제어용 장애물 비용</td><td><code>/global_costmap/costmap</code> · <code>/local_costmap/costmap</code></td></tr><tr><th scope="row">Nav2 plan / Trajectory</th><td>갈 길 / RTAB-Map 이동 이력</td><td><code>/plan</code> / <code>/mapPath</code></td></tr><tr><th scope="row">Publish Point</th><td>한 점의 좌표 전달</td><td><code>/clicked_point</code>. 이 버튼 자체는 Nav2 주행 Goal이 아님</td></tr></tbody></table></div><article class="spec" id="06-a"><div class="spec-head"><span class="spec-id">06-A</span><h3>한 지점 주행이 확인된 뒤 · 여러 지점을 이어 갑니다</h3></div><div class="spec-body"><p>Navigation 2 패널의 <b>Waypoint mode</b>를 누른 뒤, <b>Nav2 Goal</b>로 방문할 위치와 방향을 순서대로 추가합니다. 입력한 순서와 화살표를 확인하고 <b>Start Waypoint Following</b>을 누르면 여러 지점 주행이 시작됩니다. <b>Cancel Accumulation</b>은 점을 모으는 모드를 취소하는 버튼이며, 주행 중 취소는 <b>Cancel</b>을 사용합니다.</p><div class="note"><b>현재 프로젝트의 제한:</b> 180° 방향 전환과 무개입 왕복은 아직 완료되지 않았습니다. 처음부터 긴 왕복 미션을 성공 절차로 제시하지 않습니다. 실패한 필수 지점을 건너뛰지 않도록 소스의 <code>stop_on_failure=true</code>를 유지합니다.</div><p class="spec-src">근거: <a href="../go2_slam_nav/config/nav.rviz">프로젝트 RViz2 표시·도구 구성</a> · Nav2 RViz plugin 1.1.20의 버튼 이름 확인</p></div></article><article class="spec" id="06-b"><div class="spec-head"><span class="spec-id">06-B</span><h3>지도는 보이는데 위치가 이상하면 · TF부터 확인합니다</h3></div><div class="spec-body"><p>D에서 아래 두 명령을 <b>하나씩</b> 실행합니다. 변환이 출력되는 것을 본 뒤 각각 <kbd>Ctrl</kbd>+<kbd>C</kbd>로 끝냅니다. 변환 존재와 실제 위치 정확도는 별개이므로 RViz2 벽 정합도 함께 확인합니다.</p><div class="code"><div class="code-h"><span class="t">터미널 D · map과 odom 연결 확인</span><button type="button" data-copy="cmd-tf-map" aria-label="터미널 D · map과 odom 연결 확인 명령어 복사">복사</button></div><pre tabindex="0" aria-label="터미널 D · map과 odom 연결 확인"><code id="cmd-tf-map" data-language="bash">ros2 run tf2_ros tf2_echo map odom</code></pre></div><div class="code"><div class="code-h"><span class="t">터미널 D · odom과 몸체 연결 확인</span><button type="button" data-copy="cmd-tf-body" aria-label="터미널 D · odom과 몸체 연결 확인 명령어 복사">복사</button></div><pre tabindex="0" aria-label="터미널 D · odom과 몸체 연결 확인"><code id="cmd-tf-body" data-language="bash">ros2 run tf2_ros tf2_echo odom base_link</code></pre></div><p><b>Localization INACTIVE 표기:</b> Navigation 2 패널의 Localization 표시는 별도의 AMCL lifecycle 관리 상태와 관련됩니다. 이 프로젝트는 RTAB-Map을 사용하므로 그 문구 하나만 보고 전체 위치 추정 실패로 판정하지 않습니다. RTAB-Map 로그·TF·실제 위치 정합을 함께 확인합니다.</p></div></article>
     </section>
 
-    <section class="section" id="improvements" aria-labelledby="improvements-title" data-template="improvements">
-      <div class="section-heading">
-        <span class="section-number" aria-hidden="true">07</span>
-        <div><h2 id="improvements-title">개선해야 할 점</h2></div>
-      </div>
-      <div class="table-scroll" role="region" aria-label="개선 사항 표" tabindex="0">
-        <table class="template-table">
-          <thead><tr><th scope="col">항목</th><th scope="col">현재 문제</th><th scope="col">개선 방향</th><th scope="col">확인 기준</th></tr></thead>
-          <tbody><tr><td></td><td></td><td></td><td></td></tr></tbody>
-        </table>
-      </div>
+    <section class="section" id="completed" aria-labelledby="completed-title">
+      <div class="section-heading"><span class="section-number" aria-hidden="true">07</span><h2 id="completed-title">현재 완료한 작업</h2></div>
+      <div class="table-scroll" role="region" aria-label="현재 완료한 작업과 확인 범위" tabindex="0"><table class="tutorial-table"><thead><tr><th scope="col">작업</th><th scope="col">완료 내용</th><th scope="col">확인 근거</th></tr></thead><tbody><tr><th scope="row">L1·D435i·Go2 odometry 연결</th><td>RTAB-Map으로 전달하는 기본 센서 경로와 센서 수신·중복 노드 검사를 구현했습니다.</td><td><a href="../go2_slam_nav/launch/l1_rgbd.launch.py">실행 소스</a> · <a href="../scripts/mapping_preflight.py">검사 소스</a>. 대상 서버의 새 라이브 검증과는 구분.</td></tr><tr><th scope="row">지도 작성·DB 보존</th><td>창학관 3층 기존 지도 작성 결과를 사용합니다. 새 Mapping은 기존 DB 덮어쓰기를 거부하고, 주행은 세션 복사본으로 실행합니다.</td><td>기존 운영 기록 · <a href="../scripts/run_mapping.sh">Mapping 저장</a> · <a href="../scripts/run_nav.sh">복사본 실행</a>.</td></tr><tr><th scope="row">저장 지도 기반 위치 추정</th><td>RTAB-Map Localization 실행과 RViz2 초기 위치 입력을 사용합니다. 상대 영상 방향으로 native yaw drift를 제한하는 구성도 포함합니다.</td><td><a href="../go2_slam_nav/launch/aligned_visual_localization.launch.py">방향 보정 구성</a>. 자동 초기 정합이 완료됐다는 뜻은 아님.</td></tr><tr><th scope="row">Nav2 계획·제어와 진단</th><td>NavFn+DWB, 실시간 Costmap, 전진·회전 명령 경로와 진단 기록을 구현했습니다. 후진·횡이동은 이 bridge에서 차단합니다.</td><td><a href="../go2_slam_nav/config/nav2_params.yaml">Nav2 파라미터</a> · <a href="../go2_slam_nav/go2_slam_nav/navigation_recorder.py">recorder</a>.</td></tr><tr><th scope="row">서버 실행용 진입점</th><td>check·camera·sensors·map·view·bridge·health·shell 명령을 구현했습니다. bridge는 비활성 상태로 시작합니다.</td><td><a href="../scripts/student_session.sh">student_session.sh</a>. 새 서버 전체 실행 성공은 NOT TESTED.</td></tr><tr><th scope="row">연구실 → 교수님 방 문앞</th><td>운영자가 초기 위치를 보정하고 소구간 목표를 반복 지정해 이동했다고 보고했습니다.</td><td><a href="../README.md">운영자 보고·저장 로그 요약</a>. FollowWaypoints는 21:22:51 첫 점 성공, 두 번째 점은 취소.</td></tr><tr><th scope="row">교수님 방 문앞 → 연구실</th><td>운영자가 수동으로 180° 돌린 뒤 소구간 목표를 반복 지정해 복귀했다고 보고했습니다.</td><td>2026-11-12 복귀 목표 기록과 21:29:05 마지막 Goal SUCCEEDED. 수동 회전은 운영자 관측.</td></tr></tbody></table></div><div class="verdict"><h3>현재 가능한 범위</h3><ul><li>초기 위치 지정·짧은 목표 지정·수동 방향 전환을 포함한 기존 주행 결과가 있습니다.</li><li>이 결과를 무개입 전체 왕복이나 새 서버의 주행 완료로 확대하지 않습니다.</li><li>이 문서 작성 중 새 ROS 세션·RViz2 실환경·로봇 이동 시험은 실행하지 않았습니다.</li></ul></div>
     </section>
 
-    <section class="section" id="future" aria-labelledby="future-title" data-template="future">
-      <div class="section-heading">
-        <span class="section-number" aria-hidden="true">08</span>
-        <div><h2 id="future-title">추가적으로 발전시킬 수 있는 부분</h2></div>
-      </div>
-      <div class="table-scroll" role="region" aria-label="발전 방향 표" tabindex="0">
-        <table class="template-table">
-          <thead><tr><th scope="col">아이디어</th><th scope="col">기대 효과</th><th scope="col">필요한 조건</th><th scope="col">우선순위</th></tr></thead>
-          <tbody><tr><td></td><td></td><td></td><td></td></tr></tbody>
-        </table>
-      </div>
+    <section class="section" id="improvements" aria-labelledby="improvements-title">
+      <div class="section-heading"><span class="section-number" aria-hidden="true">08</span><h2 id="improvements-title">개선해야 할 점</h2></div>
+      <div class="table-scroll" role="region" aria-label="개선해야 할 점과 확인 기준" tabindex="0"><table class="tutorial-table"><thead><tr><th scope="col">항목</th><th scope="col">현재 문제</th><th scope="col">개선 방향</th><th scope="col">확인 기준</th></tr></thead><tbody><tr><th scope="row">초기 위치 정합</th><td>저장 DB를 열어도 자동 초기 위치가 안정적이지 않아 운영자가 2D Pose Estimate를 사용합니다.</td><td>기존 DB 관측·현재 RGB/깊이·센서 TF·시각을 함께 기록하고 시작 위치별 재인식 결과를 비교합니다.</td><td>다른 시작 위치·방향에서 벽·문틀 정합과 초기화 성공 여부를 반복 기록.</td></tr><tr><th scope="row">목적지의 180° 회전</th><td>교수님 방 문앞에서 Nav2 방향 전환을 완료하지 못했습니다. 원인은 확정하지 않았습니다.</td><td>위치 정합·Local Costmap·DWB 회전 후보·실제 회전 응답을 같은 시간축으로 분리해 봅니다.</td><td>넓은 곳과 해당 문앞을 비교하고, 수동 회전 없이 도착 방향 완료 여부를 확인.</td></tr><tr><th scope="row">여러 지점 자동 왕복</th><td>소구간 Goal과 수동 개입 결과가 있으며, 한 번의 전체 자동 미션은 미달성입니다.</td><td>한 점 성공 → 두 점 연속 → 짧은 왕복 순서로 확대합니다. 필수점 실패는 중단합니다.</td><td>목표별 결과·미완료 점·개입 횟수를 기록. 목표 교체에 따른 ABORTED와 제어 실패 구분.</td></tr><tr><th scope="row">실제 보행 외곽·좁은 문</th><td>현재 70×36 cm Footprint·1 cm padding은 축소 설정입니다. 0.5 m/s 보행 외곽과 제동은 미검증입니다.</td><td>운영자가 실제 다리·발·장착물 범위와 정지 거리를 측정한 뒤 모델과 여유를 평가합니다.</td><td>90 cm 문에서 정적 경로와 실제 보행·회전·제동 결과를 각각 기록. 설정값만으로 통과 판정하지 않음.</td></tr><tr><th scope="row">센서 단절·복구</th><td>카메라/케이블 단절 뒤 관측·위치 추정과 복귀가 끊긴 기록이 있습니다.</td><td>재연결 후 센서 최신성·VO·TF·Costmap을 확인하고 재개 조건을 명시합니다.</td><td>운영자 감독하에 단절·재연결 반복 결과와 복구 시간·수동 개입 기록.</td></tr><tr><th scope="row">빈 통로의 장애물 표시</th><td>저장 지도와 실시간 Costmap이 다를 때 실제 물체·정합 오류·바닥 투영·잔상을 구분해야 합니다.</td><td>원시 L1/깊이·동일 시각 TF·Global/Local Costmap을 함께 비교합니다.</td><td>센서별 장애물 출처와 높이 필터의 낮은 장애물 손실 여부 확인.</td></tr><tr><th scope="row">서버에서의 재현성</th><td>실행 진입점과 문서는 있으나 새 서버의 센서 수신부터 주행까지 완료한 검증은 없습니다.</td><td>05절을 순서대로 확인하고 원본 DB·실행 프로파일·오류 로그를 함께 기록합니다.</td><td>T00–T10에서 소스 검사·서버 실행·실물 관측을 나눠 남김.</td></tr></tbody></table></div>
+    </section>
+
+    <section class="section" id="future" aria-labelledby="future-title">
+      <div class="section-heading"><span class="section-number" aria-hidden="true">09</span><h2 id="future-title">추가적으로 발전시킬 수 있는 부분</h2></div>
+      <div class="plain"><b>아래는 후속 개발 제안입니다.</b> 현재 완료된 기능과 구분하며, 기존 기록·노드·운영 절차를 활용할 수 있는 범위부터 제시합니다.</div><div class="table-scroll" role="region" aria-label="현실적인 발전 방향" tabindex="0"><table class="tutorial-table"><thead><tr><th scope="col">아이디어</th><th scope="col">기대 효과</th><th scope="col">필요한 조건</th><th scope="col">우선순위</th></tr></thead><tbody><tr><th scope="row">진단 로그 요약 리포트</th><td>events.jsonl.gz·summary.json에서 Goal 결과·센서 공백·재계획 구간을 표와 그래프로 모아 반복 분석 시간을 줄입니다.</td><td>현재 recorder 출력 형식과 누락 메시지 수를 유지. 먼저 저장 로그의 읽기 전용 분석부터 구현.</td><td>1 · 실물 이동 없이 시작 가능</td></tr><tr><th scope="row">지도 목록과 선택 화면</th><td>공간 이름·작성 날짜·미리보기·DB 검사 결과를 함께 보여줘 다른 공간의 지도를 고르는 실수를 줄입니다.</td><td>원본 DB 불변, 검사·주행 복사본 분리, 지도별 카메라 모델·프로파일 메타데이터.</td><td>2 · 파일 선택 기능부터</td></tr><tr><th scope="row">기록한 경유점 재사용</th><td>검증한 지점·도착 방향을 저장해 매번 마우스로 찍는 작업을 줄입니다.</td><td>초기 정합과 180° 회전 문제를 먼저 확인. 기존 FollowWaypoints와 실패 중단 사용.</td><td>3 · 짧은 두 점부터</td></tr><tr><th scope="row">시작·종료 안내 도우미</th><td>터미널별 상태를 모아 카메라 → 지도 → bridge → 검사 순서를 안내합니다.</td><td>기존 student_session과 health를 호출. 이동 허용과 Goal 실행은 운영자가 명시적으로 결정.</td><td>3 · 상태 표시부터</td></tr><tr><th scope="row">위치 정합·문 통과 반복 평가</th><td>날짜·조명·시작 방향별 결과를 같은 형식으로 비교해 개선 효과를 판단합니다.</td><td>고정 기준점, 동일 경로, 실제 외곽 측정, 정합·계획·주행을 나눈 기록.</td><td>기반 작업 · 알고리즘 교체 전</td></tr></tbody></table></div>
     </section>
   </main>
 
@@ -384,7 +371,8 @@
     <div class="wrap">
       <div class="footer-line"><span>Unitree Go2 EDU · SLAM · Nav2 자율주행 프로젝트</span></div>
       <details class="revision" id="revision-history">
-        <summary>문서 관리 기록 · R56 · 2026-11-13</summary>
+        <summary>문서 관리 기록 · R57 · 2026-11-13</summary>
+        <p>R57: 8개 항목 → 9개 항목. 04절에 새 Mapping/기존 DB 두 경로를 추가하고 터미널 명령을 05절, RViz2를 06절, 완료·개선·발전을 07–09절로 이동했습니다. 빈 표 → 실행 순서·명령·확인 기준·오류 대응, 개념 카드 → 무엇/왜/언제 표로 구성했습니다. 참고 문서의 단계 목록·터미널 표시·명령 복사·이유 설명·다음 단계 판정 구조를 적용했습니다. <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/blob/6d9521f/docs/go2_navigation_validation.html">개편 전 R56</a>에 이전 본문을 보존합니다. 프로젝트 코드·로봇·지도 DB는 변경하지 않았습니다.</p>
         <p>R51의 소개·영상·개념·실습 순서 4개 구성을 요청한 8개 항목으로 변경했습니다. 소개에 Go2 EDU와 기존 노트북에서 연구실 서버로 이어가는 목표를 명시하고, 핵심 개념 6개를 9개로 보강했습니다. 기존 실습 절차는 비워 둔 명령어·RViz2·완료 작업·개선점·발전 방향 템플릿 5개로 변경했습니다.</p>
         <p>R53에서는 모바일 항목 번호가 두 줄로 나뉘던 표시를 한 줄로 보정하고, R52의 검사 예정 상태를 실제 문서 검사 결과로 갱신했습니다. <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/fe8cbc14d7f37d617a1e129b3183b6cc0761ce8c">8개 항목 개편 커밋</a>과 이번 검증 기록을 구분합니다.</p>
         <p>R54: 소개 우측 요약 카드 → 사용자 제공 사진의 1254×1254 보정본, 소개 이관 문단·2/3번 부연 문구 → 삭제, 4–8번 안내·배지·작성 양식 제목 → 컬럼명과 빈 표만 유지, 영상 설명·길이·다운로드 링크 → 영상 재생창만 유지. <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/183b1bc">이미지 자산 커밋</a>. 기본 imagegen 도구에 “원본 로봇 형태·자세·구도·흰 배경을 유지하고 해상도와 선명도만 개선”을 요청했습니다. 이전 R53은 <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/blob/8d18bf5/docs/go2_navigation_validation.html">개편 전 문서</a>에 보존합니다.</p>
@@ -452,5 +440,45 @@
       </details>
     </div>
   </footer>
+  <div class="copy-status" role="status" aria-live="polite" aria-atomic="true"></div>
+  <script>
+    (() => {
+      const status = document.querySelector('.copy-status');
+      let statusTimer;
+      function fallbackCopy(text) {
+        const input = document.createElement('textarea');
+        input.value = text;
+        input.setAttribute('readonly', '');
+        input.style.position = 'fixed';
+        input.style.left = '-9999px';
+        document.body.appendChild(input);
+        input.select();
+        const copied = document.execCommand('copy');
+        input.remove();
+        return copied;
+      }
+      document.addEventListener('click', async event => {
+        const button = event.target.closest('button[data-copy]');
+        if (!button) return;
+        const code = document.getElementById(button.dataset.copy);
+        if (!code) return;
+        let copied = false;
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(code.textContent);
+            copied = true;
+          }
+        } catch (_) { /* Local file clipboard fallback. */ }
+        if (!copied) {
+          try { copied = fallbackCopy(code.textContent); } catch (_) { copied = false; }
+        }
+        clearTimeout(statusTimer);
+        status.textContent = copied ? '명령어를 복사했습니다.' : '복사하지 못했습니다. 명령어를 선택해 복사하세요.';
+        button.textContent = copied ? '복사됨' : '복사';
+        button.focus({preventScroll: true});
+        statusTimer = setTimeout(() => { status.textContent = ''; button.textContent = '복사'; }, 1800);
+      });
+    })();
+  </script>
 </body>
 </html>
