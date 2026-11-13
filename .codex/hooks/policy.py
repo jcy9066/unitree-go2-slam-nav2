@@ -114,7 +114,8 @@ def risk_reason(tool, args, cwd):
 
 def static_checks(repo_root):
     report = []
-    shell = [repo_root / "scripts" / p for p in ("_env.sh", "run_mapping.sh", "run_nav.sh")]
+    shell = [repo_root / p for p in ("install_student.sh", "setup_maps.sh", "run_mapping.sh", "run_nav.sh")]
+    shell.append(repo_root / "scripts" / "_env.sh")
     for path in shell:
         if not path.exists():
             report.append(f"FAIL missing {path.relative_to(repo_root)}")
