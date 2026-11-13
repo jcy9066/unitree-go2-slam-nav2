@@ -21,7 +21,40 @@
 
 원본은 실험 PC의 `~/go2_maps/nav_sessions/20261112_194202_3012154/diagnostics/20261112_211808_7a89824a/events.jsonl.gz`에 있습니다. 상세 이력은 [단일 검증 기록](docs/go2_navigation_validation.html)에 보존합니다. 이번 문서 갱신에서 로봇 이동이나 새로운 실기 시험을 수행하지 않았습니다.
 
+## 환경 설치: Conda `go2_nav2`
+
+현재 PC의 Ubuntu 22.04 x86_64와 기존 Conda Python **3.14.7**을 기준으로 구성합니다. ROS 2는 Humble, Nav2는 1.1.20, RTAB-Map은 0.23.13입니다. 패키지·채널·소스 commit·빌드·검증 설정은 **[environment.json](environment.json)** 한 파일에서 관리합니다. Conda가 이미 설치돼 있어야 합니다.
+
+저장소 루트에서 기존 설치 스크립트 한 번으로 환경 생성부터 시작합니다.
+
+```bash
+bash scripts/install_student.sh
+```
+
+스크립트는 `conda create --name go2_nav2`로 **기존 Conda의 기본 envs 경로**에 환경을 생성합니다. 저장소 안에 가상환경이나 별도 설치 폴더를 만들지 않습니다. 선언한 의존성을 설치하고, Unitree 메시지·`rtabmap_viz`·프로젝트 패키지를 임시 작업 폴더에서 빌드해 해당 Conda 환경에 설치합니다. 원본 로봇 연결·망 설정·지도·주행 설정은 이 설치 명령에서 다루지 않습니다.
+
+모든 설치·빌드·Python/ROS 패키지·메시지·플러그인 검증이 성공한 마지막에만 다음 문구가 출력됩니다. 실패하면 오류로 종료하고 이 문구는 출력하지 않습니다.
+
+```text
+go2_nav2 환경 설정이 완료되었습니다.
+```
+
+설치 후에는 일반 Conda 방식으로 활성화합니다.
+
+```bash
+conda activate go2_nav2
+bash scripts/install_student.sh verify
+```
+
+설치 동작 없이 목록만 확인하려면 `bash scripts/install_student.sh plan`, 명세와 ROS 메타데이터를 대조하려면 `python3 scripts/environment.py validate`를 사용합니다. 설치 기록·해결된 패키지 목록·빌드 로그는 선택된 Conda 환경의 `.go2_nav2_setup/`에 저장됩니다. 기존에 직접 만든 `go2_nav2`가 있으면 자동 덮어쓰지 않고 중단합니다.
+
+`rtabmap_viz`는 RViz2와 별도 GUI입니다. 2026-11-05/09의 실행 기록과 현재 Mapping 스크립트의 사용을 확인해 유지합니다. Conda 채널에 해당 바이너리가 없어 현재 PC와 같은 **0.23.13의 공식 소스 commit**으로 빌드합니다. Nav2 주행은 이 GUI를 끄고 RViz2를 사용합니다.
+
+검증 범위: Conda 의존성 dry-run에서 **58개 요청/927개 패키지 해결**, 설치·실행 진입의 오프라인 회귀 **21개 통과**. 이번 작업에서 새 Conda 환경의 실제 전체 설치·소스 빌드·GUI 실행·로봇 주행은 수행하지 않았습니다. 실제 설치 성공 여부는 위 명령의 검증과 완료 문구로 확인해야 합니다.
+
 ## 기존 노트북 실행 경로
+
+아래는 기존 시스템 ROS 환경의 실험 재현 기록입니다. 새 Conda 설치는 위 절차를 사용하며 두 환경의 overlay를 섞지 않습니다.
 
 새 지도를 만들 때는 노트북에서 다음 한 줄을 실행합니다. 카메라 재사용/SSH 시작 → 센서 수신 확인 → 새 DB Mapping·RViz → Ctrl+C 후 저장 검사를 묶었습니다. 로봇 이동은 운영자가 수행합니다.
 
