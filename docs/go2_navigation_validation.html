@@ -316,7 +316,7 @@
     <div class="wrap">
       <div class="footer-line"><span>Unitree Go2 EDU · SLAM · Nav2 자율주행 프로젝트</span></div>
       <details class="revision" id="revision-history">
-        <summary>문서 관리 기록 · R55 · 2026-11-13</summary>
+        <summary>문서 관리 기록 · R56 · 2026-11-13</summary>
         <p>R51의 소개·영상·개념·실습 순서 4개 구성을 요청한 8개 항목으로 변경했습니다. 소개에 Go2 EDU와 기존 노트북에서 연구실 서버로 이어가는 목표를 명시하고, 핵심 개념 6개를 9개로 보강했습니다. 기존 실습 절차는 비워 둔 명령어·RViz2·완료 작업·개선점·발전 방향 템플릿 5개로 변경했습니다.</p>
         <p>R53에서는 모바일 항목 번호가 두 줄로 나뉘던 표시를 한 줄로 보정하고, R52의 검사 예정 상태를 실제 문서 검사 결과로 갱신했습니다. <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/fe8cbc14d7f37d617a1e129b3183b6cc0761ce8c">8개 항목 개편 커밋</a>과 이번 검증 기록을 구분합니다.</p>
         <p>R54: 소개 우측 요약 카드 → 사용자 제공 사진의 1254×1254 보정본, 소개 이관 문단·2/3번 부연 문구 → 삭제, 4–8번 안내·배지·작성 양식 제목 → 컬럼명과 빈 표만 유지, 영상 설명·길이·다운로드 링크 → 영상 재생창만 유지. <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/183b1bc">이미지 자산 커밋</a>. 기본 imagegen 도구에 “원본 로봇 형태·자세·구도·흰 배경을 유지하고 해상도와 선명도만 개선”을 요청했습니다. 이전 R53은 <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/blob/8d18bf5/docs/go2_navigation_validation.html">개편 전 문서</a>에 보존합니다.</p>
@@ -342,6 +342,43 @@
           </table>
         </div>
         <p>브라우저 검사는 실제 화면 폭을 지정하고 영상 재생 시간이 증가하는지 확인했습니다. 초기 CLI 검사는 화면 폭 제한과 가상시간 재생값 때문에 판정에 사용하지 않았습니다. 새 ROS 실행·RViz2 평가·실물 주행은 위 문서 검사와 구분합니다.</p>
+        <h3 id="conda-setup-r56">R56 · 현재 PC용 Conda 설치와 주행 현황 기록</h3>
+        <p>기준 PC는 Ubuntu 22.04.5 x86_64입니다. 이번 설치 대상은 연구실 서버가 아니라 현재 PC입니다. 아래 기록은 R55의 문서·브라우저 검사와 별개이며, 본문의 8개 항목·9개 개념·빈 표 5개와 이미지·영상은 유지합니다.</p>
+        <div class="table-scroll" role="region" aria-label="R56 환경 관리 변경" tabindex="0">
+          <table>
+            <caption>환경 관리 변경과 이유</caption>
+            <thead><tr><th scope="col">대상</th><th scope="col">이전 → 현재 · 이유 · 커밋</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">환경 정의</th><td>스크립트에 분산된 설치 목록 → 루트 <a href="../environment.json">environment.json</a>에 채널·버전·외부 SHA·빌드·검증 설정 통합. 기존 ROS 메타데이터의 의존성도 대조합니다. Python 3.14.7은 현재 RoboStack Humble 패키지 해석 결과와 맞춥니다. <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/a9bc64a">정의</a>, <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/3ecd719">장치 설정 제외</a>, <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/c4ce32f">설치 경로 설정 제거</a>.</td></tr>
+              <tr><th scope="row">설치 진입점</th><td>시스템 apt·별도 설치 폴더 → <code>bash scripts/install_student.sh</code> 한 명령으로 기존 Conda의 기본 envs 위치에 <code>--name go2_nav2</code> 생성, 의존성 설치, 임시 소스 빌드, 환경 내부 설치, 검증. 전 단계 성공 뒤에만 <code>go2_nav2 환경 설정이 완료되었습니다.</code> 출력. 읽기 전용 <code>plan</code> 유지. <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/543b24f">설치 구현</a>, <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/151a589">기존 sh 교체</a>.</td></tr>
+              <tr><th scope="row">시각화 · 소스</th><td>Unitree의 이동하는 main 참조 → SHA 고정. Mapping에서 사용한 <code>rtabmap_viz</code> 유지: Conda 바이너리가 없어 RTAB-Map 0.23.13 대응 소스를 고정하여 빌드합니다. <code>dependencies.repo</code>는 독립 설정 대신 JSON의 생성물로 변경합니다. <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/32a825a">호환 목록</a>.</td></tr>
+              <tr><th scope="row">실행 환경</th><td>활성 Conda에서도 시스템 ROS를 불러오던 경로 → 선택된 Conda Python·ROS·패키지만 검증 후 사용. 설치에는 로봇 SSH·NIC·지도 경로·주행 설정을 추가하지 않습니다. <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/f040eaf">환경 로더</a>, <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/5521daf">실행 진입점</a>.</td></tr>
+              <tr><th scope="row">검사 · 문서 · 규칙</th><td>시스템 설치 전제 검사 → Conda 설치 단계 실패·기존 환경 보호·실행 진입 검사 21개. README에 주행 개입과 설치 절차 명시. AGENTS에 JSON 단일 관리·기본 Conda 위치·미확정 사항 사전 논의 규칙 기록. <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/afb7913">설치 검사 13개</a>, <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/f2182d8">진입 검사 8개</a>, <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/a77efd8">주행 현황</a>, <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/d6f5a03">설치 안내</a>, <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/841df2d">환경 규칙</a>, <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/b368249">논의 규칙</a>, <a href="https://github.com/jcy9066/unitree-go2-slam-nav2/commit/613cb08">기본 envs 경로</a>.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>시각화 사용 근거: <code>/home/cvr/.ros/log/rtabmap_viz_2602935_1794210091239.log</code>의 2026-11-09 16:41:31 시작·ROS 파라미터 417개 읽기와 해당 launch 로그의 정상 종료. <a href="../scripts/run_mapping.sh">Mapping 진입점</a>은 <code>use_rtabmapviz:=true</code>를 전달합니다. RViz2는 별도 노드이며 <code>rtabmap_viz</code>의 존재를 RViz2 실행의 필수 조건으로 설명하지 않습니다.</p>
+        <div class="table-scroll" role="region" aria-label="R56 T00부터 T10 검증" tabindex="0">
+          <table>
+            <caption>R56 검증 범위 · 새 Conda 실제 설치는 미실행</caption>
+            <thead><tr><th scope="col">항목</th><th scope="col">상태</th><th scope="col">근거 · 한계</th></tr></thead>
+            <tbody>
+              <tr><th scope="row">T00 소스 · 브랜치</th><td>PASS</td><td>원격 fetch 후 최신 작업 브랜치와 Draft PR #1/#2 확인. 파일별 commit·일반 push. main 쓰기·Merge·auto-merge·Actions 없음. 원격의 문서 개편과 기존 기록 보존.</td></tr>
+              <tr><th scope="row">T01 설치 · 정적 검사</th><td>PASS / NOT TESTED</td><td>PASS: 선언 58개로 Conda dry-run 927개 패키지 해석, Python 3.14.7. shell 10개 bash -n, Python 60개 ast.parse, JSON·ROS 메타데이터 validate. 설치·진입 단위 검사 21개 포함 기존 native ROS를 불러온 전체 소스 회귀 126개 통과. NOT TESTED: 새 Conda 환경 생성·실제 패키지 설치·소스 컴파일·GUI 실행. 모의 설치 검사는 실제 설치 성공의 증거가 아닙니다.</td></tr>
+              <tr><th scope="row">T02 센서 · TF</th><td>NOT TESTED</td><td>이번 환경 수정 후 실시간 센서·TF 검사 미실행. 노드 시작 없음.</td></tr>
+              <tr><th scope="row">T03 Mapping · DB</th><td>NOT TESTED</td><td>이번 작업에서 Mapping·DB 쓰기 없음. 기존 원본 보존.</td></tr>
+              <tr><th scope="row">T04 저장 지도</th><td>NOT TESTED</td><td>새 Conda에서 저장 지도 로드 미실행. 기존 운영자 지도는 창학관 3층 사전 Mapping 결과.</td></tr>
+              <tr><th scope="row">T05 실효 파라미터</th><td>NOT TESTED</td><td>새 Conda의 실행 중 파라미터 미확인. Footprint·Inflation·Planner·Controller 설정 변경 없음.</td></tr>
+              <tr><th scope="row">T06 위치 정합</th><td>NOT TESTED</td><td>새 검사는 없음. 운영자는 기존 실행에서 초기 위치 자동 설정이 불안정하여 RViz2 2D Pose Estimate로 보정했다고 보고.</td></tr>
+              <tr><th scope="row">T07 통과 계획</th><td>NOT TESTED</td><td>새 Conda 경로 계획·동적 보행 외곽·90 cm 문 여유 미검증.</td></tr>
+              <tr><th scope="row">T08 편도 주행</th><td>NOT TESTED</td><td>이번 작업에서 이동 없음. 기존 운영자 보고: 작은 목표를 반복 지정하여 연구실 → 교수님 방 문앞 주행 가능. 2026-11-12 로그에는 FollowWaypoints의 첫 지점 성공과 둘째 지점 취소, 이후 개별 목표 교체가 기록됨.</td></tr>
+              <tr><th scope="row">T09 자동 왕복</th><td>FAIL / NOT TESTED</td><td>기존 운영자 보고 기준 FAIL: 도착 후 Nav2 180° 회전 불가, 원인 미확정. 수동 180° 회전 후 개별 목표로 복귀 가능하다고 보고. 로그상 21:27:12–21:29:05 복귀 목표와 최종 SUCCEEDED 확인. 초기 위치·목표·회전 개입 없는 자동 왕복은 미달성. 새 Conda 주행은 NOT TESTED.</td></tr>
+              <tr><th scope="row">T10 문서 · 증거</th><td>PASS</td><td>R56 HTML5 오류·중복 ID·깨진 내부 앵커·누락 로컬 링크 0. 본문 8개 항목·9개 개념·빈 표 5개, 스타일·이미지·영상 유지. 새 브라우저 시험은 미실행이며 R55 결과와 구분. 실제 설치와 소스 검사, 과거 운용 증거를 분리.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>실패 이력: Python 3.11/3.12 지정 dry-run은 현재 RoboStack ABI와 맞지 않아 실패했고, <code>rtabmap_viz</code> 바이너리 검색도 실패했습니다. 호환 Python과 고정 소스 빌드로 설치 계획을 수정했으며 실제 컴파일은 남아 있습니다. 전체 pytest 첫 실행은 ROS 미로딩 import 오류, 다음 실행은 기본 ROS 로그 디렉터리 쓰기 제한으로 실패했습니다. 기존 native ROS와 Unitree/project overlay를 불러오고 <code>ROS_LOG_DIR</code>를 임시 경로로 지정한 소스 검사는 126개 통과했습니다. 이 native 테스트 환경을 새 Conda 설치 결과와 혼동하지 않습니다.</p>
+        <p>운용 로그: <code>/home/cvr/go2_maps/nav_sessions/20261112_194202_3012154/diagnostics/20261112_211808_7a89824a/events.jsonl.gz</code>. 21:22:39 FollowWaypoints 시작, 21:22:51 첫 지점 성공, 21:23:46 두 번째 취소. 이후 목표 교체·일부 중단을 모두 제어기 실패로 판정하지 않습니다. 수동 회전은 운영자 보고이며 이 로그만으로 물리 동작을 증명하지 않습니다. 후속 확인은 실제 Conda 소스 빌드·시각화, 초기 위치 자동 정합과 180° 회전 실패 원인의 독립 분석입니다.</p>
       </details>
     </div>
   </footer>
