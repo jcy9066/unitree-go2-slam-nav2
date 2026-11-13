@@ -225,7 +225,7 @@ body{margin:0;overflow-wrap:anywhere;word-break:keep-all}a{text-underline-offset
 </div>
 <p class="outcome">Mapping은 Go2 조종기로 이동하며 진행합니다. 저장된 지도에서는 RViz2로 위치를 맞추고 주행 목표를 지정합니다.</p></div>
 <figure class="project-image">
-<img alt="흰 배경에 서 있는 회색 Unitree Go2 EDU 사족보행 로봇" decoding="async" fetchpriority="high" height="1254" src="images/go2-edu-hero.png" width="1254"/>
+<img alt="흰 배경에 서 있는 회색 Unitree Go2 EDU 사족보행 로봇" decoding="async" fetchpriority="high" height="1254" src="docs/images/go2-edu-hero.png" width="1254"/>
 </figure>
 </section>
 <section aria-labelledby="video-title" class="section" id="video">
@@ -238,7 +238,7 @@ body{margin:0;overflow-wrap:anywhere;word-break:keep-all}a{text-underline-offset
 <figure>
 <div class="video-frame">
 <video aria-label="Go2 기존 주행 기록 영상" controls="" height="1280" id="go2-video" playsinline="" preload="metadata" width="720">
-<source src="KakaoTalk_20261112_203846672_web.mp4" type="video/mp4"/>
+<source src="docs/KakaoTalk_20261112_203846672_web.mp4" type="video/mp4"/>
             동영상 재생을 지원하지 않는 브라우저입니다.
           </video>
 </div>
@@ -326,7 +326,7 @@ printf "선택한 지도: %s\n" "$GO2_TEST_MAP"</code></pre></div><p class="outc
 <section aria-labelledby="rviz-title" class="section" id="rviz"><div class="section-heading">
 <span aria-hidden="true" class="section-number">05</span>
 <div><h2 id="rviz-title">RViz2에서 눌러야 할 버튼과 조작 순서</h2></div>
-</div><p>4번의 단계 번호와 연결해서 봅니다. 기본 RViz 설정은 <a href="../go2_slam_nav/config/nav.rviz">nav.rviz</a>이며 초기 위치와 Nav2 목표 도구를 포함합니다.</p><div aria-label="RViz2 실습 순서" class="table-scroll" role="region" tabindex="0"><table><thead><tr><th scope="col">단계</th><th scope="col">화면·도구</th><th scope="col">조작</th><th scope="col">확인할 결과</th></tr></thead><tbody><tr><th scope="row">C0</th><td>직접 / 원격 화면</td><td>실행 컴퓨터의 데스크톱 또는 GUI 전달 화면에서 창이 열리는지 확인.</td><td>단순 SSH 셸만 열고 RViz2 화면을 기대하지 않음.</td></tr><tr><th scope="row">M1</th><td>Mapping 화면</td><td>조종기로 이동하며 로봇 이동과 새 벽·공간이 지도에 반영되는지 확인. rtabmap_viz는 Mapping용 별도 GUI.</td><td>저장 직전 지도 내용과 실제 공간 비교. Ctrl+C 저장 후 N1로 이동.</td></tr><tr><th scope="row">N1</th><td>Fixed Frame / 지도</td><td>Displays의 Global Options에서 Fixed Frame이 map인지 확인. 지도가 현재 장소인지 확인.</td><td>설정 파일은 map 사용. 좌표·지도 오류가 있으면 주행 보류.</td></tr><tr><th scope="row">N1</th><td>2D Pose Estimate</td><td>실제 위치를 지도에서 누른 뒤 Go2가 바라보는 방향으로 드래그하고 놓음. 현재 운용에 포함된 수동 보정.</td><td>표시된 로봇 위치·방향이 실제와 맞는지 확인.</td></tr><tr><th scope="row">N2</th><td>센서 / TF / Costmap</td><td>지도 벽과 센서 벽, map → odom → base_link 연결, 가까운 장애물의 위치를 비교.</td><td>초기 위치 정합과 좁은 문 통과 가능성을 별도로 판단.</td></tr><tr><th scope="row">N3</th><td>실제 주행 모드 재시작</td><td>N3 sh 실행 후 초기 위치와 Costmap을 다시 확인. 이후 Nav2 Goal 도구로 가까운 목표 위치와 방향 지정.</td><td>목표 성공을 확인한 뒤 다음 작은 목표 지정. 계획 경로 표시만으로 주행 성공으로 기록하지 않음.</td></tr><tr><th scope="row">N4</th><td>도착 / 조종기 회전 / 복귀</td><td>도착 후 Nav2 종료·정지 확인 → Go2 조종기로 수동180° 회전 → 같은 지도 Nav2 재실행 → 초기 위치 재확인 → 복귀 목표 지정.</td><td>현재 개입이 필요한 절차를 기록. 무개입 자동 왕복으로 표현하지 않음.</td></tr></tbody></table></div></section>
+</div><p>4번의 단계 번호와 연결해서 봅니다. 기본 RViz 설정은 <a href="go2_slam_nav/config/nav.rviz">nav.rviz</a>이며 초기 위치와 Nav2 목표 도구를 포함합니다.</p><div aria-label="RViz2 실습 순서" class="table-scroll" role="region" tabindex="0"><table><thead><tr><th scope="col">단계</th><th scope="col">화면·도구</th><th scope="col">조작</th><th scope="col">확인할 결과</th></tr></thead><tbody><tr><th scope="row">C0</th><td>직접 / 원격 화면</td><td>실행 컴퓨터의 데스크톱 또는 GUI 전달 화면에서 창이 열리는지 확인.</td><td>단순 SSH 셸만 열고 RViz2 화면을 기대하지 않음.</td></tr><tr><th scope="row">M1</th><td>Mapping 화면</td><td>조종기로 이동하며 로봇 이동과 새 벽·공간이 지도에 반영되는지 확인. rtabmap_viz는 Mapping용 별도 GUI.</td><td>저장 직전 지도 내용과 실제 공간 비교. Ctrl+C 저장 후 N1로 이동.</td></tr><tr><th scope="row">N1</th><td>Fixed Frame / 지도</td><td>Displays의 Global Options에서 Fixed Frame이 map인지 확인. 지도가 현재 장소인지 확인.</td><td>설정 파일은 map 사용. 좌표·지도 오류가 있으면 주행 보류.</td></tr><tr><th scope="row">N1</th><td>2D Pose Estimate</td><td>실제 위치를 지도에서 누른 뒤 Go2가 바라보는 방향으로 드래그하고 놓음. 현재 운용에 포함된 수동 보정.</td><td>표시된 로봇 위치·방향이 실제와 맞는지 확인.</td></tr><tr><th scope="row">N2</th><td>센서 / TF / Costmap</td><td>지도 벽과 센서 벽, map → odom → base_link 연결, 가까운 장애물의 위치를 비교.</td><td>초기 위치 정합과 좁은 문 통과 가능성을 별도로 판단.</td></tr><tr><th scope="row">N3</th><td>실제 주행 모드 재시작</td><td>N3 sh 실행 후 초기 위치와 Costmap을 다시 확인. 이후 Nav2 Goal 도구로 가까운 목표 위치와 방향 지정.</td><td>목표 성공을 확인한 뒤 다음 작은 목표 지정. 계획 경로 표시만으로 주행 성공으로 기록하지 않음.</td></tr><tr><th scope="row">N4</th><td>도착 / 조종기 회전 / 복귀</td><td>도착 후 Nav2 종료·정지 확인 → Go2 조종기로 수동180° 회전 → 같은 지도 Nav2 재실행 → 초기 위치 재확인 → 복귀 목표 지정.</td><td>현재 개입이 필요한 절차를 기록. 무개입 자동 왕복으로 표현하지 않음.</td></tr></tbody></table></div></section>
 <section aria-labelledby="completed-title" class="section" id="completed"><div class="section-heading">
 <span aria-hidden="true" class="section-number">06</span>
 <div><h2 id="completed-title">현재 완료한 작업과 확인 근거</h2></div>
