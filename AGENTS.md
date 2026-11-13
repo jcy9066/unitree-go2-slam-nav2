@@ -19,11 +19,17 @@ Scope: this repository, its Codex agents, and all subagents. Read this file firs
 - The project Conda environment is named `go2_nav2`. Install ROS 2 Humble and the project runtime inside that environment. Select its Python ABI from the compatible RoboStack package set and record it in `environment.json`.
 - Create it with `conda create --name go2_nav2` in the existing Conda installation's default envs location. Do not place a Conda environment in the repository or invent a separate permanent installation prefix. Use temporary source-build directories and install their results into the selected Conda environment.
 - Retain `rtabmap_viz`: earlier logs confirm its use and the Mapping entry point starts it. Its source version and installation method belong in `environment.json`.
-- Keep `scripts/install_student.sh` as the setup entry point. Its default command must create the Conda environment, install declared dependencies, build Unitree/project packages and verify the installation. Print `go2_nav2 환경 설정이 완료되었습니다.` only after every required step succeeds. Keep an explicit read-only `plan` mode.
+- Keep root `install_student.sh` as the setup entry point. Its default command must create the Conda environment, install declared dependencies, build Unitree/project packages and verify the installation. Print `go2_nav2 환경 설정이 완료되었습니다.` only after every required step succeeds. Keep an explicit read-only `plan` mode.
 - Build and run with the selected Conda interpreter and ROS environment. Do not source `/opt/ros` or reuse system-built Unitree/project overlays in the Conda deployment. A system Python bootstrap may read JSON before Conda activation.
 - Preserve required ROS `package.xml` metadata and check its dependencies against the environment specification. Generated activation files, resolved package snapshots and compatibility exports derive from `environment.json`; do not maintain them as independent configuration sources.
 - Keep existing Conda environments, original maps and credentials intact. Runtime robot-network interface and data paths may be explicit installation overrides; do not silently reconfigure the host network.
 - Setup covers environment creation, dependency installation, builds and verification. Do not add robot SSH targets, NIC selection, map paths or motion/profile settings to the installer or its manifest unless the user explicitly requests them. Existing operator runtime settings stay separate.
+
+## Shell entry points and camera operation
+- Keep exactly four user-facing shell entry points at repository root: `install_student.sh`, `setup_maps.sh`, `run_mapping.sh`, `run_nav.sh`. Keep `scripts/_env.sh` as the single internal shared shell helper; Python implementations remain under `scripts/`.
+- Tutorial commands must use the root paths. Mapping and Nav2 stay separate. Preserve explicit DB-path input, original DB protection, shutdown validation and owned-process cleanup.
+- Start the camera with commands in a separate Go2 SSH terminal. Do not deploy this repository to Go2 or reintroduce a camera shell payload or automatic camera SSH startup.
+- Keep used health diagnostics and localization-profile selection as Nav2 subcommands rather than separate sh files. Default/view mode stays motion-disabled; physical drive is an explicit operator action.
 
 ## Git and parallel Codex workflow
 1. Never commit to `main`. Do not merge or enable auto-merge without explicit user authorization.
