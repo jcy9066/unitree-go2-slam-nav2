@@ -3,6 +3,20 @@
 # Assumes a colcon workspace layout: <workspace>/src/unitree-go2-slam-nav2.
 GO2_SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 GO2_REPO_ROOT="$(cd -- "$GO2_SCRIPT_DIR/.." && pwd)"
+if [[ -n ${CONDA_PREFIX:-} ]]; then
+    GO2_ENV_NAME=$(env -u PYTHONHOME -u PYTHONPATH /usr/bin/python3 -c \
+        'import json,sys; print(json.load(open(sys.argv[1]))["conda"]["name"])' \
+        "$GO2_REPO_ROOT/environment.json")
+    if [[ "$(basename -- "$CONDA_PREFIX")" != "$GO2_ENV_NAME" ]]; then
+        printf 'ERROR: activate the project environment first: conda activate %s\n' "$GO2_ENV_NAME" >&2
+        return 1
+    fi
+    python3 "$GO2_SCRIPT_DIR/environment.py" verify || return 1
+    export GO2_ENV_MANAGER=conda
+    export GO2_PYTHON="$CONDA_PREFIX/bin/python"
+    GO2_WS_ROOT="$CONDA_PREFIX"
+    return 0
+fi
 GO2_WS_ROOT="${GO2_WS_ROOT:-$(cd -- "$GO2_REPO_ROOT/../.." && pwd)}"
 GO2_ROS_DISTRO="${ROS_DISTRO:-humble}"
 GO2_ROS_SETUP="/opt/ros/$GO2_ROS_DISTRO/setup.bash"
