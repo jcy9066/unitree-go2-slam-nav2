@@ -1,5 +1,28 @@
 # Unitree Go2 L1 + D435i: RTAB-Map / Nav2
 
+## 현재 주행 범위와 제한
+
+운영자 보고와 2026-11-12 저장 주행 로그를 기준으로 정리했습니다. 지도는 **사전에 Mapping한 창학관 3층 지도**를 사용합니다. 아래 결과는 운영자의 목표 지정·초기 위치 보정·방향 전환을 포함한 주행 결과입니다.
+
+| 항목 | 확인된 동작과 제한 |
+|---|---|
+| 초기 위치 | Nav2 시작 시 자동 초기 위치 정합이 원활하지 않아 RViz2의 **2D Pose Estimate**로 위치·방향을 수동 설정한 뒤 출발 |
+| 연구실 → 교수님 방 문앞 | 소구간 목표(waypoint)를 조금씩 여러 번 지정하여 Nav2 주행 가능 |
+| 도착 후 180° 회전 | 교수님 방 문앞에서 Nav2를 통한 180° 방향 전환을 완료하지 못함. 원인은 미확정 |
+| 교수님 방 문앞 → 연구실 | 운영자가 Go2를 수동으로 180° 회전한 뒤, 소구간 목표를 반복 지정하여 Nav2 복귀 가능 |
+| 전체 자동 왕복 | 초기 위치 설정·목표 지정·도착 후 방향 전환에 수동 개입 필요. 무개입 전체 미션 완료는 미달성 |
+| Mapping | 기존 창학관 3층 지도 작성 결과 사용. 신규 서버에서 설치부터 새 Mapping까지 실행한 결과는 미검증 |
+
+저장 로그의 주요 근거(2026-11-12 KST):
+
+- **21:22:39–21:23:46:** FollowWaypoints 실행에서 첫 점은 21:22:51에 성공했고 두 번째 점은 취소됐습니다.
+- **이후:** 교수님 방 방향 및 복귀 방향으로 NavigateToPose 목표를 여러 번 교체한 기록이 있습니다. 목표 교체(preemption)에 따른 ABORTED 상태는 별도로 구분합니다.
+- **21:27:12–21:29:05:** 복귀 방향 목표를 나눠 지정했고 마지막 Goal은 21:29:05에 SUCCEEDED입니다. 수동 180° 회전은 운영자 관측으로 기록합니다.
+
+원본은 실험 PC의 `~/go2_maps/nav_sessions/20261112_194202_3012154/diagnostics/20261112_211808_7a89824a/events.jsonl.gz`에 있습니다. 상세 이력은 [단일 검증 기록](docs/go2_navigation_validation.html)에 보존합니다. 이번 문서 갱신에서 로봇 이동이나 새로운 실기 시험을 수행하지 않았습니다.
+
+## 기존 노트북 실행 경로
+
 새 지도를 만들 때는 노트북에서 다음 한 줄을 실행합니다. 카메라 재사용/SSH 시작 → 센서 수신 확인 → 새 DB Mapping·RViz → Ctrl+C 후 저장 검사를 묶었습니다. 로봇 이동은 운영자가 수행합니다.
 
 ```bash
@@ -18,7 +41,7 @@ bash scripts/laptop_nav.sh view    # Go2/카메라 시작 후 지도·위치 확
 
 위 `view`를 Ctrl+C로 종료하고 위치 정합을 확인한 뒤, 운영자만 `bash scripts/laptop_nav.sh drive`로 주행 bridge를 켭니다. Goal도 운영자가 지정합니다. 두 번째 인자로 다른 `.db`를 선택할 수 있습니다. Ethernet `eno1`에 연결이 없으면 `view`/`drive`는 ROS 기동 전에 중단합니다.
 
-2026-11-12 현재 navigation profile은 두 문 허용(`GO2_FIRST_DOOR_ONLY=false`), Footprint70×36cm와 padding1cm(검사72×38cm), inflation20cm입니다. 공식 정지 외형70×31cm를 근거로 줄인 후보이며0.5m/s 실제 다리 스윕/제동은 미검증입니다. Localization은 TF를 발행하지 않는 RGB-D odometry 상대 yaw로 native Go2 yaw drift를 제한하고, 기존 SensorTimeSync 한 개가 odom TF를 발행합니다. Mapping 및 저장 지도는 유지합니다. 정지75초 raw yaw변화1.31° 대비 map yaw span0.11° 확인. 첫 문 동결 경로 외곽 검사는 왕복0/63, 둘째 문은 잔여 겹침이 있어 실제 통과 성공으로 취급하지 않습니다. [현재 설정·실패/성공 범위 R37](docs/go2_navigation_validation.html#heading-fix-r37).
+현재 소스의 navigation 설정은 두 문 허용(`GO2_FIRST_DOOR_ONLY=false`), Footprint 70×36cm와 양쪽 padding 1cm(검사 72×38cm), Local inflation 20cm / Global inflation 30cm입니다. 0.5m/s에서 실제 다리 스윕과 제동거리는 미검증입니다. `aligned_visual` Localization은 RGB-D odometry의 상대 방향으로 native Go2 yaw drift를 제한하고 센서 원본 취득 시각을 보존합니다. 기존 Mapping/legacy 모드의 카메라 시각 재표기와 구분합니다. 정지 yaw와 동결 경로의 과거 비교는 [R37 기록](docs/go2_navigation_validation.html#heading-fix-r37), 복귀·바닥 필터·진척 검사 변경은 [R47 기록](docs/go2_navigation_validation.html#known-space-return-r47)을 참조하세요.
 
 2026-11-10 설치 점검: 실제 작업공간 빌드 PASS, 기존 DB 복사본 quick_check `ok` / 4,516 keyframes, 로봇과 분리한 ROS 기동에서 1131×1537 지도 로드 PASS. Live 센서·초기 위치 정합·실제 문 통과는 Go2 전원 OFF로 NOT TESTED. 자세한 기록은 같은 HTML의 R6에 있습니다.
 
@@ -117,13 +140,14 @@ Mapping refuses an existing DB path. Stop with Ctrl+C to flush it. Navigation us
 | Setting | Current |
 |---|---|
 | Global / Local resolution | 0.05 / 0.02 m |
-| Footprint | 0.80 × 0.42 m, matching the previous laptop configuration |
-| Global / Local padding | 0.01 / 0.02 m |
-| Both inflation radii / scaling | 0.45 m / 4.0 |
+| Footprint | 0.70 × 0.36 m |
+| Global / Local padding | 0.01 / 0.01 m |
+| Global / Local inflation radius | 0.30 / 0.20 m |
+| Inflation scaling | 4.0 |
 | Planner / Controller | NavFn Dijkstra / DWB, retained from PR #1 |
 | Forward / lateral velocity | 0…0.50 m/s / 0 |
 
-The footprint is a configuration baseline, **not a measured dynamic leg boundary**. The previous PR's 70×40cm and 0.42m inflation remain historical experiments in the same validation record. DWB now restores `Go2WalkingSpeed` and `ObstacleFootprint` in addition to its existing critics. Nonzero translation candidates below 0.20m/s are rejected; zero-translation turns remain available. The padded rectangular boundary is checked at sampled trajectory poses. This is not a measured dynamic leg envelope or a guarantee of continuous collision safety. Initial localization and the 90cm second-door traversal remain NOT TESTED with this port because Go2 is powered off.
+The footprint is a configuration baseline, **not a measured dynamic leg boundary**. The previous PR's 70×40cm and 0.42m inflation remain historical experiments in the same validation record. DWB now restores `Go2WalkingSpeed` and `ObstacleFootprint` in addition to its existing critics. Nonzero translation candidates below 0.20m/s are rejected; zero-translation turns remain available. The padded rectangular boundary is checked at sampled trajectory poses. This is not a measured dynamic leg envelope or a guarantee of continuous collision safety. Initial localization currently requires the operator’s 2D Pose Estimate. The supervised route and manual turn are documented above; the dynamic leg envelope and autonomous complete mission remain unverified.
 
 Local checks:
 
@@ -137,7 +161,7 @@ See the single [validation record](docs/go2_navigation_validation.html) for R5 r
 
 ## Corner safeguards and automatic evaluation recording
 
-Nonzero DWB translation candidates are limited to **0.20…0.50m/s**, while `min_vel_x=0` retains in-place rotation. `min_speed_theta=0.20rad/s` filters tiny pure turns. `Go2WalkingSpeed` rejects small translation even when mixed with rotation; `ObstacleFootprint` checks the rotated padded boundary. The 0.20m/s threshold is an adjustable trial value informed by the earlier response measurements, not a proven universal walking threshold. Smoother startup/braking can still pass briefly through lower speeds. Commands are never boosted after collision scoring. The maximum yaw rate remains ±1.8rad/s; reverse/lateral translation remains blocked. The current progress checker is unchanged for comparison.
+Nonzero DWB translation candidates are limited to **0.20…0.50m/s**, while `min_vel_x=0` retains in-place rotation. `min_speed_theta=0.60rad/s` filters tiny pure turns. `Go2WalkingSpeed` rejects small translation even when mixed with rotation; `ObstacleFootprint` checks the rotated padded boundary. The 0.20m/s threshold is an adjustable trial value informed by the earlier response measurements, not a proven universal walking threshold. Smoother startup/braking can still pass briefly through lower speeds. Commands are never boosted after collision scoring. The maximum yaw rate remains ±1.8rad/s; reverse/lateral translation remains blocked. `PoseProgressChecker` recognizes either 0.5m translation or 0.10rad rotation within 10 seconds. This configured rotation support does not establish successful 180° turning at the professor’s room entrance.
 
 A read-only recorder starts automatically with `view` and `drive`. It sends no motion or parameter-setting requests. It saves:
 
