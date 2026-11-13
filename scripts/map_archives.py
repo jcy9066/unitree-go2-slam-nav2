@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Local map archives. Git transfer and robot operation belong to the operator."""
 import argparse
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 import fcntl
 import hashlib
 import json
@@ -209,20 +209,22 @@ class MapArchives:
     def pack(self, database, replace_archive=False):
         archive, metadata = self.paths(database)
         require(not archive.is_symlink() and not metadata.is_symlink(), '압축본 경로에 심볼릭 링크가 있습니다.')
-        with map_lock(database), database_snapshot(database) as info:
-            if archive.exists() or metadata.exists():
-                try:
-                    existing = self.read_metadata(database)
-                    if info['size'] == existing['database']['size'] and checksum(database) == existing['database']['sha256']:
-                        print('REUSE 압축본: ' + str(archive))
-                        return
-                except (MapError, OSError, ValueError, KeyError, TypeError):
-                    if not replace_archive:
-                        raise
-                require(replace_archive,
-                        '다른 내용의 압축본을 보존합니다. 갱신하려면 pack --replace-archive를 명시하세요: ' + str(archive))
-            print('PACK ' + str(database), flush=True)
-            with temporary_output(database.parent) as temporary, temporary_output(database.parent) as temporary_meta:
+        with map_lock(database), ExitStack() as outputs:
+            with database_snapshot(database) as info:
+                if archive.exists() or metadata.exists():
+                    try:
+                        existing = self.read_metadata(database)
+                        if info['size'] == existing['database']['size'] and checksum(database) == existing['database']['sha256']:
+                            print('REUSE 압축본: ' + str(archive))
+                            return
+                    except (MapError, OSError, ValueError, KeyError, TypeError):
+                        if not replace_archive:
+                            raise
+                    require(replace_archive,
+                            '다른 내용의 압축본을 보존합니다. 갱신하려면 pack --replace-archive를 명시하세요: ' + str(archive))
+                print('PACK ' + str(database), flush=True)
+                temporary = outputs.enter_context(temporary_output(database.parent))
+                temporary_meta = outputs.enter_context(temporary_output(database.parent))
                 digest = hashlib.sha256()
                 size = 0
                 with temporary.open('wb') as output, database.open('rb') as source:
@@ -247,16 +249,17 @@ class MapArchives:
                          'compression': {'level': self.config['compression_level'],
                                          'threads': self.config['compression_threads']}}
                 temporary_meta.write_text(json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2) + '\n')
-                if replace_archive:
-                    os.replace(temporary, archive)
-                    os.replace(temporary_meta, metadata)
-                else:
-                    os.link(temporary, archive)
-                    try:
-                        os.link(temporary_meta, metadata)
-                    except BaseException:
-                        archive.unlink()
-                        raise
+            # Validate the source snapshot before publishing either derived file.
+            if replace_archive:
+                os.replace(temporary, archive)
+                os.replace(temporary_meta, metadata)
+            else:
+                os.link(temporary, archive)
+                try:
+                    os.link(temporary_meta, metadata)
+                except BaseException:
+                    archive.unlink()
+                    raise
             print('PACK OK ' + str(archive) + ' + ' + metadata.name)
 
     def restore(self, database):
