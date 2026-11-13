@@ -12,6 +12,7 @@ import shlex
 import shutil
 import subprocess
 import sys
+import tempfile
 import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -83,7 +84,7 @@ def load_config(path, root=None):
     require('python' not in {package_name(s) for s in conda['packages']},
             'Declare Python only in conda.python')
     require(config['build']['jobs'] > 0, 'Build jobs must be positive')
-    for value in config['paths'].values():
+    for value in config.get('paths', {}).values():
         relative_path(value)
     names = set()
     for source in config['sources']:
@@ -91,7 +92,7 @@ def load_config(path, root=None):
         require(source['name'] not in names, 'Duplicate source name')
         names.add(source['name'])
         require(re.fullmatch(r'[0-9a-f]{40}', source['ref']), 'Pin external sources to a commit SHA')
-        for key in ('workspace', 'source_subpath'):
+        for key in ('source_subpath',):
             relative_path(source[key])
     for source in [config['project'], *config['sources']]:
         require(re.fullmatch(r'https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+(?:\.git)?', source['url']),
@@ -109,13 +110,6 @@ def load_config(path, root=None):
     require(config['completion_message'] == 'go2_nav2 환경 설정이 완료되었습니다.', 'Invalid completion message')
     audit_metadata(config, root or Path(path).resolve().parent)
     return config
-
-
-def resolve_paths(config, prefix=None, home=None):
-    home = (home or Path.home()).resolve()
-    path = Path(prefix).expanduser().resolve() if prefix else (home / config['paths']['prefix']).resolve()
-    require(path != home and home in path.parents, 'Choose a dedicated path inside your home')
-    return {'prefix': path, 'logs': path / 'logs'}
 
 
 def clean_environment():
@@ -141,16 +135,20 @@ def conda_executable(explicit=None):
 
 
 class Installer:
-    def __init__(self, config, paths, conda, project_ref=None):
-        self.config, self.paths, self.conda = config, paths, conda
-        self.prefix, self.logs = paths['prefix'], paths['logs']
-        self.project_ref = project_ref or config['project']['ref']
+    """Only the named Conda environment is persistent; builds use temporary files."""
+
+    def __init__(self, config, conda, source_root=ROOT):
+        self.config, self.conda, self.source_root = config, conda, Path(source_root)
         self.env_prefix = None
-        self.overlays = []
         self.env = clean_environment()
         jobs = str(config['build']['jobs'])
         self.env.update(MAKEFLAGS='-j' + jobs, CMAKE_BUILD_PARALLEL_LEVEL=jobs,
                         OPENBLAS_NUM_THREADS=jobs, OMP_NUM_THREADS=jobs)
+
+    @property
+    def record_dir(self):
+        require(self.env_prefix is not None, 'Conda environment is not selected')
+        return self.env_prefix / '.go2_nav2_setup'
 
     def run(self, command, cwd=None, capture=False):
         if not capture:
@@ -159,12 +157,9 @@ class Installer:
                                 check=True, text=True, stdout=subprocess.PIPE if capture else None)
         return result.stdout.strip() if capture else None
 
-    def in_conda(self, command, cwd=None, overlays=False, capture=False):
-        prefix = [self.conda, 'run', '--no-capture-output', '--prefix', str(self.env_prefix)]
-        if overlays:
-            script = 'set -e; set +u; ' + ''.join('source ' + shlex.quote(str(p)) + '; ' for p in self.overlays)
-            command = ['bash', '--noprofile', '--norc', '-c', script + 'exec "$@"', 'go2-setup', *command]
-        return self.run(prefix + command, cwd, capture)
+    def in_conda(self, command, cwd=None, capture=False):
+        return self.run([self.conda, 'run', '--no-capture-output',
+                         '--prefix', str(self.env_prefix), *command], cwd, capture)
 
     def find_env(self):
         data = json.loads(self.run([self.conda, 'env', 'list', '--json'], capture=True))
@@ -174,11 +169,13 @@ class Installer:
 
     def create_environment(self):
         existing = self.find_env()
-        owner = '.go2_nav2-managed.json'
         if existing:
-            marker = existing / owner
+            marker = existing / '.go2_nav2_setup' / 'installation.json'
             require(marker.is_file() and json.loads(marker.read_text()).get('project') == 'unitree-go2-slam-nav2',
                     'An unmanaged go2_nav2 environment already exists; it was not modified.')
+        if existing:
+            self.env_prefix = existing
+            self.save_state(complete=False)
         conda = self.config['conda']
         command = [self.conda, 'install' if existing else 'create', '--yes', '--name', conda['name'],
                    '--override-channels', '--strict-channel-priority', '--solver', conda['solver']]
@@ -188,42 +185,41 @@ class Installer:
         self.run(command)
         self.env_prefix = self.find_env()
         require(self.env_prefix is not None, 'Conda did not create the requested environment')
-        (self.env_prefix / owner).write_text(json.dumps({'project': 'unitree-go2-slam-nav2'}))
+        self.record_dir.mkdir(exist_ok=True)
+        self.save_state(complete=False)
+        variables = [key + '=' + value for key, value in self.config['activation']['environment'].items()]
+        if variables:
+            self.run([self.conda, 'env', 'config', 'vars', 'set', '--name', conda['name'], *variables])
         if conda['pip']:
             self.in_conda(['python', '-m', 'pip', 'install', *conda['pip']])
 
-    def clone(self, source, target, ref=None):
-        ref = ref or source['ref']
-        fresh = not target.exists()
-        if not fresh:
-            require((target / '.git').exists(), 'Existing source directory is not a Git checkout: ' + str(target))
-            require(not self.in_conda(['git', 'status', '--porcelain'], cwd=target, capture=True),
-                    'Existing source checkout is modified: ' + str(target))
-        else:
-            target.parent.mkdir(parents=True, exist_ok=True)
-            self.in_conda(['git', 'clone', '--no-checkout', source['url'], str(target)])
-        self.in_conda(['git', 'fetch', 'origin', ref], cwd=target)
-        expected = self.in_conda(['git', 'rev-parse', 'FETCH_HEAD'], cwd=target, capture=True)
-        head = self.in_conda(['git', 'rev-parse', 'HEAD'], cwd=target, capture=True)
-        # A fresh --no-checkout clone has no source files yet.
-        require(fresh or head == expected, 'Source revision changed; choose a new installation prefix.')
-        if fresh:
-            self.in_conda(['git', 'checkout', '--detach', expected], cwd=target)
-        return expected
+    def save_state(self, complete, revisions=None):
+        state = {'project': 'unitree-go2-slam-nav2', 'complete': complete,
+                 'environment_name': self.config['conda']['name'],
+                 'manifest_sha256': hashlib.sha256(json.dumps(self.config, sort_keys=True).encode()).hexdigest(),
+                 'source_commits': revisions or {}}
+        (self.record_dir / 'installation.json').write_text(json.dumps(state, indent=2) + '\n')
 
-    def build(self, workspace, base_path, packages):
+    def clone(self, source, target):
+        self.in_conda(['git', 'clone', '--no-checkout', source['url'], str(target)])
+        self.in_conda(['git', 'fetch', 'origin', source['ref']], cwd=target)
+        revision = self.in_conda(['git', 'rev-parse', 'FETCH_HEAD'], cwd=target, capture=True)
+        require(revision == source['ref'], 'External source commit does not match the manifest')
+        self.in_conda(['git', 'checkout', '--detach', revision], cwd=target)
+        return revision
+
+    def build(self, workspace, base_path, packages, label):
         workspace.mkdir(parents=True, exist_ok=True)
         python = str(self.env_prefix / 'bin' / 'python')
-        command = ['colcon', 'build', '--base-paths', str(base_path), '--packages-select', *packages,
-                   '--executor', 'sequential', '--cmake-args', *self.config['build']['cmake_args'],
+        command = ['colcon', '--log-base', str(self.record_dir / 'build-logs' / label),
+                   'build', '--base-paths', str(base_path), '--packages-select', *packages,
+                   '--executor', 'sequential', '--merge-install', '--install-base', str(self.env_prefix),
+                   '--cmake-args', *self.config['build']['cmake_args'],
                    '-DPython_EXECUTABLE=' + python, '-DPython3_EXECUTABLE=' + python]
-        self.in_conda(command, cwd=workspace, overlays=True)
-        setup = workspace / 'install' / 'local_setup.bash'
-        require(setup.is_file(), 'Build did not produce ' + str(setup))
-        self.overlays.append(setup)
+        # Install copies rather than symlinks so temporary build sources can be removed.
+        self.in_conda(command, cwd=workspace)
 
     def verify(self):
-        settings = self.config['verification']
         code = '''import importlib, json, sys
 from pathlib import Path
 from ament_index_python.packages import get_package_prefix, get_package_share_directory
@@ -235,37 +231,15 @@ for module, names in d['checks']['python_symbols'].items():
     for name in names: getattr(importlib.import_module(module), name)
 assert Path(importlib.import_module('rclpy').__file__).resolve().is_relative_to(Path(sys.prefix)), 'System rclpy leaked in'
 for package in d['checks']['ros_packages']:
-    prefix=Path(get_package_prefix(package)).resolve()
-    assert any(prefix.is_relative_to(Path(root)) for root in [d['prefix'],d['workspace_root']]), 'System ROS overlay leaked in: '+package
+    assert Path(get_package_prefix(package)).resolve().is_relative_to(Path(sys.prefix)), 'System ROS overlay leaked in: '+package
 for plugin in d['checks']['plugins']:
     root=Path(get_package_share_directory(plugin['package']))
     assert any(plugin['class'] in p.read_text() for p in root.rglob('*.xml')), 'Missing plugin '+plugin['class']
 print('INSTALL CHECK PASS: Conda Python, ROS packages, messages and plugins. Live sensors/TF/motion NOT TESTED.')
 '''
-        payload = {'prefix': str(self.env_prefix), 'workspace_root': str(self.prefix), 'python': self.config['conda']['python'], 'checks': settings}
-        self.in_conda(['python', '-c', code, json.dumps(payload)], overlays=True)
-
-    def activation(self, repo):
-        base = self.run([self.conda, 'info', '--base'], capture=True)
-        complete = self.prefix / '.go2-setup-complete'
-        lines = ['# Generated from environment.json; rerun the installer to refresh.',
-                 'if [[ ! -f ' + shlex.quote(str(complete)) + ' ]]; then',
-                 "  echo 'ERROR: setup is incomplete; rerun install_student.sh.' >&2",
-                 '  return 1 2>/dev/null || exit 1', 'fi',
-                 'unset ' + ' '.join(x for x in OVERLAY_VARS if not x.startswith('CONDA_')),
-                 'source ' + shlex.quote(str(Path(base) / 'etc/profile.d/conda.sh')),
-                 'conda activate ' + shlex.quote(str(self.env_prefix)) + ' || return 1']
-        values = dict(self.config['activation']['environment'])
-        values.update(GO2_ENV_MANAGER='conda', GO2_CONDA_ENV=self.config['conda']['name'],
-                      GO2_CONDA_PREFIX=str(self.env_prefix), GO2_PYTHON=str(self.env_prefix / 'bin/python'),
-                      GO2_PREFIX=str(self.prefix), GO2_WS_ROOT=str(self.prefix / 'ws'),
-                      GO2_REPO_ROOT=str(repo), GO2_UNITREE_SETUP=str(self.overlays[0]),
-                      GO2_STUDENT_ENV=str(self.prefix / 'env.bash'))
-        for key, value in values.items():
-            lines.append('export ' + key + '=' + shlex.quote(value))
-        lines += ['set +u'] + ['source ' + shlex.quote(str(p)) + ' || return 1' for p in self.overlays]
-        lines.append('set -u')
-        (self.prefix / 'env.bash').write_text('\n'.join(lines) + '\n')
+        payload = {'prefix': str(self.env_prefix), 'python': self.config['conda']['python'],
+                   'checks': self.config['verification']}
+        self.in_conda(['python', '-c', code, json.dumps(payload)])
 
     def install(self):
         require(os.geteuid() != 0, 'Run setup as your normal user, not root')
@@ -274,52 +248,37 @@ print('INSTALL CHECK PASS: Conda Python, ROS packages, messages and plugins. Liv
         release = dict(line.strip().split('=', 1) for line in Path('/etc/os-release').read_text().splitlines() if '=' in line)
         require(release.get('ID', '').strip('"') == 'ubuntu' and release.get('VERSION_ID', '').strip('"') == self.config['host']['ubuntu'],
                 'This environment targets the recorded Ubuntu version')
-        marker = self.prefix / '.go2-student-install'
-        if self.prefix.exists() and any(self.prefix.iterdir()):
-            require(marker.is_file() and marker.read_text().strip() == 'conda:go2_nav2',
-                    'Existing prefix belongs to another setup; choose a new dedicated prefix.')
-        self.prefix.mkdir(parents=True, exist_ok=True)
-        marker.write_text('conda:go2_nav2\n')
-        complete = self.prefix / '.go2-setup-complete'
-        complete.unlink(missing_ok=True)
-        self.logs.mkdir(parents=True, exist_ok=True)
+        audit_metadata(self.config, self.source_root, required=True)
         self.create_environment()
         revisions = {}
-        for source in self.config['sources']:
-            target = self.prefix / 'vendor' / source['name']
-            revisions[source['name']] = self.clone(source, target)
-            self.build(self.prefix / source['workspace'], target / source['source_subpath'], source['packages'])
-        repo = self.prefix / 'ws/src/unitree-go2-slam-nav2'
-        revisions['project'] = self.clone(self.config['project'], repo, self.project_ref)
-        audit_metadata(self.config, repo, required=True)
-        self.build(self.prefix / 'ws', repo, self.config['project']['packages'])
-        self.activation(repo)
+        with tempfile.TemporaryDirectory(prefix='go2-nav2-build-') as temporary:
+            scratch = Path(temporary)
+            for source in self.config['sources']:
+                target = scratch / source['name']
+                revisions[source['name']] = self.clone(source, target)
+                self.build(scratch / (source['name'] + '-build'),
+                           target / source['source_subpath'], source['packages'], source['name'])
+            self.build(scratch / 'project-build', self.source_root,
+                       self.config['project']['packages'], 'project')
+        if (self.source_root / '.git').exists():
+            revisions['project'] = self.in_conda(['git', 'rev-parse', 'HEAD'], cwd=self.source_root, capture=True)
         self.verify()
         resolved = self.run([self.conda, 'list', '--prefix', str(self.env_prefix), '--explicit'], capture=True)
-        snapshot = self.logs
-        (snapshot / 'conda-resolved.txt').write_text(resolved + '\n')
-        (snapshot / 'environment-installed.json').write_text(json.dumps(self.config, indent=2) + '\n')
-        (snapshot / 'source-commits.json').write_text(json.dumps(revisions, indent=2) + '\n')
-        complete.write_text(hashlib.sha256(json.dumps(self.config, sort_keys=True).encode()).hexdigest() + '\n')
-        print('Activate: source ' + shlex.quote(str(self.prefix / 'env.bash')))
+        (self.record_dir / 'conda-resolved.txt').write_text(resolved + '\n')
+        (self.record_dir / 'environment-installed.json').write_text(json.dumps(self.config, indent=2) + '\n')
+        self.save_state(complete=True, revisions=revisions)
+        print('Environment: ' + str(self.env_prefix))
+        print('Activate: conda activate ' + self.config['conda']['name'])
         print(self.config['completion_message'])
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('mode', nargs='?', default='install', choices=['install', 'plan', 'verify', 'validate', 'env-file', 'vcs'])
+    parser.add_argument('mode', nargs='?', default='install', choices=['install', 'plan', 'verify', 'validate', 'vcs'])
     parser.add_argument('--manifest', type=Path, default=ROOT / 'environment.json')
-    parser.add_argument('--prefix')
-    parser.add_argument('--ref')
     parser.add_argument('--conda-exe')
     args = parser.parse_args(argv)
     config = load_config(args.manifest)
-    paths = resolve_paths(config, args.prefix)
-    if args.ref:
-        require(re.fullmatch(r'[A-Za-z0-9_./-]+', args.ref) and not args.ref.startswith('-'), 'Invalid project ref')
-    if args.mode == 'env-file':
-        print(paths['prefix'] / 'env.bash')
-        return
     if args.mode == 'validate':
         print('environment.json and ROS metadata: PASS')
         return
@@ -330,26 +289,27 @@ def main(argv=None):
         return
     if args.mode == 'plan':
         print('Environment: ' + config['conda']['name'] + ' / Python ' + config['conda']['python'])
-        print('Prefix: ' + str(paths['prefix']) + '\nSetup logs: ' + str(paths['logs']))
+        print('Location: Conda default envs directory (--name); no repository environment or separate install prefix.')
         print('Conda packages: ' + ', '.join(['python=' + config['conda']['python'], *config['conda']['packages']]))
         print('Build: ' + ', '.join(p for s in config['sources'] for p in s['packages']) + ', ' + ', '.join(config['project']['packages']))
+        print('Temporary source builds install into the Conda environment.')
         print('No apt, clone, build, Conda creation, SSH, network change, ROS startup or motion executed.')
         return
-    installer = Installer(config, paths, conda_executable(args.conda_exe), args.ref)
+    installer = Installer(config, conda_executable(args.conda_exe))
     if args.mode == 'install':
         installer.install()
     else:
-        require((paths['prefix'] / '.go2-setup-complete').is_file(), 'Missing completed installation; run install first.')
         installer.env_prefix = installer.find_env()
         require(installer.env_prefix is not None, 'go2_nav2 is missing')
-        installer.overlays = [paths['prefix'] / s['workspace'] / 'install/local_setup.bash' for s in config['sources']]
-        installer.overlays.append(paths['prefix'] / 'ws/install/local_setup.bash')
+        record = installer.record_dir / 'installation.json'
+        require(record.is_file() and json.loads(record.read_text()).get('complete') is True,
+                'Missing completed installation; run install first.')
         installer.verify()
 
 
 if __name__ == '__main__':
     try:
         main()
-    except (SetupError, OSError, ValueError, KeyError, ET.ParseError, subprocess.CalledProcessError) as error:
+    except (SetupError, OSError, ValueError, TypeError, KeyError, ET.ParseError, subprocess.CalledProcessError) as error:
         print('ERROR: ' + str(error), file=sys.stderr)
         raise SystemExit(1)
