@@ -1,0 +1,201 @@
+{
+  "schema_version": 1,
+  "host": {
+    "os": "linux",
+    "ubuntu": "22.04",
+    "architectures": [
+      "x86_64"
+    ],
+    "reference_os_release": "Ubuntu 22.04.5 LTS",
+    "reference_system_python": "3.10.12"
+  },
+  "conda": {
+    "name": "go2_nav2",
+    "python": "3.14.7",
+    "channels": [
+      "robostack-humble",
+      "conda-forge"
+    ],
+    "channel_priority": "strict",
+    "solver": "libmamba",
+    "packages": [
+      "ros-humble-desktop=0.10.0",
+      "ros-humble-navigation2=1.1.20",
+      "ros-humble-nav2-bringup=1.1.20",
+      "ros-humble-rtabmap-ros=0.23.13",
+      "ros-humble-depthimage-to-laserscan",
+      "ros-humble-rmw-cyclonedds-cpp=1.3.5",
+      "ros-humble-rosidl-generator-dds-idl",
+      "ros-dev-tools",
+      "compilers",
+      "cmake<4",
+      "pkg-config",
+      "make",
+      "git",
+      "openssh",
+      "numpy",
+      "scipy",
+      "opencv",
+      "pyyaml",
+      "pytest",
+      "setuptools",
+      "pip",
+      "libgl-devel",
+      "ros-humble-ament-cmake",
+      "ros-humble-dwb-core",
+      "ros-humble-dwb-msgs",
+      "ros-humble-nav2-util",
+      "ros-humble-pluginlib",
+      "ros-humble-rclcpp",
+      "ros-humble-ament-cmake-gtest",
+      "ros-humble-dwb-critics",
+      "ros-humble-nav2-costmap-2d",
+      "ros-humble-nav2-controller",
+      "ros-humble-rclcpp-lifecycle",
+      "ros-humble-geometry-msgs",
+      "ros-humble-launch",
+      "ros-humble-launch-ros",
+      "ros-humble-rclpy",
+      "ros-humble-nav-msgs",
+      "ros-humble-sensor-msgs",
+      "ros-humble-tf2-ros",
+      "ros-humble-rtabmap-slam",
+      "ros-humble-rtabmap-util",
+      "ros-humble-rtabmap-msgs",
+      "ros-humble-nav2-map-server",
+      "ros-humble-nav2-msgs",
+      "ros-humble-action-msgs",
+      "ros-humble-tf2-msgs",
+      "ros-humble-rcl-interfaces",
+      "ros-humble-rosidl-runtime-py",
+      "ros-humble-std-srvs",
+      "ros-humble-ament-copyright",
+      "ros-humble-ament-flake8",
+      "ros-humble-ament-pep257",
+      "ros-humble-cv-bridge",
+      "ros-humble-rtabmap-sync",
+      "ros-humble-tf2",
+      "ros-humble-std-msgs"
+    ],
+    "pip": []
+  },
+  "project": {
+    "url": "https://github.com/jcy9066/unitree-go2-slam-nav2.git",
+    "ref": "fix/l1-rgbd-forward-only",
+    "packages": [
+      "go2_nav2_critics",
+      "go2_slam_nav",
+      "go2_cmd_processor"
+    ]
+  },
+  "sources": [
+    {
+      "name": "unitree_ros2",
+      "url": "https://github.com/unitreerobotics/unitree_ros2.git",
+      "ref": "668d1ec5a05d1c38d3306bdca7d59f2ba3581a88",
+      "workspace": "unitree_ws",
+      "source_subpath": "cyclonedds_ws/src/unitree",
+      "packages": [
+        "unitree_go",
+        "unitree_api"
+      ]
+    },
+    {
+      "name": "rtabmap_ros",
+      "url": "https://github.com/introlab/rtabmap_ros.git",
+      "ref": "cb2117f1ed6674cf7cfc644d7bb4ffc0b567b364",
+      "workspace": "rtabmap_viz_ws",
+      "source_subpath": "rtabmap_viz",
+      "packages": [
+        "rtabmap_viz"
+      ],
+      "reason": "RoboStack Humble channel has no rtabmap_viz binary; build the matching 0.23.13 source against the Conda RTAB-Map libraries."
+    }
+  ],
+  "paths": {
+    "prefix": ".local/share/go2_nav2",
+    "data_root": "go2_nav2_data"
+  },
+  "build": {
+    "jobs": 2,
+    "cmake_args": [
+      "-DBUILD_TESTING=OFF",
+      "-DCMAKE_BUILD_TYPE=Release",
+      "-DPython_FIND_VIRTUALENV=ONLY",
+      "-DPython3_FIND_VIRTUALENV=ONLY"
+    ]
+  },
+  "runtime": {
+    "interface": "lo",
+    "environment": {
+      "GO2_SKIP_BUILD": "1",
+      "GO2_ENABLE_MOTION": "false",
+      "GO2_LOCALIZATION_PROFILE": "aligned_visual",
+      "GO2_FIRST_DOOR_ONLY": "false",
+      "GO2_RECORD_DIAGNOSTICS": "true",
+      "GO2_RECORD_OBSTACLE_SENSORS": "true",
+      "GO2_SSH_TARGET": "",
+      "GO2_CAMERA_RMW_IMPLEMENTATION": "rmw_fastrtps_cpp",
+      "ROS_DOMAIN_ID": "0",
+      "ROS_LOCALHOST_ONLY": "0",
+      "RMW_IMPLEMENTATION": "rmw_cyclonedds_cpp",
+      "PYTHONNOUSERSITE": "1",
+      "OPENBLAS_NUM_THREADS": "2",
+      "OMP_NUM_THREADS": "2",
+      "CUDA_VISIBLE_DEVICES": "",
+      "LIBGL_ALWAYS_SOFTWARE": "1",
+      "QT_X11_NO_MITSHM": "1"
+    }
+  },
+  "verification": {
+    "ros_packages": [
+      "unitree_api",
+      "unitree_go",
+      "go2_slam_nav",
+      "go2_cmd_processor",
+      "go2_nav2_critics",
+      "rtabmap_slam",
+      "rtabmap_odom",
+      "rtabmap_viz",
+      "rtabmap_util",
+      "rtabmap_msgs",
+      "nav2_bringup",
+      "nav2_controller",
+      "depthimage_to_laserscan",
+      "rmw_cyclonedds_cpp",
+      "dwb_core"
+    ],
+    "python_modules": [
+      "rclpy",
+      "numpy",
+      "scipy",
+      "cv2",
+      "yaml",
+      "unitree_api.msg",
+      "unitree_go.msg",
+      "rtabmap_msgs.msg"
+    ],
+    "python_symbols": {
+      "unitree_api.msg": [
+        "Request"
+      ],
+      "unitree_go.msg": [
+        "SportModeState"
+      ],
+      "rtabmap_msgs.msg": [
+        "OdomInfo"
+      ]
+    },
+    "plugins": [
+      {
+        "package": "nav2_controller",
+        "class": "PoseProgressChecker"
+      }
+    ]
+  },
+  "rosdep_conda_overrides": {
+    "python3-numpy": "numpy",
+    "python3-pytest": "pytest"
+  },
+  "completion_message": "go2_nav2 환경 설정이 완료되었습니다."
+}
