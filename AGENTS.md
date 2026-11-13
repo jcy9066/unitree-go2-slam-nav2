@@ -5,14 +5,22 @@ Scope: this repository, its Codex agents, and all subagents. Read this file firs
 ## Goal and baseline
 - Platform: Unitree Go2, ROS 2 Humble laptop, internal L1 + D435i, native Go2 odometry, RTAB-Map, Nav2 (NavFn + DWB). Legacy RoboSense launches are not the default pipeline.
 - Target test: a 90 cm doorway. Preserve the original RTAB-Map database.
-- Reference PR: #1, branch `fix/nav2-narrow-passage`, base `main`.
+- Current integration Draft PR: #2, branch `fix/l1-rgbd-forward-only`, base `main`. PR #1 (`fix/nav2-narrow-passage`) is historical context.
 - Canonical validation record: `docs/go2_navigation_validation.html`.
 - Nav mode: `localize_only=true`, `Mem/IncrementalMemory=false`. RTAB-Map localizes while Nav2 updates its Costmaps. Do not describe this as continuous map extension.
+
+## Environment source of truth
+- Manage installation dependencies, package/channel versions, external source revisions, build settings and deployment defaults in the root `environment.json`. Do not add a competing `requirements.txt`, Conda YAML or hardcoded installer package list.
+- The project Conda environment is named `go2_nav2`. Install ROS 2 Humble and the project runtime inside that environment. Select its Python ABI from the compatible RoboStack package set and record it in `environment.json`.
+- Keep `scripts/install_student.sh` as the setup entry point. Its default command must create the Conda environment, install declared dependencies, build Unitree/project packages and verify the installation. Print `go2_nav2 환경 설정이 완료되었습니다.` only after every required step succeeds. Keep an explicit read-only `plan` mode.
+- Build and run with the selected Conda interpreter and ROS environment. Do not source `/opt/ros` or reuse system-built Unitree/project overlays in the Conda deployment. A system Python bootstrap may read JSON before Conda activation.
+- Preserve required ROS `package.xml` metadata and check its dependencies against the environment specification. Generated activation files, resolved package snapshots and compatibility exports derive from `environment.json`; do not maintain them as independent configuration sources.
+- Keep existing Conda environments, original maps and credentials intact. Runtime robot-network interface and data paths may be explicit installation overrides; do not silently reconfigure the host network.
 
 ## Git and parallel Codex workflow
 1. Never commit to `main`. Do not merge or enable auto-merge without explicit user authorization.
 2. Do not create, edit, view, trigger, or use GitHub Actions. Use local checks only.
-3. For concurrent agents, allocate a separate task branch and Git worktree to each writer. Do not let two agents edit the same file concurrently. Share changes through review or separate PRs; assign one integrator to PR #1.
+3. For concurrent agents, allocate a separate task branch and Git worktree to each writer. Do not let two agents edit the same file concurrently. Share changes through review or separate PRs; assign one integrator to the current integration PR #2.
 4. Before editing, check `git status --short`, `git branch --show-current`, current PR/branch head and unmerged work. Do not overwrite another agent's changes.
 5. Keep independent code/config changes in separate commits. Use a short Korean/English commit subject with explicit before → after values. Put rationale, expected effects, limitations and verification evidence in commit body and Draft PR.
    **Mandatory immediate commit and push:** After every individual file edit or independently completed modification, create a dedicated commit and push it to the current task branch immediately, before starting the next edit. Do not batch multiple edits into a later commit, postpone a push, or leave completed modifications uncommitted/unpushed. Never push directly to `main`. This applies to code, configuration, scripts, documentation, and validation records.
