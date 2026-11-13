@@ -9,6 +9,11 @@ Scope: this repository, its Codex agents, and all subagents. Read this file firs
 - Canonical validation record: `docs/go2_navigation_validation.html`.
 - Nav mode: `localize_only=true`, `Mem/IncrementalMemory=false`. RTAB-Map localizes while Nav2 updates its Costmaps. Do not describe this as continuous map extension.
 
+## Discuss unknowns before deciding
+- Distinguish confirmed facts, agreed requirements and proposed choices. If a requirement is unclear or a choice changes the agreed scope, explain the alternatives and their effects and ask the user first. The user makes that decision.
+- Wait for the user's answer before implementing work that depends on that choice. Continue only independent work already agreed. Silence, elapsed time and a preselected suggestion are not decisions.
+- Do not copy existing defaults into a new feature merely because they are present in the repository. Do not assume authorization for additional device access or deployment settings.
+
 ## Environment source of truth
 - Manage installation dependencies, package/channel versions, external source revisions, build settings and deployment defaults in the root `environment.json`. Do not add a competing `requirements.txt`, Conda YAML or hardcoded installer package list.
 - The project Conda environment is named `go2_nav2`. Install ROS 2 Humble and the project runtime inside that environment. Select its Python ABI from the compatible RoboStack package set and record it in `environment.json`.
@@ -16,6 +21,7 @@ Scope: this repository, its Codex agents, and all subagents. Read this file firs
 - Build and run with the selected Conda interpreter and ROS environment. Do not source `/opt/ros` or reuse system-built Unitree/project overlays in the Conda deployment. A system Python bootstrap may read JSON before Conda activation.
 - Preserve required ROS `package.xml` metadata and check its dependencies against the environment specification. Generated activation files, resolved package snapshots and compatibility exports derive from `environment.json`; do not maintain them as independent configuration sources.
 - Keep existing Conda environments, original maps and credentials intact. Runtime robot-network interface and data paths may be explicit installation overrides; do not silently reconfigure the host network.
+- Setup covers environment creation, dependency installation, builds and verification. Do not add robot SSH targets, NIC selection, map paths or motion/profile settings to the installer or its manifest unless the user explicitly requests them. Existing operator runtime settings stay separate.
 
 ## Git and parallel Codex workflow
 1. Never commit to `main`. Do not merge or enable auto-merge without explicit user authorization.
