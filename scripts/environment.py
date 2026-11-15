@@ -107,7 +107,7 @@ def load_config(path, root=None):
                 'Invalid deployment environment key')
         require(isinstance(value, str) and '\x00' not in value, 'Environment values must be text')
     require(not any(key.startswith('GO2_') or 'SSH' in key for key in environment), 'Robot settings do not belong in setup')
-    require(config['completion_message'] == 'go2_nav2 환경 설정이 완료되었습니다.', 'Invalid completion message')
+    require(config['completion_message'] == '[env] 환경 신규 구축 및 검증 완료', 'Invalid completion message')
     audit_metadata(config, root or Path(path).resolve().parent)
     return config
 
@@ -167,12 +167,81 @@ class Installer:
         require(len(matches) <= 1, 'Multiple go2_nav2 environments found; resolve the name ambiguity first')
         return matches[0] if matches else None
 
+
+    @staticmethod
+    def _version_tuple(value):
+        """Numeric version comparison for the simple Conda constraints in environment.json."""
+        parts = [int(part) for part in re.findall(r'\d+', str(value).split('+')[0])]
+        return tuple((parts + [0] * 6)[:6])
+
+    def configuration_problems(self):
+        """Read-only audit of installed packages, declared versions and ROS runtime."""
+        problems = []
+        record = self.record_dir / 'installation.json'
+        if not record.is_file():
+            problems.append('설치 완료 기록이 없습니다')
+        else:
+            try:
+                state = json.loads(record.read_text())
+                expected = hashlib.sha256(json.dumps(self.config, sort_keys=True).encode()).hexdigest()
+                if state.get('project') != 'unitree-go2-slam-nav2' or not state.get('complete'):
+                    problems.append('프로젝트 설치 완료 기록이 유효하지 않습니다')
+                if state.get('manifest_sha256') != expected:
+                    problems.append('환경 설정(environment.json)이 설치 당시와 다릅니다')
+                for source in self.config['sources']:
+                    if state.get('source_commits', {}).get(source['name']) != source['ref']:
+                        problems.append('외부 소스 버전이 다릅니다: ' + source['name'])
+            except (OSError, ValueError, TypeError, KeyError) as error:
+                problems.append('설치 기록을 읽을 수 없습니다: ' + str(error))
+        installed = json.loads(self.run(
+            [self.conda, 'list', '--prefix', str(self.env_prefix), '--json'], capture=True))
+        versions = {p['name'].lower(): str(p['version']) for p in installed}
+        specs = ['python=' + self.config['conda']['python'], *self.config['conda']['packages']]
+        for spec in specs:
+            name = package_name(spec)
+            actual = versions.get(name.lower())
+            if actual is None:
+                problems.append('필수 패키지 누락: ' + name)
+                continue
+            constraints = spec[len(name):]
+            for condition in filter(None, constraints.split(',')):
+                match = re.fullmatch(r'(>=|<=|==|=|>|<)([A-Za-z0-9_.+-]+)', condition)
+                require(match is not None, 'Invalid Conda version constraint: ' + spec)
+                operator, wanted = match.groups()
+                left, right = self._version_tuple(actual), self._version_tuple(wanted)
+                accepted = {'=': left == right, '==': left == right,
+                            '>=': left >= right, '<=': left <= right,
+                            '>': left > right, '<': left < right}[operator]
+                if not accepted:
+                    problems.append('버전 불일치: ' + name + ' (' + actual + ' / ' + condition + ')')
+        try:
+            variables = json.loads(self.run(
+                [self.conda, 'env', 'config', 'vars', 'list',
+                 '--name', self.config['conda']['name'], '--json'], capture=True))
+            for key, wanted in self.config['activation']['environment'].items():
+                if variables.get(key) != wanted:
+                    problems.append('Conda 환경 변수 불일치: ' + key)
+        except (ValueError, subprocess.CalledProcessError) as error:
+            problems.append('Conda 환경 변수를 검증할 수 없습니다: ' + str(error))
+        if self.config['conda']['pip']:
+            try:
+                listed = json.loads(self.in_conda(['python', '-m', 'pip', 'list', '--format=json'], capture=True))
+                pip_versions = {p['name'].lower().replace('_', '-'): p['version'] for p in listed}
+                for spec in self.config['conda']['pip']:
+                    if package_name(spec).lower().replace('_', '-') not in pip_versions:
+                        problems.append('pip 패키지 누락: ' + package_name(spec))
+            except (ValueError, subprocess.CalledProcessError) as error:
+                problems.append('pip 패키지 검증 실패: ' + str(error))
+        if not problems:
+            try:
+                self.verify()
+            except subprocess.CalledProcessError:
+                problems.append('ROS 2 모듈·메시지·플러그인 실행 검증 실패')
+        return problems
+
     def create_environment(self):
         existing = self.find_env()
-        if existing:
-            marker = existing / '.go2_nav2_setup' / 'installation.json'
-            require(marker.is_file() and json.loads(marker.read_text()).get('project') == 'unitree-go2-slam-nav2',
-                    'An unmanaged go2_nav2 environment already exists; it was not modified.')
+        # The caller explicitly requests consent before modifying an existing environment.
         if existing:
             self.env_prefix = existing
             self.save_state(complete=False)
@@ -235,11 +304,11 @@ for package in d['checks']['ros_packages']:
 for plugin in d['checks']['plugins']:
     root=Path(get_package_share_directory(plugin['package']))
     assert any(plugin['class'] in p.read_text() for p in root.rglob('*.xml')), 'Missing plugin '+plugin['class']
-print('INSTALL CHECK PASS: Conda Python, ROS packages, messages and plugins. Live sensors/TF/motion NOT TESTED.')
+pass  # Validation is silent when all checks succeed; sensor and physical tests remain separate.
 '''
         payload = {'prefix': str(self.env_prefix), 'python': self.config['conda']['python'],
                    'checks': self.config['verification']}
-        self.in_conda(['python', '-c', code, json.dumps(payload)])
+        self.in_conda(['python', '-c', code, json.dumps(payload)], capture=True)
 
     def install(self):
         require(os.geteuid() != 0, 'Run setup as your normal user, not root')
@@ -249,6 +318,21 @@ print('INSTALL CHECK PASS: Conda Python, ROS packages, messages and plugins. Liv
         require(release.get('ID', '').strip('"') == 'ubuntu' and release.get('VERSION_ID', '').strip('"') == self.config['host']['ubuntu'],
                 'This environment targets the recorded Ubuntu version')
         audit_metadata(self.config, self.source_root, required=True)
+        existing = self.find_env()
+        if existing:
+            self.env_prefix = existing
+            problems = self.configuration_problems()
+            if not problems:
+                print('[env] 기존 환경 검증 완료')
+                return
+            print('[env] 기존 환경의 설정 차이가 발견되었습니다:')
+            for problem in problems:
+                print(' - ' + problem)
+            if not sys.stdin.isatty():
+                raise SetupError('대화형 터미널에서 수정 여부를 y/n으로 선택해야 합니다. 환경은 변경하지 않았습니다.')
+            answer = input('[env] 기존 환경을 수정하시겠습니까? (y/n): ').strip().lower()
+            if answer != 'y':
+                raise SetupError('수정하지 않고 종료했습니다. 기존 환경은 변경되지 않았습니다.')
         self.create_environment()
         revisions = {}
         with tempfile.TemporaryDirectory(prefix='go2-nav2-build-') as temporary:
@@ -267,9 +351,10 @@ print('INSTALL CHECK PASS: Conda Python, ROS packages, messages and plugins. Liv
         (self.record_dir / 'conda-resolved.txt').write_text(resolved + '\n')
         (self.record_dir / 'environment-installed.json').write_text(json.dumps(self.config, indent=2) + '\n')
         self.save_state(complete=True, revisions=revisions)
-        print('Environment: ' + str(self.env_prefix))
-        print('Activate: conda activate ' + self.config['conda']['name'])
-        print(self.config['completion_message'])
+        if existing:
+            print('[env] 기존 환경 수정 및 검증 완료')
+        else:
+            print(self.config['completion_message'])
 
 
 def main(argv=None):
@@ -301,10 +386,8 @@ def main(argv=None):
     else:
         installer.env_prefix = installer.find_env()
         require(installer.env_prefix is not None, 'go2_nav2 is missing')
-        record = installer.record_dir / 'installation.json'
-        require(record.is_file() and json.loads(record.read_text()).get('complete') is True,
-                'Missing completed installation; run install first.')
-        installer.verify()
+        problems = installer.configuration_problems()
+        require(not problems, 'Conda 환경 검증 실패: ' + '; '.join(problems))
 
 
 if __name__ == '__main__':
