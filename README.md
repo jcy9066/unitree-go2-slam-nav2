@@ -185,6 +185,13 @@ bash ./03_run_nav.sh view "maps/창학관 3층/rtabmap.db" --profile aligned_vis
 
 기존 지도를 선택하려면 Map Manager가 아니라 `bash ./03_run_nav.sh select`를 실행합니다. `~/maps/` 및 저장소 `maps/`에 복원된 DB 중 유효한 파일을 목록으로 선택할 수 있습니다. 선택한 지도로 실제 주행하려면 `view`에서 Pose·TF·Costmap 확인 후 운영자가 별도 `drive`를 실행합니다.
 
+오프라인 소스·회귀 검증 명령(로봇 움직임 없음):
+
+```bash
+python3 tests/static_contract_check.py
+python3 -m pytest -q tests/test_environment.py tests/test_map_manager.py tests/test_mapping_entrypoint.py tests/test_database_scripts.py tests/test_student_bootstrap.py
+```
+
 **이번 변경의 검증 범위:** GitHub 소스 검토 및 오프라인 회귀 테스트 추가. 새 Conda 환경 설치·ROS 2·RViz2·Go2 실물 주행은 별도 검증 전이므로 PASS로 표기하지 않습니다.
 
 ## Current data and control routes
