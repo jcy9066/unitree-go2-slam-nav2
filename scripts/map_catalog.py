@@ -158,7 +158,8 @@ def choose(root=None):
     print('\n저장된 지도', file=sys.stderr)
     for i, row in enumerate(rows, 1):
         print(f" {i}. {row['name']} | {row['created_at']}", file=sys.stderr)
-    answer = input('지도 번호를 선택하세요: ').strip()
+    print('지도 번호를 선택하세요: ', end='', file=sys.stderr, flush=True)
+    answer = sys.stdin.readline().strip()
     if not answer.isdecimal() or not (1 <= int(answer) <= len(rows)):
         raise MapCatalogError('잘못된 지도 번호')
     selected = rows[int(answer) - 1]['database']
