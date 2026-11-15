@@ -12,7 +12,7 @@ if [[ "${1:-}" =~ ^(start|check|plan|sensors)$ ]]; then MODE=$1; shift; fi
 (( $# <= 1 )) && [[ "${1:-new.db}" == *.db ]] || { usage >&2; exit 2; }
 source "$REPO_ROOT/scripts/_env.sh"
 MAP_DIR="$(go2_map_directory)"
-DB="$(realpath -m -- "${1:-$MAP_DIR/map_$(date +%Y%m%d_%H%M%S)_$/rtabmap.db}")"
+DB="$(realpath -m -- "${1:-$MAP_DIR/map_$(date +%Y%m%d_%H%M%S)_$$/rtabmap.db}")"
 # Explicit names remain possible, but new Mapping DBs must stay under the shared map root.
 [[ "$DB" == "$MAP_DIR/"*/rtabmap.db ]] || {
     echo 'ERROR: 신규 지도는 ~/maps/<지도 ID>/rtabmap.db 위치에 저장해야 합니다.' >&2
@@ -68,8 +68,8 @@ finish() {
             exit 1
         fi
         for pointer in .last_map .selected_map; do
-            printf '%s\n' "$DB" > "$MAP_DIR/$pointer.$.tmp"
-            mv -- "$MAP_DIR/$pointer.$.tmp" "$MAP_DIR/$pointer"
+            printf '%s\n' "$DB" > "$MAP_DIR/$pointer.$$.tmp"
+            mv -- "$MAP_DIR/$pointer.$$.tmp" "$MAP_DIR/$pointer"
         done
         printf '[map] 지도 저장 완료: %s\n' "$DB"
         echo '[map] 다음 단계: bash ./03_run_nav.sh view'
