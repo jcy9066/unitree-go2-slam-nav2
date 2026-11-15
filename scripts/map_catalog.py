@@ -93,6 +93,16 @@ def list_maps(root=None):
     return sorted(rows, key=lambda row: row['created_at'], reverse=True)
 
 
+def list_available_maps(root=None):
+    """CLI may also select an already restored repository map; admin UI stays ~/maps-only."""
+    runtime = Path(root or map_root()).expanduser().resolve()
+    repository_maps = Path(__file__).resolve().parents[1] / 'maps'
+    rows = list_maps(runtime)
+    if repository_maps.is_dir() and repository_maps.resolve() != runtime:
+        rows.extend(list_maps(repository_maps))
+    return sorted(rows, key=lambda row: row['created_at'], reverse=True)
+
+
 def register(database, root=None):
     root = Path(root or map_root()).expanduser().resolve()
     database = Path(database).expanduser().resolve()
@@ -125,20 +135,22 @@ def selected_path(root=None):
         if not path.is_file() or path.is_symlink():
             continue
         selected = Path(path.read_text(encoding='utf-8').strip()).expanduser().resolve()
-        if selected.parent.parent != root:
-            continue
-        try:
-            _, db = _safe_directory(root, selected.parent.name)
-            if db == selected:
-                return str(db)
-        except MapCatalogError:
-            continue
+        repository_maps = (Path(__file__).resolve().parents[1] / 'maps').resolve()
+        for trusted_root in (root, repository_maps):
+            if selected.parent.parent != trusted_root:
+                continue
+            try:
+                _, db = _safe_directory(trusted_root, selected.parent.name)
+                if db == selected:
+                    return str(db)
+            except MapCatalogError:
+                continue
     return None
 
 
 def choose(root=None):
     root = Path(root or map_root()).expanduser().resolve()
-    rows = list_maps(root)
+    rows = list_available_maps(root)
     if not rows:
         raise MapCatalogError('선택 가능한 지도가 없습니다. 신규 Mapping을 진행하세요')
     if not sys.stdin.isatty():
