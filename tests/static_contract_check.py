@@ -39,6 +39,13 @@ def main():
     for file in SHELLS:
         result = subprocess.run(['bash', '-n', str(ROOT / file)], capture_output=True, text=True)
         assert result.returncode == 0, f'bash -n {file}: {result.stderr}'
+    mapping = (ROOT / '02_create_map.sh').read_text(encoding='utf-8')
+    navigation = (ROOT / '03_run_nav.sh').read_text(encoding='utf-8')
+    assert 'map_$(date +%Y%m%d_%H%M%S)_$/rtabmap.db' in mapping, 'missing mapping PID'
+    assert mapping.count('$pointer.$.tmp') == 2, 'non-unique pointer temp file'
+    assert 'restart_map:=false' in mapping and 'restart_map:=false' in navigation
+    assert 'ENABLE_MOTION=false' in navigation and 'if [[ "$MODE" == drive ]]; then ENABLE_MOTION=true; fi' in navigation
+    assert 'cp -p -- "$DB" "$SESSION_DB"' in navigation, 'navigation must copy original map'
     for file in PYTHON:
         ast.parse((ROOT / file).read_text(encoding='utf-8'), filename=file)
     for file in HTML:
@@ -53,6 +60,7 @@ def main():
             assert 'docs/images/go2-edu-hero.png' in content
             assert 'docs/KakaoTalk_20261112_203846672_web.mp4' in content
             assert 'map_manager.html' not in content and 'map_manager.py' not in content
+            assert 'Map Manager' not in content, 'tutorial must not mention administrator app'
         else:
             assert '03_run_nav.sh' not in content and 'slam_nav2_tutorial.html' not in content
     print('PASS: shell syntax, Python AST, HTML anchors, root scripts and UI separation')
