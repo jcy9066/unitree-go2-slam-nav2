@@ -65,7 +65,7 @@ finish() {
     elif "$PYTHON_BIN" "$REPO_ROOT/scripts/mapping_preflight.py" validate-db "$DB"; then
         if ! "$PYTHON_BIN" "$REPO_ROOT/scripts/map_catalog.py" register "$DB"; then
             echo '[map] 메타데이터 저장 실패. 원본 DB는 보존하고 선택 상태는 변경하지 않습니다.' >&2
-            return 1
+            exit 1
         fi
         for pointer in .last_map .selected_map; do
             printf '%s\n' "$DB" > "$MAP_DIR/$pointer.$.tmp"
