@@ -193,11 +193,18 @@ class Installer:
                         problems.append('외부 소스 버전이 다릅니다: ' + source['name'])
             except (OSError, ValueError, TypeError, KeyError) as error:
                 problems.append('설치 기록을 읽을 수 없습니다: ' + str(error))
-        installed = json.loads(self.run(
-            [self.conda, 'list', '--prefix', str(self.env_prefix), '--json'], capture=True))
-        versions = {p['name'].lower(): str(p['version']) for p in installed}
+        try:
+            installed = json.loads(self.run(
+                [self.conda, 'list', '--prefix', str(self.env_prefix), '--json'], capture=True))
+            require(isinstance(installed, list), 'Invalid Conda package response')
+            versions = {p['name'].lower(): str(p['version']) for p in installed}
+        except (ValueError, TypeError, KeyError, subprocess.CalledProcessError, SetupError) as error:
+            problems.append('Conda 패키지 목록 검증 실패: ' + str(error))
+            versions = None
         specs = ['python=' + self.config['conda']['python'], *self.config['conda']['packages']]
         for spec in specs:
+            if versions is None:
+                break
             name = package_name(spec)
             actual = versions.get(name.lower())
             if actual is None:
