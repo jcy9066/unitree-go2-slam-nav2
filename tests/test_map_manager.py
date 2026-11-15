@@ -77,13 +77,16 @@ class TTY(io.StringIO):
         return True
 
 
-def test_terminal_selection_updates_only_pointer(tmp_path, monkeypatch):
+def test_terminal_selection_updates_only_pointer(tmp_path, monkeypatch, capsys):
     root = tmp_path / 'maps'
     db = make_map(root / 'map_20261116_130000')
     monkeypatch.setenv('GO2_MAP_DIR', str(root))
     catalog.register(db)
     monkeypatch.setattr(catalog.sys, 'stdin', TTY('1\n'))
     assert catalog.choose() == str(db.resolve())
+    streams = capsys.readouterr()
+    assert streams.out == '', 'CLI prompts must not corrupt captured DB path'
+    assert '지도 번호' in streams.err
     assert catalog.selected_path() == str(db.resolve())
     assert db.is_file()
 
