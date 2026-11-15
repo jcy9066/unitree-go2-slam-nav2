@@ -7,9 +7,8 @@ go2_map_directory() {
     if [[ -n ${GO2_MAP_DIR:-} ]]; then
         realpath -m -- "$GO2_MAP_DIR"
     else
-        env -u PYTHONHOME -u PYTHONPATH "${GO2_BOOTSTRAP_PYTHON:-/usr/bin/python3}" -c \
-            'import json,pathlib,sys; r=pathlib.Path(sys.argv[1]); print((r/json.load(open(r/"environment.json"))["maps"]["root"]).resolve())' \
-            "$GO2_REPO_ROOT"
+        # Runtime Mapping/Nav2 maps are local, independent of repository map archives.
+        realpath -m -- "$HOME/maps"
     fi
 }
 
