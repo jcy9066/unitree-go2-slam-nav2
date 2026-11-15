@@ -14,9 +14,11 @@ def runtime_project(tmp_path):
     root = tmp_path / 'repo'
     scripts = root / 'scripts'
     scripts.mkdir(parents=True)
-    for name in ('run_mapping.sh', 'run_nav.sh'):
+    for name in ('02_create_map.sh', '03_run_nav.sh'):
         shutil.copyfile(source / name, root / name)
     shutil.copyfile(source / 'environment.json', root / 'environment.json')
+    for name in ('map_catalog.py', 'map_preview_capture.py'):
+        shutil.copyfile(source / 'scripts' / name, scripts / name)
     helpers = (source / 'scripts/_env.sh').read_text()
     helpers += '''
 go2_load_environment() {
