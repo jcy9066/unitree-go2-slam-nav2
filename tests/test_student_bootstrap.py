@@ -18,7 +18,7 @@ def test_plan_survives_conda_and_makes_no_files(tmp_path):
     env = dict(os.environ, CONDA_PREFIX='/nonexistent/conda',
                PYTHONHOME='/nonexistent/python', PYTHONPATH='/nonexistent/site')
     before = set(tmp_path.iterdir())
-    result = run('install_student.sh', 'plan', env=env)
+    result = run('01_setup_env.sh', 'plan', env=env)
     assert result.returncode == 0, result.stderr
     manifest = json.loads((ROOT / 'environment.json').read_text())
     assert 'Python ' + manifest['conda']['python'] in result.stdout
@@ -31,12 +31,12 @@ def test_unsafe_paths_and_invalid_options_rejected():
     for args in [('install', '--prefix', '/'), ('plan', '--prefix', str(Path.home())),
                  ('install', '--interface', 'eth0;touch x'), ('install', '--ref', '--force'),
                  ('delete',), ('install', '--prefix')]:
-        assert run('install_student.sh', *args).returncode != 0
+        assert run('01_setup_env.sh', *args).returncode != 0
 
 
 def test_wrong_environment_stops_before_ros(tmp_path):
     env = dict(os.environ, CONDA_PREFIX=str(tmp_path / 'other-environment'))
-    result = run('run_nav.sh', 'check', env=env)
+    result = run('03_run_nav.sh', 'check', env=env)
     assert result.returncode != 0
     assert 'conda activate go2_nav2' in result.stderr
 
@@ -59,7 +59,7 @@ def session_fixture(tmp_path, iface='lo', existing=False):
     (bindir / 'python3').symlink_to(python)
     root = tmp_path / 'repo'
     (root / 'scripts').mkdir(parents=True)
-    for name in ['run_nav.sh', 'run_mapping.sh']:
+    for name in ['03_run_nav.sh', '02_create_map.sh']:
         (root / name).write_bytes((ROOT / name).read_bytes())
     (root / 'environment.json').write_bytes((ROOT / 'environment.json').read_bytes())
     network = tmp_path / 'net'
@@ -74,9 +74,9 @@ def session_fixture(tmp_path, iface='lo', existing=False):
 def test_offline_interface_blocks_all_live_modes(tmp_path):
     env, log = session_fixture(tmp_path)
     original = tmp_path / 'inert.db'; original.write_bytes(b'inert map')
-    for script, args in [('run_mapping.sh', ['sensors']), ('run_mapping.sh', ['start']),
-                         ('run_nav.sh', ['view', str(original)]), ('run_nav.sh', ['bridge']),
-                         ('run_nav.sh', ['health'])]:
+    for script, args in [('02_create_map.sh', ['sensors']), ('02_create_map.sh', ['start']),
+                         ('03_run_nav.sh', ['view', str(original)]), ('03_run_nav.sh', ['bridge']),
+                         ('03_run_nav.sh', ['health'])]:
         result = run(script, *args, env=env)
         assert result.returncode != 0
         assert 'Offline interface' in result.stderr
@@ -86,7 +86,7 @@ def test_offline_interface_blocks_all_live_modes(tmp_path):
 def test_bridge_starts_disabled_and_remapped(tmp_path):
     iface = 'fixture0'
     env, log = session_fixture(tmp_path, iface)
-    result = run('run_nav.sh', 'bridge', env=env)
+    result = run('03_run_nav.sh', 'bridge', env=env)
     assert result.returncode == 0, result.stderr
     text = log.read_text()
     assert 'enabled:=false' in text
@@ -98,7 +98,7 @@ def test_bridge_starts_disabled_and_remapped(tmp_path):
 def test_duplicate_bridge_rejected(tmp_path):
     iface = 'fixture0'
     env, log = session_fixture(tmp_path, iface, existing=True)
-    result = run('run_nav.sh', 'bridge', env=env)
+    result = run('03_run_nav.sh', 'bridge', env=env)
     assert result.returncode != 0
     assert 'already exists' in result.stderr
     assert 'run go2_cmd_processor' not in log.read_text()
@@ -127,5 +127,5 @@ def test_other_conda_environment_is_rejected_before_ros(tmp_path):
 
 def test_shell_layout_is_four_root_entrypoints_and_one_internal_helper():
     assert {p.name for p in ROOT.glob('*.sh')} == {
-        'install_student.sh', 'setup_maps.sh', 'run_mapping.sh', 'run_nav.sh'}
+        '01_setup_env.sh', 'setup_maps.sh', '02_create_map.sh', '03_run_nav.sh'}
     assert {p.name for p in SCRIPTS.glob('*.sh')} == {'_env.sh'}
