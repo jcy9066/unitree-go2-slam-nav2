@@ -11,8 +11,8 @@ from xml.etree import ElementTree
 ROOT = Path(__file__).resolve().parents[1]
 SHELLS = ['01_setup_env.sh', '02_create_map.sh', '03_run_nav.sh', 'setup_maps.sh', 'scripts/_env.sh']
 PYTHON = ['scripts/environment.py', 'scripts/map_catalog.py',
-          'scripts/map_preview_capture.py', 'map_manager.py',
-          'tests/test_map_manager.py']
+          'scripts/map_preview_capture.py', 'scripts/tutorial_server.py', 'map_manager.py',
+          'tests/test_map_manager.py', 'tests/test_tutorial_map_viewer.py']
 HTML = ['slam_nav2_tutorial.html', 'map_manager.html']
 
 
@@ -56,6 +56,12 @@ def main():
     assert 'iface=lo' not in helper, 'unsafe loopback fallback'
     for file in PYTHON:
         ast.parse((ROOT / file).read_text(encoding='utf-8'), filename=file)
+    api = (ROOT / 'scripts/tutorial_server.py').read_text(encoding='utf-8')
+    for source in ("'127.0.0.1'", "'/api/tutorial/maps'", 'resolve_image', 'STATIC_FILES'):
+        assert source in api, f'read-only local map API missing: {source}'
+    assert 'map_manager.py' not in api, 'tutorial must stay independent of map manager'
+    capture = (ROOT / 'scripts/map_preview_capture.py').read_text(encoding='utf-8')
+    assert "with_name('map.png')" in capture and "max_side=max(width, height)" in capture, 'full map output missing'
     for file in HTML:
         content = (ROOT / file).read_text(encoding='utf-8')
         parser = Structure()
@@ -69,9 +75,17 @@ def main():
             assert 'docs/KakaoTalk_20261112_203846672_web.mp4' in content
             assert 'map_manager.html' not in content and 'map_manager.py' not in content
             assert 'Map Manager' not in content, 'tutorial must not mention administrator app'
-            assert 'class="media-results"' in content, 'video and results must be adjacent'
+            assert 'class="media-results"' in content, 'video, map and results must be adjacent'
+            assert 'class="media-top"' in content and 'class="map-panel"' in content, 'video must sit alongside map'
+            assert 'id="map-select"' in content and 'id="map-display-name"' in content, 'map name selection absent'
+            assert 'id="map-created-at"' in content, 'metadata date absent'
+            for control in ('map-viewport', 'map-zoom-in', 'map-zoom-out', 'map-fit', 'map-refresh'):
+                assert 'id="' + control + '"' in content, f'map viewport control missing: {control}'
+            for gesture in ('pointerdown', 'pointermove', "'wheel'", 'fitScale', 'zoomAt'):
+                assert gesture in content, f'map viewer interaction missing: {gesture}'
+            assert 'scripts/tutorial_server.py --background' in content, 'local server start instruction missing'
             assert '.media-results{display:flex;flex-direction:column' in content, 'video and results must be vertically stacked'
-            assert re.search(r'class="media-results">\s*<figure[\s\S]*?</figure><div class="outcome-panel"', content), 'video must precede results table'
+            assert re.search(r'class="media-results"><div class="media-top"><figure[\s\S]*?</figure><section class="map-panel"[\s\S]*?</section></div><div class="outcome-panel"', content), 'video and map must precede results table'
             assert content.count('<li class="concept-item">') == 9, 'expected nine vertical concept bullets'
             assert '<details class="concept-disclosure" id="concept-details">' in content, 'concepts must be collapsible'
             assert '<summary class="section-heading concept-summary">' in content, 'native accessible summary missing'
