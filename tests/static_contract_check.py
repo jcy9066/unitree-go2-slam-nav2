@@ -73,6 +73,10 @@ def main():
             assert '.media-results{display:flex;flex-direction:column' in content, 'video and results must be vertically stacked'
             assert re.search(r'class="media-results">\s*<figure[\s\S]*?</figure><div class="outcome-panel"', content), 'video must precede results table'
             assert content.count('<li class="concept-item">') == 9, 'expected nine vertical concept bullets'
+            assert '<details class="concept-disclosure" id="concept-details">' in content, 'concepts must be collapsible'
+            assert '<summary class="section-heading concept-summary">' in content, 'native accessible summary missing'
+            assert '<details class="concept-disclosure" id="concept-details" open' not in content, 'concepts must default collapsed'
+            assert 'function expandFromAnchor()' in content, 'concept anchor should expand after navigation'
             assert '<ul class="concept-list"' in content and 'class="concepts"' not in content, 'old 3x3 concept cards remain'
             assert '.concept-list>li::marker' in content, 'list bullets must remain visible'
             diagram = re.search(r'(<svg[^>]+viewBox="0 0 1680 750"[\s\S]*?</svg>)', content)
