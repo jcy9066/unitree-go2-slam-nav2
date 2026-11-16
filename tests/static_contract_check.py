@@ -11,7 +11,7 @@ from xml.etree import ElementTree
 ROOT = Path(__file__).resolve().parents[1]
 SHELLS = ['01_setup_env.sh', '02_create_map.sh', '03_run_nav.sh', 'setup_maps.sh', 'scripts/_env.sh']
 PYTHON = ['scripts/environment.py', 'scripts/map_catalog.py',
-          'scripts/map_preview_capture.py', 'scripts/tutorial_server.py', 'map_manager.py',
+          'scripts/map_preview_capture.py', 'scripts/open_tutorial.py', 'map_manager.py',
           'tests/test_map_manager.py', 'tests/test_tutorial_map_viewer.py']
 HTML = ['slam_nav2_tutorial.html', 'map_manager.html']
 
@@ -56,10 +56,12 @@ def main():
     assert 'iface=lo' not in helper, 'unsafe loopback fallback'
     for file in PYTHON:
         ast.parse((ROOT / file).read_text(encoding='utf-8'), filename=file)
-    api = (ROOT / 'scripts/tutorial_server.py').read_text(encoding='utf-8')
-    for source in ("'127.0.0.1'", "'/api/tutorial/maps'", 'resolve_image', 'STATIC_FILES'):
-        assert source in api, f'read-only local map API missing: {source}'
-    assert 'map_manager.py' not in api, 'tutorial must stay independent of map manager'
+    launcher = (ROOT / 'scripts/open_tutorial.py').read_text(encoding='utf-8')
+    for source in ('list_available_maps', "'maps_manifest.js'", "'viewer_maps'", 'webbrowser.open'):
+        assert source in launcher, f'offline map indexer missing: {source}'
+    for forbidden in ('HTTPServer', 'serve_forever', 'subprocess.Popen', 'requests.get('):
+        assert forbidden not in launcher, f'launcher must not start a server or background job: {forbidden}'
+    assert not (ROOT / 'scripts/tutorial_server.py').exists(), 'tutorial HTTP server must be removed'
     capture = (ROOT / 'scripts/map_preview_capture.py').read_text(encoding='utf-8')
     assert "with_name('map.png')" in capture and "max_side=max(width, height)" in capture, 'full map output missing'
     for file in HTML:
@@ -79,11 +81,15 @@ def main():
             assert 'class="media-top"' in content and 'class="map-panel"' in content, 'video must sit alongside map'
             assert 'id="map-select"' in content and 'id="map-display-name"' in content, 'map name selection absent'
             assert 'id="map-created-at"' in content, 'metadata date absent'
-            for control in ('map-viewport', 'map-zoom-in', 'map-zoom-out', 'map-fit', 'map-refresh'):
+            for control in ('map-viewport', 'map-zoom-in', 'map-zoom-out', 'map-fit'):
                 assert 'id="' + control + '"' in content, f'map viewport control missing: {control}'
             for gesture in ('pointerdown', 'pointermove', "'wheel'", 'fitScale', 'zoomAt'):
                 assert gesture in content, f'map viewer interaction missing: {gesture}'
-            assert 'scripts/tutorial_server.py --background' in content, 'local server start instruction missing'
+            assert '<script src="maps_manifest.js"></script>' in content, 'file:// map list missing'
+            assert 'window.GO2_OFFLINE_MAPS' in content, 'offline map metadata hook missing'
+            assert 'python3 scripts/open_tutorial.py' in content, 'one-shot launcher instruction missing'
+            assert 'tutorial_server.py' not in content, 'server instructions must be removed'
+            assert '/api/tutorial/maps' not in content, 'network map API must be removed'
             assert '.media-results{display:flex;flex-direction:column' in content, 'video and results must be vertically stacked'
             assert re.search(r'class="media-results"><div class="media-top"><figure[\s\S]*?</figure><section class="map-panel"[\s\S]*?</section></div><div class="outcome-panel"', content), 'video and map must precede results table'
             assert content.count('<li class="concept-item">') == 9, 'expected nine vertical concept bullets'
