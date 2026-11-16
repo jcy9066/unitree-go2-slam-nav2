@@ -3,8 +3,10 @@
 import ast
 from html.parser import HTMLParser
 from pathlib import Path
+import re
 import subprocess
 import sys
+from xml.etree import ElementTree
 
 ROOT = Path(__file__).resolve().parents[1]
 SHELLS = ['01_setup_env.sh', '02_create_map.sh', '03_run_nav.sh', 'setup_maps.sh', 'scripts/_env.sh']
@@ -68,6 +70,24 @@ def main():
             assert 'map_manager.html' not in content and 'map_manager.py' not in content
             assert 'Map Manager' not in content, 'tutorial must not mention administrator app'
             assert 'class="media-results"' in content, 'video and results must be adjacent'
+            assert '.media-results{display:flex;flex-direction:column' in content, 'video and results must be vertically stacked'
+            assert re.search(r'class="media-results">\s*<figure[\s\S]*?</figure><div class="outcome-panel"', content), 'video must precede results table'
+            assert content.count('<li class="concept-item">') == 9, 'expected nine vertical concept bullets'
+            assert '<ul class="concept-list"' in content and 'class="concepts"' not in content, 'old 3x3 concept cards remain'
+            assert '.concept-list>li::marker' in content, 'list bullets must remain visible'
+            diagram = re.search(r'(<svg[^>]+viewBox="0 0 1280 540"[\s\S]*?</svg>)', content)
+            assert diagram, 'native SVG architecture figure missing'
+            svg = diagram.group(1)
+            ElementTree.fromstring(svg)
+            assert 'architecture-svg-title' in svg and 'architecture-svg-desc' in svg
+            assert svg.count('class="arch-panel"') == 3, 'three subsystem boundaries required'
+            for step in ('L1 LiDAR', 'D435i RGB-D', '/robot_odom_fixed', 'RTAB-Map',
+                         'Localization', 'Map DB', 'TF Frames', 'Global Costmap',
+                         'Local Costmap', 'NavFn Planner', 'DWB Controller',
+                         'RViz2', 'Motion Bridge', 'Robot Motion',
+                         'live obstacle data', 'feedback'):
+                assert step in svg, f'architecture stage missing: {step}'
+            assert '<image' not in svg and '<img' not in svg, 'architecture must be native vector elements'
             assert 'route-required-tag' in content and '클릭하여 선택' in content, 'A/B branch selection must be visibly required'
             assert 'TF 캡처 이미지 공란' in content and 'Costmap 캡처 이미지 공란' in content, 'N2 screenshot slots missing'
             assert '/local_costmap/costmap' in content and '/global_costmap/costmap' in content, 'screenshot capture topics missing'
