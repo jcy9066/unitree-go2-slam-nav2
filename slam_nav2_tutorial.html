@@ -263,6 +263,20 @@ body{margin:0;overflow-wrap:anywhere;word-break:keep-all}a{text-underline-offset
 .terminal-card p+p{margin-top:10px}
 .rviz-capture-grid{margin-top:4px}
 @media(max-width:740px){.terminal-plan{grid-template-columns:1fr}}
+
+/* Expandable reference section, collapsed on first load. */
+.concept-disclosure{border:0}
+.concept-disclosure>.concept-summary{display:flex;align-items:center;gap:16px;cursor:pointer;list-style:none;user-select:none;padding:8px 0}
+.concept-disclosure>.concept-summary::-webkit-details-marker{display:none}
+.concept-summary-title{display:flex;flex:1;min-width:0;flex-direction:column;gap:3px}
+.concept-heading{font-family:"IBM Plex Sans KR",sans-serif;font-size:clamp(22px,2.4vw,28px);font-weight:700;color:var(--ink)}
+.concept-toggle-hint{font-size:12px;color:var(--ink-2);font-weight:500}
+.concept-chevron{display:block;width:11px;height:11px;border-right:2px solid var(--accent);border-bottom:2px solid var(--accent);transform:rotate(45deg);margin-right:8px;transition:transform .2s ease}
+.concept-disclosure[open] .concept-chevron{transform:rotate(225deg)}
+.concept-disclosure[open] .concept-toggle-hint::after{content:" · 펼쳐진 상태"}
+.concept-disclosure-body{padding-top:14px}
+.concept-summary:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:3px}
+@media(prefers-reduced-motion:reduce){.concept-chevron{transition:none}}
 </style></head>
 <body>
 <a class="skip-link" href="#main">본문으로 바로가기</a>
@@ -300,12 +314,9 @@ body{margin:0;overflow-wrap:anywhere;word-break:keep-all}a{text-underline-offset
 </div>
 </figure><div class="outcome-panel"><h3 id="completed-title">현재 완료한 작업과 확인 근거</h3><div aria-label="주행 결과" class="table-scroll" id="revision-history" role="region" tabindex="0"><table><thead><tr><th scope="col">항목</th><th scope="col">결과</th></tr></thead><tbody><tr><th scope="row">창학관 3층 지도</th><td>기존 지도 기반 Localization 및 Nav2 실습</td></tr><tr><th scope="row">연구실 → 교수님 방 문앞</th><td>구간 목표 지정에 따른 주행</td></tr><tr><th scope="row">교수님 방 문앞 → 연구실</th><td>조종기로 방향 전환 후 구간별 복귀</td></tr><tr><th scope="row">전체 자동 왕복</th><td>일부 수동 조작 필요</td></tr></tbody></table></div></div></div></section>
 <section aria-labelledby="concepts-title" class="section" id="concepts">
-<div class="section-heading">
-<span aria-hidden="true" class="section-number">03</span>
-<div>
-<h2 id="concepts-title">SLAM·Nav2 핵심 개념</h2>
-</div>
-</div>
+<details class="concept-disclosure" id="concept-details">
+<summary class="section-heading concept-summary"><span aria-hidden="true" class="section-number">03</span><span class="concept-summary-title"><span class="concept-heading" id="concepts-title" role="heading" aria-level="2">SLAM·Nav2 핵심 개념</span><span class="concept-toggle-hint" aria-hidden="true">클릭하여 펼치기</span></span><span class="concept-chevron" aria-hidden="true"></span></summary>
+<div class="concept-disclosure-body">
 <ul class="concept-list" aria-label="Nine SLAM and Nav2 concepts">
 <li class="concept-item">
 <h3>ROS 2 데이터 흐름</h3>
@@ -404,6 +415,8 @@ body{margin:0;overflow-wrap:anywhere;word-break:keep-all}a{text-underline-offset
 <path d="M1510 553 V680 H155 V505" class="arch-feedback" marker-end="url(#go2-arrow)"/>
 <text x="668" y="713" class="arch-feedback-label">Odometry / robot state feedback</text>
 </svg></div></figure>
+</div>
+</details>
 <aside aria-label="지도 작성과 자율주행 모드의 차이" class="notice"><strong>지도를 만들 때는 Mapping, 저장된 지도에서 주행할 때는 Localization을 사용합니다.</strong><p>주행 중에는 Nav2 Costmap이 현재 장애물을 반영합니다. 원본 지도 DB는 보존하고 주행에는 복사본을 사용합니다.</p></aside>
 </section>
 <section aria-labelledby="terminal-title" class="section" id="terminal-commands"><div class="section-heading">
@@ -465,6 +478,13 @@ body{margin:0;overflow-wrap:anywhere;word-break:keep-all}a{text-underline-offset
  async function copy(text){if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(text);return;}var field=document.createElement('textarea');field.value=text;field.style.position='fixed';field.style.opacity='0';document.body.appendChild(field);field.select();var ok=document.execCommand('copy');field.remove();if(!ok)throw new Error('copy');}
  document.addEventListener('click',async function(event){var button=event.target.closest('button[data-copy]');if(!button)return;var source=document.getElementById(button.dataset.copy);try{await copy(source.textContent);button.textContent='복사됨';document.getElementById('copy-status').textContent='명령을 복사했습니다. 표시된 터미널에서 실행하세요.';setTimeout(function(){button.textContent='복사';},1500);}catch(error){button.textContent='직접 선택';document.getElementById('copy-status').textContent='복사를 허용하지 않는 화면입니다. 코드 내용을 직접 선택해 복사하세요.';var selection=window.getSelection();var range=document.createRange();range.selectNodeContents(source);selection.removeAllRanges();selection.addRange(range);}});
  var toggle=document.getElementById('theme-toggle');toggle.addEventListener('click',function(){var current=document.documentElement.dataset.theme||(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');var dark=current!=='dark';document.documentElement.dataset.theme=dark?'dark':'light';toggle.textContent=dark?'밝은 화면':'어두운 화면';toggle.setAttribute('aria-pressed',String(dark));});
+})();
+
+(function(){
+ var details=document.getElementById('concept-details');
+ // Preserve collapsed default; expand only after explicitly navigating to its section.
+ function expandFromAnchor(){if(location.hash==='#concepts'||location.hash==='#concepts-title')details.open=true;}
+ window.addEventListener('hashchange',expandFromAnchor);
 })();
 
 (function(){
