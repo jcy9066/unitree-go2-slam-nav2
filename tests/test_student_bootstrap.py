@@ -79,7 +79,7 @@ def test_offline_interface_blocks_all_live_modes(tmp_path):
                          ('03_run_nav.sh', ['health'])]:
         result = run(script, *args, env=env)
         assert result.returncode != 0
-        assert 'Offline interface' in result.stderr
+        assert '유효한 Go2 네트워크' in result.stderr
     assert not log.exists()
 
 
