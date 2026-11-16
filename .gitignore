@@ -11,3 +11,7 @@ log/
 *.db-shm
 *.db-wal
 !maps/**/*.db.zst
+
+# Generated offline tutorial map index and display cache (never commit private maps)
+maps_manifest.js
+viewer_maps/
