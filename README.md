@@ -177,6 +177,20 @@ bash ./03_run_nav.sh view "maps/창학관 3층/rtabmap.db" --profile aligned_vis
 루트 통합 검증: 가짜 ROS·DB로 Mapping 13개, Nav2 11개, 설치 진입·공통 환경 9개, 지도 23개, 환경 13개, hook 보호 16개, **총 85개 PASS**. 실제 Conda 설치·카메라·센서·RViz2·물리 주행은 이번 정리에서 NOT TESTED입니다. 기존 주행 범위는 위 운영 기록을 참고합니다.
 
 
+## 튜토리얼 Interactive Map Viewer
+
+지도는 원본 RTAB-Map DB와 별개인 읽기 전용 2D Occupancy PNG로 표시합니다. **PC 터미널 A 하나에서** 다음 명령을 한 번 실행하면 웹 서버가 백그라운드로 시작되어 터미널 A를 계속 Mapping/Nav2에 사용할 수 있습니다.
+
+```bash
+python3 scripts/tutorial_server.py --background
+```
+
+이후 실행 PC의 브라우저에서 `http://127.0.0.1:8766/`를 엽니다. 주행 영상 우측에서 `~/maps/` 및 복원된 저장소 `maps/`의 지도를 선택하면 `metadata.json`에 기록된 **이름·생성 날짜**와 Occupancy Map을 표시합니다. 드래그 이동, 휠 또는 +/- 확대·축소, 전체 보기, 터치 제스처와 키보드 이동을 지원합니다. 결과 표는 영상과 지도 아래에 유지됩니다.
+
+- 신규 Mapping 종료 시 기존 `preview.png`(최대 900px)와 `map.png`(원본 /map 그리드 해상도, 최대 36MP)를 생성합니다. 구형 지도의 `map.png`가 없으면 `preview.png`로 표시하고 축소 이미지임을 알립니다. 둘 다 없으면 허위 지도 대신 '이미지 없음'을 표시합니다.
+- `scripts/tutorial_server.py`는 `127.0.0.1:8766`에서만 실행되고 지도 목록/PNG, HTML/영상 에셋만 제공합니다. 원본 `rtabmap.db`, Metadata, `.selected_map`을 **수정하지 않으며** DB 파일을 웹으로 제공하지 않습니다.
+- GitHub 또는 RawGitHack의 정적 HTML을 열 때는 로컬 PC 지도에 접근할 수 없습니다. 실제 지도 목록을 보려면 위 로컬 주소로 페이지를 열어야 합니다. 이 서버는 `map_manager.py`와 서로 독립적입니다.
+
 ## 독립 지도 관리 UI (실습에 불필요)
 
 `python3 map_manager.py`로 로컬 관리 서버를 실행한 뒤 `http://127.0.0.1:8765`에 접속합니다. 이 도구는 **튜토리얼과 완전히 독립**이며 지도 이름·생성 날짜·실제 `/map`에서 캡처된 미리보기만 표시합니다. 이름 변경 시 `~/maps/<지도 ID>/metadata.json`만 바뀌고 원본 DB는 변경하지 않습니다. 미리보기 수신에 실패하면 임의의 이미지를 생성하지 않고 ‘미리보기 없음’을 표시합니다. 관리자 계정 인증 기능은 없으므로 서버는 로컬 루프백에서만 실행됩니다.
@@ -187,7 +201,7 @@ bash ./03_run_nav.sh view "maps/창학관 3층/rtabmap.db" --profile aligned_vis
 
 ```bash
 python3 tests/static_contract_check.py
-python3 -m pytest -q tests/test_environment.py tests/test_map_manager.py tests/test_mapping_entrypoint.py tests/test_database_scripts.py tests/test_student_bootstrap.py
+python3 -m pytest -q tests/test_environment.py tests/test_map_manager.py tests/test_mapping_entrypoint.py tests/test_database_scripts.py tests/test_student_bootstrap.py tests/test_tutorial_map_viewer.py
 ```
 
 **이번 변경의 검증 범위:** GitHub 소스 검토 및 오프라인 회귀 테스트 추가. 새 Conda 환경 설치·ROS 2·RViz2·Go2 실물 주행은 별도 검증 전이므로 PASS로 표기하지 않습니다.
