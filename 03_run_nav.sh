@@ -3,14 +3,15 @@
 set -Eeuo pipefail
 REPO_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 usage() {
-    echo 'Usage: bash ./03_run_nav.sh [view|drive|plan|check|select|list] [existing.db] [--profile legacy|aligned_visual|reference_visual]'
+    echo 'Usage: bash ./03_run_nav.sh [view|drive|plan|select|list] [existing.db] [--profile legacy|aligned_visual|reference_visual]'
     echo '       bash ./03_run_nav.sh health [--seconds 4] | bridge | shell'
     echo '       bash ./03_run_nav.sh aligned|reference existing.db'
     echo 'Default: view (motion disabled). Existing DB path alone is also supported.'
 }
 if [[ "${1:-}" == -h || "${1:-}" == --help ]]; then usage; exit 0; fi
+if [[ "${1:-}" == check ]]; then echo 'ERROR: 환경 검증은 bash ./01_setup_env.sh에서 수행합니다.' >&2; exit 2; fi
 MODE=view
-if [[ "${1:-}" =~ ^(view|drive|plan|check|health|bridge|shell|aligned|reference|select|list)$ ]]; then MODE=$1; shift; fi
+if [[ "${1:-}" =~ ^(view|drive|plan|health|bridge|shell|aligned|reference|select|list)$ ]]; then MODE=$1; shift; fi
 PROFILE=${GO2_LOCALIZATION_PROFILE:-legacy}
 COMPARISON=0
 if [[ "$MODE" == aligned || "$MODE" == reference ]]; then
@@ -68,10 +69,6 @@ fi
 export GO2_SKIP_BUILD=1
 go2_load_environment
 PYTHON_BIN=${GO2_PYTHON:-python3}
-if [[ "$MODE" == check ]]; then
-    echo '[go2] Environment ready; no ROS nodes or motion bridge started.'
-    exit 0
-fi
 if [[ "$MODE" == shell ]]; then exec /bin/bash --noprofile --norc -i; fi
 go2_require_network
 if [[ "$MODE" == health ]]; then exec "$PYTHON_BIN" "$REPO_ROOT/scripts/nav_health.py" "$@"; fi
