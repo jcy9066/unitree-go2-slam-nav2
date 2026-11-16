@@ -369,10 +369,14 @@ body{margin:0;overflow-wrap:anywhere;word-break:keep-all}a{text-underline-offset
 <rect class="arch-box" x="1048" y="127" width="204" height="71" rx="7"/><text x="1063" y="154" class="arch-heading">Motion Bridge</text><text x="1063" y="175" class="arch-small">/go2_nav/cmd_vel</text><text x="1063" y="193" class="arch-small">Velocity commands</text>
 <rect class="arch-box" x="1048" y="264" width="204" height="62" rx="7"/><text x="1063" y="291" class="arch-heading">Walking Control</text><text x="1063" y="312" class="arch-small">Go2 motion API</text>
 <rect class="arch-box" x="1048" y="366" width="204" height="61" rx="7"/><text x="1063" y="393" class="arch-heading">Robot Motion</text><text x="1063" y="414" class="arch-small">Walk to goal</text>
+<path class="arch-link" d="M244 142 H278 V104 H803 V121" marker-end="url(#go2-arrow)"/>
+<text x="595" y="112" class="arch-label">live obstacle data</text>
 <path class="arch-link" d="M244 171 H308" marker-end="url(#go2-arrow)"/>
 <path class="arch-link" d="M244 311 H308" marker-end="url(#go2-arrow)"/>
 <text x="265" y="157" class="arch-label">sensors</text>
 <text x="265" y="296" class="arch-label">odom</text>
+<path class="arch-link" d="M500 218 V239 H530 V282 H538" marker-end="url(#go2-arrow)"/>
+<text x="531" y="256" class="arch-label">localize</text>
 <path class="arch-link" d="M515 172 H538" marker-end="url(#go2-arrow)"/>
 <text x="520" y="157" class="arch-label">map</text>
 <path class="arch-link" d="M515 302 H538" marker-end="url(#go2-arrow)"/>
@@ -385,9 +389,9 @@ body{margin:0;overflow-wrap:anywhere;word-break:keep-all}a{text-underline-offset
 <text x="987" y="194" class="arch-label">cmd_vel</text>
 <path class="arch-link" d="M1150 198 V260" marker-end="url(#go2-arrow)"/>
 <path class="arch-link" d="M1150 326 V362" marker-end="url(#go2-arrow)"/>
-<path class="arch-link" d="M845 355 V407 H715" marker-end="url(#go2-arrow)"/>
+<path class="arch-link" d="M845 355 V407 H710" marker-end="url(#go2-arrow)"/>
 <text x="747" y="397" class="arch-label">visualization</text>
-<path class="arch-feedback" d="M1150 428 V490 H143 V452" marker-end="url(#go2-arrow)"/>
+<path class="arch-feedback" d="M1150 428 V490 H143 V440" marker-end="url(#go2-arrow)"/>
 <text x="472" y="519" class="arch-feedback-label">Odometry / robot state feedback</text>
 </svg></div></figure>
 <aside aria-label="지도 작성과 자율주행 모드의 차이" class="notice"><strong>지도를 만들 때는 Mapping, 저장된 지도에서 주행할 때는 Localization을 사용합니다.</strong><p>주행 중에는 Nav2 Costmap이 현재 장애물을 반영합니다. 원본 지도 DB는 보존하고 주행에는 복사본을 사용합니다.</p></aside>
