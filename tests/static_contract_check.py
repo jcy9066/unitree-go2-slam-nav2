@@ -46,6 +46,10 @@ def main():
     assert 'restart_map:=false' in mapping and 'restart_map:=false' in navigation
     assert 'ENABLE_MOTION=false' in navigation and 'if [[ "$MODE" == drive ]]; then ENABLE_MOTION=true; fi' in navigation
     assert 'cp -p -- "$DB" "$SESSION_DB"' in navigation, 'navigation must copy original map'
+    helper = (ROOT / 'scripts/_env.sh').read_text(encoding='utf-8')
+    assert 'go2_auto_network_interface()' in helper, 'missing Go2 wired-network selection'
+    assert 'conda activate go2_nav2' in helper, 'missing environment auto activation'
+    assert 'iface=lo' not in helper, 'unsafe loopback fallback'
     for file in PYTHON:
         ast.parse((ROOT / file).read_text(encoding='utf-8'), filename=file)
     for file in HTML:
@@ -61,6 +65,13 @@ def main():
             assert 'docs/KakaoTalk_20261112_203846672_web.mp4' in content
             assert 'map_manager.html' not in content and 'map_manager.py' not in content
             assert 'Map Manager' not in content, 'tutorial must not mention administrator app'
+            assert 'class="media-results"' in content, 'video and results must be adjacent'
+            assert '.steps>li>div{display:block' in content, 'Ctrl+C keyboard tokens must wrap inline'
+            assert 'bash ./03_run_nav.sh</code>' in content, 'safe default command missing'
+            assert 'bash ./03_run_nav.sh drive' in content, 'operator motion must be explicit'
+            for disallowed in ('SSH', '초보자', 'read -r -p', 'GO2_NET_IFACE', 'CYCLONEDDS_URI',
+                               '성공한 실행에서 해당하는', 'nav.rviz'):
+                assert disallowed not in content, f'tutorial contains obsolete discussion: {disallowed}'
         else:
             assert '03_run_nav.sh' not in content and 'slam_nav2_tutorial.html' not in content
     print('PASS: shell syntax, Python AST, HTML anchors, root scripts and UI separation')
