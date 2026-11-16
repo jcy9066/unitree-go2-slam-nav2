@@ -36,9 +36,15 @@ def test_unsafe_paths_and_invalid_options_rejected():
 
 def test_wrong_environment_stops_before_ros(tmp_path):
     env = dict(os.environ, CONDA_PREFIX=str(tmp_path / 'other-environment'))
-    result = run('03_run_nav.sh', 'check', env=env)
+    result = run('03_run_nav.sh', 'health', env=env)
     assert result.returncode != 0
     assert 'conda activate go2_nav2' in result.stderr
+
+
+def test_deprecated_nav_environment_check_is_rejected_before_ros(tmp_path):
+    result = run('03_run_nav.sh', 'check')
+    assert result.returncode == 2
+    assert '01_setup_env.sh' in result.stderr
 
 
 def session_fixture(tmp_path, iface='lo', existing=False):
