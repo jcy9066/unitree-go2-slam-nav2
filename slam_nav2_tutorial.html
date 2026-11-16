@@ -252,6 +252,9 @@ body{margin:0;overflow-wrap:anywhere;word-break:keep-all}a{text-underline-offset
 .arch-feedback-label{fill:var(--accent);font-size:14px;font-weight:700}
 .architecture-scroll:focus-visible{outline:2px solid var(--accent);outline-offset:-3px}
 @media print{.architecture-scroll{overflow:visible}.architecture-scroll svg{min-width:0}}
+
+.arch-bus{fill:none;stroke:var(--accent);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.architecture-scroll svg{min-width:1150px}
 </style></head>
 <body>
 <a class="skip-link" href="#main">본문으로 바로가기</a>
@@ -343,56 +346,55 @@ body{margin:0;overflow-wrap:anywhere;word-break:keep-all}a{text-underline-offset
 </li>
 </ul>
 
-<figure class="architecture-figure" aria-labelledby="architecture-caption"><figcaption id="architecture-caption">Go2 SLAM / Nav2 Architecture</figcaption><div class="architecture-scroll" role="region" aria-label="Scrollable system architecture diagram" tabindex="0">
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 540" role="img" aria-labelledby="architecture-svg-title architecture-svg-desc" preserveAspectRatio="xMidYMid meet">
-<title id="architecture-svg-title">Go2 SLAM / Nav2 data flow</title>
-<desc id="architecture-svg-desc">L1 LiDAR, D435i RGB-D and Go2 odometry feed RTAB-Map and TF on the ROS 2 laptop. RTAB-Map produces a map database and localization. TF provides transforms. Nav2 uses map, pose and observations for costmaps, global planning and local control, then sends velocity commands to the Go2 motion bridge. RViz2 is for monitoring only, not for forwarding control commands. Robot odometry feeds back to the system.</desc>
-<defs><marker id="go2-arrow" viewBox="0 0 9 9" refX="8" refY="4.5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L9 4.5 L0 9 Z" fill="var(--accent)"/></marker></defs>
-<rect class="arch-panel" x="12" y="18" width="248" height="430" rx="10"/><rect class="arch-panel-head" x="13" y="19" width="246" height="66" rx="9"/><text x="29" y="47" class="arch-title">GO2 EDU</text><text x="29" y="68" class="arch-small">Sensors &amp; Robot State</text>
-<rect class="arch-box" x="28" y="107" width="216" height="70" rx="7"/><text x="43" y="134" class="arch-heading">L1 LiDAR</text><text x="43" y="155" class="arch-small">/utlidar/cloud_base</text><text x="43" y="173" class="arch-small">Point cloud</text>
-<rect class="arch-box" x="28" y="189" width="216" height="70" rx="7"/><text x="43" y="216" class="arch-heading">D435i RGB-D</text><text x="43" y="237" class="arch-small">RGB + aligned depth</text><text x="43" y="255" class="arch-small">/camera/*</text>
-<rect class="arch-box" x="28" y="271" width="216" height="70" rx="7"/><text x="43" y="298" class="arch-heading">Go2 Odometry</text><text x="43" y="319" class="arch-small">/robot_odom_fixed</text><text x="43" y="337" class="arch-small">Motion estimate</text>
-<rect class="arch-box" x="28" y="353" width="216" height="70" rx="7"/><text x="43" y="380" class="arch-heading">Robot Frames</text><text x="43" y="401" class="arch-small">/tf</text><text x="43" y="419" class="arch-small">Transforms &amp; state</text>
-<rect class="arch-panel" x="296" y="18" width="696" height="430" rx="10"/><rect class="arch-panel-head" x="297" y="19" width="694" height="66" rx="9"/><text x="313" y="47" class="arch-title">RESEARCH PC</text><text x="313" y="68" class="arch-small">ROS 2 Humble · SLAM and Navigation</text>
-<rect class="arch-box" x="312" y="125" width="203" height="93" rx="7"/><text x="327" y="152" class="arch-heading">RTAB-Map</text><text x="327" y="173" class="arch-small">Mapping / Localization</text><text x="327" y="191" class="arch-small">Visual + LiDAR inputs</text>
-<rect class="arch-box" x="542" y="125" width="147" height="93" rx="7"/><text x="557" y="152" class="arch-heading">Map DB</text><text x="557" y="173" class="arch-small">rtabmap.db</text><text x="557" y="191" class="arch-small">Saved mapping</text>
-<rect class="arch-box" x="312" y="260" width="203" height="82" rx="7"/><text x="327" y="287" class="arch-heading">TF Frames</text><text x="327" y="308" class="arch-small">map → odom</text><text x="327" y="326" class="arch-small">→ base_link</text>
-<rect class="arch-box" x="542" y="260" width="147" height="82" rx="7"/><text x="557" y="287" class="arch-heading">Robot Pose</text><text x="557" y="308" class="arch-small">Localization</text><text x="557" y="326" class="arch-small">Pose + transform</text>
-<rect class="arch-box arch-nav" x="719" y="125" width="253" height="230" rx="7"/>
-<text x="736" y="153" class="arch-heading">Nav2</text>
-<rect class="arch-nav-row" x="735" y="166" width="220" height="37" rx="4"/><text x="748" y="190" class="arch-copy">Global Costmap</text>
-<rect class="arch-nav-row" x="735" y="209" width="220" height="37" rx="4"/><text x="748" y="233" class="arch-copy">Local Costmap</text>
-<rect class="arch-nav-row" x="735" y="252" width="220" height="37" rx="4"/><text x="748" y="276" class="arch-copy">NavFn Planner</text>
-<rect class="arch-nav-row" x="735" y="295" width="220" height="37" rx="4"/><text x="748" y="319" class="arch-copy">DWB Controller</text>
-<rect class="arch-box" x="542" y="376" width="169" height="62" rx="7"/><text x="557" y="403" class="arch-heading">RViz2</text><text x="557" y="424" class="arch-small">Map · TF · Path</text><text x="557" y="442" class="arch-small">Monitoring only</text>
-<rect class="arch-panel" x="1032" y="18" width="236" height="430" rx="10"/><rect class="arch-panel-head" x="1033" y="19" width="234" height="66" rx="9"/><text x="1049" y="47" class="arch-title">GO2 EDU</text><text x="1049" y="68" class="arch-small">Motion Execution</text>
-<rect class="arch-box" x="1048" y="127" width="204" height="71" rx="7"/><text x="1063" y="154" class="arch-heading">Motion Bridge</text><text x="1063" y="175" class="arch-small">/go2_nav/cmd_vel</text><text x="1063" y="193" class="arch-small">Velocity commands</text>
-<rect class="arch-box" x="1048" y="264" width="204" height="62" rx="7"/><text x="1063" y="291" class="arch-heading">Walking Control</text><text x="1063" y="312" class="arch-small">Go2 motion API</text>
-<rect class="arch-box" x="1048" y="366" width="204" height="61" rx="7"/><text x="1063" y="393" class="arch-heading">Robot Motion</text><text x="1063" y="414" class="arch-small">Walk to goal</text>
-<path class="arch-link" d="M244 142 H278 V104 H803 V121" marker-end="url(#go2-arrow)"/>
-<text x="595" y="112" class="arch-label">live obstacle data</text>
-<path class="arch-link" d="M244 171 H308" marker-end="url(#go2-arrow)"/>
-<path class="arch-link" d="M244 311 H308" marker-end="url(#go2-arrow)"/>
-<text x="265" y="157" class="arch-label">sensors</text>
-<text x="265" y="296" class="arch-label">odom</text>
-<path class="arch-link" d="M500 218 V239 H530 V282 H538" marker-end="url(#go2-arrow)"/>
-<text x="531" y="256" class="arch-label">localize</text>
-<path class="arch-link" d="M515 172 H538" marker-end="url(#go2-arrow)"/>
-<text x="520" y="157" class="arch-label">map</text>
-<path class="arch-link" d="M515 302 H538" marker-end="url(#go2-arrow)"/>
-<text x="519" y="287" class="arch-label">TF</text>
-<path class="arch-link" d="M689 172 H715" marker-end="url(#go2-arrow)"/>
-<text x="691" y="156" class="arch-label">map</text>
-<path class="arch-link" d="M689 302 H715" marker-end="url(#go2-arrow)"/>
-<text x="691" y="286" class="arch-label">pose</text>
-<path class="arch-link" d="M972 207 H1044" marker-end="url(#go2-arrow)"/>
-<text x="987" y="194" class="arch-label">cmd_vel</text>
-<path class="arch-link" d="M1150 198 V260" marker-end="url(#go2-arrow)"/>
-<path class="arch-link" d="M1150 326 V362" marker-end="url(#go2-arrow)"/>
-<path class="arch-link" d="M845 355 V407 H710" marker-end="url(#go2-arrow)"/>
-<text x="747" y="397" class="arch-label">visualization</text>
-<path class="arch-feedback" d="M1150 428 V490 H143 V440" marker-end="url(#go2-arrow)"/>
-<text x="472" y="519" class="arch-feedback-label">Odometry / robot state feedback</text>
+<figure class="architecture-figure" aria-labelledby="architecture-caption"><figcaption id="architecture-caption">Go2 SLAM / Nav2 Architecture</figcaption><div class="architecture-scroll" role="region" aria-label="System architecture diagram (scroll horizontally if needed)" tabindex="0">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1680 750" role="img" aria-labelledby="architecture-svg-title architecture-svg-desc" preserveAspectRatio="xMidYMid meet">
+<title id="architecture-svg-title">Go2 SLAM / Nav2 Architecture</title>
+<desc id="architecture-svg-desc">Go2 LiDAR, RGB-D, odometry, and TF feed the ROS 2 computer. RTAB-Map performs mapping or localization and saves observations in a database. Nav2 uses the map, robot pose, and live observations for costmaps and navigation. Velocity commands go to the Go2 motion bridge and walking control, while RViz2 monitors. Robot motion feeds back as odometry.</desc>
+<defs><marker id="go2-arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="var(--accent)"/></marker></defs>
+<rect x="20" y="60" width="250" height="550" rx="11" class="arch-panel"/><rect x="21" y="61" width="248" height="82" rx="10" class="arch-panel-head"/><text x="40" y="94" class="arch-title">GO2 EDU</text><text x="40" y="121" class="arch-small">Sensors &amp; Robot State</text>
+<rect x="43" y="172" width="204" height="70" rx="8" class="arch-box"/><text x="57" y="202" class="arch-heading">L1 LiDAR</text><text x="57" y="224" class="arch-small">/utlidar/cloud_base</text><text x="57" y="242" class="arch-small">Point cloud</text>
+<rect x="43" y="258" width="204" height="70" rx="8" class="arch-box"/><text x="57" y="288" class="arch-heading">D435i RGB-D</text><text x="57" y="310" class="arch-small">RGB + aligned depth</text><text x="57" y="328" class="arch-small">/camera/*</text>
+<rect x="43" y="344" width="204" height="70" rx="8" class="arch-box"/><text x="57" y="374" class="arch-heading">Go2 Odometry</text><text x="57" y="396" class="arch-small">/robot_odom_fixed</text><text x="57" y="414" class="arch-small">Pose estimate</text>
+<rect x="43" y="430" width="204" height="70" rx="8" class="arch-box"/><text x="57" y="460" class="arch-heading">Robot TF</text><text x="57" y="482" class="arch-small">/tf</text><text x="57" y="500" class="arch-small">Frame transforms</text>
+<rect x="320" y="60" width="1000" height="550" rx="11" class="arch-panel"/><rect x="321" y="61" width="998" height="82" rx="10" class="arch-panel-head"/><text x="340" y="94" class="arch-title">RESEARCH PC</text><text x="340" y="121" class="arch-small">ROS 2 Humble · SLAM and Navigation</text>
+<rect x="365" y="214" width="168" height="104" rx="8" class="arch-box"/><text x="379" y="244" class="arch-heading">Sensor Topics</text><text x="379" y="266" class="arch-small">LiDAR · RGB-D</text><text x="379" y="284" class="arch-small">Odometry · TF</text>
+<rect x="585" y="214" width="215" height="104" rx="8" class="arch-box"/><text x="599" y="244" class="arch-heading">RTAB-Map</text><text x="599" y="266" class="arch-small">Mapping / Localization</text><text x="599" y="284" class="arch-small">Sensor registration</text>
+<rect x="850" y="214" width="175" height="104" rx="8" class="arch-box"/><text x="864" y="244" class="arch-heading">Map DB</text><text x="864" y="266" class="arch-small">rtabmap.db</text><text x="864" y="284" class="arch-small">Saved observations</text>
+<rect x="585" y="402" width="215" height="88" rx="8" class="arch-box"/><text x="599" y="432" class="arch-heading">TF Frames</text><text x="599" y="454" class="arch-small">map → odom</text><text x="599" y="472" class="arch-small">→ base_link</text>
+<rect x="850" y="402" width="175" height="88" rx="8" class="arch-box"/><text x="864" y="432" class="arch-heading">Robot Pose</text><text x="864" y="454" class="arch-small">Localization</text><text x="864" y="472" class="arch-small">Global pose</text>
+<rect x="1074" y="214" width="223" height="275" rx="8" class="arch-box arch-nav"/>
+<text x="1092" y="245" class="arch-heading">Nav2</text>
+<rect x="1091" y="265" width="189" height="40" rx="5" class="arch-nav-row"/><text x="1107" y="291" class="arch-copy">Global Costmap</text>
+<rect x="1091" y="316" width="189" height="40" rx="5" class="arch-nav-row"/><text x="1107" y="342" class="arch-copy">Local Costmap</text>
+<rect x="1091" y="367" width="189" height="40" rx="5" class="arch-nav-row"/><text x="1107" y="393" class="arch-copy">NavFn Planner</text>
+<rect x="1091" y="418" width="189" height="40" rx="5" class="arch-nav-row"/><text x="1107" y="444" class="arch-copy">DWB Controller</text>
+<rect x="828" y="530" width="218" height="78" rx="8" class="arch-box"/><text x="842" y="560" class="arch-heading">RViz2</text><text x="842" y="582" class="arch-small">Map · TF · Path</text><text x="842" y="600" class="arch-small">Monitoring only</text>
+<rect x="1360" y="60" width="300" height="550" rx="11" class="arch-panel"/><rect x="1361" y="61" width="298" height="82" rx="10" class="arch-panel-head"/><text x="1380" y="94" class="arch-title">GO2 EDU</text><text x="1380" y="121" class="arch-small">Motion Execution</text>
+<rect x="1385" y="214" width="248" height="88" rx="8" class="arch-box"/><text x="1399" y="244" class="arch-heading">Motion Bridge</text><text x="1399" y="266" class="arch-small">/go2_nav/cmd_vel</text><text x="1399" y="284" class="arch-small">Velocity command</text>
+<rect x="1385" y="350" width="248" height="81" rx="8" class="arch-box"/><text x="1399" y="380" class="arch-heading">Walking Control</text><text x="1399" y="402" class="arch-small">Go2 motion API</text>
+<rect x="1385" y="472" width="248" height="81" rx="8" class="arch-box"/><text x="1399" y="502" class="arch-heading">Robot Motion</text><text x="1399" y="524" class="arch-small">Walk to target</text>
+<path d="M247 207 H290 M247 293 H290 M247 379 H290 M247 465 H290 M290 207 V465" class="arch-bus"/>
+<path d="M290 266 H361" class="arch-link" marker-end="url(#go2-arrow)"/>
+<path d="M533 266 H581" class="arch-link" marker-end="url(#go2-arrow)"/>
+<path d="M446 318 V447 H581" class="arch-link" marker-end="url(#go2-arrow)"/>
+<text x="455" y="361" class="arch-label">odom / tf</text>
+<path d="M447 214 V175 H1190 V210" class="arch-link" marker-end="url(#go2-arrow)"/>
+<text x="773" y="166" class="arch-label">live obstacle observations</text>
+<path d="M800 259 H846" class="arch-link" marker-end="url(#go2-arrow)"/>
+<path d="M800 299 H825 V430 H846" class="arch-link" marker-end="url(#go2-arrow)"/>
+<text x="804" y="339" class="arch-label">localization</text>
+<path d="M800 465 H846" class="arch-link" marker-end="url(#go2-arrow)"/>
+<path d="M1025 257 H1070" class="arch-link" marker-end="url(#go2-arrow)"/>
+<path d="M1025 453 H1070" class="arch-link" marker-end="url(#go2-arrow)"/>
+<path d="M1297 259 H1381" class="arch-link" marker-end="url(#go2-arrow)"/>
+<text x="1312" y="248" class="arch-label">cmd_vel</text>
+<path d="M1510 302 V346" class="arch-link" marker-end="url(#go2-arrow)"/>
+<path d="M1510 431 V468" class="arch-link" marker-end="url(#go2-arrow)"/>
+<path d="M1175 489 V566 H1050" class="arch-link" marker-end="url(#go2-arrow)"/>
+<text x="1065" y="553" class="arch-label">monitoring</text>
+<path d="M940 490 V526" class="arch-link" marker-end="url(#go2-arrow)"/>
+<path d="M1510 553 V680 H155 V505" class="arch-feedback" marker-end="url(#go2-arrow)"/>
+<text x="668" y="713" class="arch-feedback-label">Odometry / robot state feedback</text>
 </svg></div></figure>
 <aside aria-label="지도 작성과 자율주행 모드의 차이" class="notice"><strong>지도를 만들 때는 Mapping, 저장된 지도에서 주행할 때는 Localization을 사용합니다.</strong><p>주행 중에는 Nav2 Costmap이 현재 장애물을 반영합니다. 원본 지도 DB는 보존하고 주행에는 복사본을 사용합니다.</p></aside>
 </section>
