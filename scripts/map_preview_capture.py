@@ -73,8 +73,17 @@ def capture(output):
     finally:
         message = cache['message']
         if message is not None:
-            save_png(output, occupancy_png(message.info.width, message.info.height, message.data))
+            # Small thumbnail for catalog; source-resolution image for web pan and zoom.
+            width, height = message.info.width, message.info.height
+            save_png(output, occupancy_png(width, height, message.data))
             print('[map] 미리보기 저장: ' + str(output), flush=True)
+            full_path = Path(output).with_name('map.png')
+            # Avoid allocating unbounded pixel buffers on unusually large maps.
+            if width * height <= 36_000_000:
+                save_png(full_path, occupancy_png(width, height, message.data, max_side=max(width, height)))
+                print('[map] 원본 해상도 지도 이미지 저장: ' + str(full_path), flush=True)
+            else:
+                print('[map] 지도 크기가 36MP를 초과해 원본 크기 이미지는 생략했습니다', flush=True)
         else:
             print('[map] /map을 수신하지 못해 미리보기는 생성되지 않았습니다', flush=True)
         node.destroy_subscription(subscriber)
