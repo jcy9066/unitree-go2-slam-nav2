@@ -1,124 +1,91 @@
-"""Read-only interactive tutorial map API tests: no ROS or physical robot required."""
+"""Offline tutorial launcher tests. No HTTP, ROS, or robot access."""
 import json
-import sqlite3
-import struct
-import sys
-import threading
-from http.server import ThreadingHTTPServer
 from pathlib import Path
-from urllib.error import HTTPError
-from urllib.request import Request, urlopen
-
-import pytest
+import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'scripts'))
-import map_catalog
 import map_preview_capture
-import tutorial_server
+import open_tutorial
 
 
-@pytest.fixture
-def sample_maps(tmp_path, monkeypatch):
-    root = tmp_path / 'maps'
-    folder = root / 'map_20261116_100000'
+def make_saved_map(base, ident, image=True):
+    folder = base / ident
     folder.mkdir(parents=True)
     db = folder / 'rtabmap.db'
-    with sqlite3.connect(db) as conn:
-        conn.execute('CREATE TABLE Node(id INTEGER)')
-        conn.execute('INSERT INTO Node VALUES (1)')
-    original_db = db.read_bytes()
-    map_catalog.register(db, root)
-    map_catalog.rename(folder.name, '창학관 3층', root)
-    # A full-size occupancy image and a smaller preview come from the same cells.
-    values = [0, 100, -1, 0] * 6
-    full = map_preview_capture.occupancy_png(8, 3, values, max_side=8)
-    thumb = map_preview_capture.occupancy_png(8, 3, values, max_side=4)
+    db.write_bytes(b'synthetic original RTAB-Map DB sentinel')
+    (folder / 'metadata.json').write_text(
+        json.dumps({'name': f'지도 {ident}', 'created_at': '2026-11-16T13:00:00+09:00'}),
+        encoding='utf-8'
+    )
+    if image:
+        png = map_preview_capture.occupancy_png(2, 2, [0, 100, 0, -1])
+        (folder / 'preview.png').write_bytes(png)
+    return folder, db.read_bytes()
+
+
+def test_all_maps_indexed_with_metadata_and_optional_image(tmp_path, monkeypatch):
+    first, first_db = make_saved_map(tmp_path, 'a', True)
+    second, second_db = make_saved_map(tmp_path, 'b', False)
+    rows = [
+        {'database': str(first / 'rtabmap.db'), 'name': '복도 지도', 'created_at': '2026-11-16T13:00:00+09:00'},
+        {'database': str(second / 'rtabmap.db'), 'name': '계단 지도', 'created_at': '2026-11-16T12:00:00+09:00'},
+    ]
+    monkeypatch.setattr(open_tutorial, 'list_available_maps', lambda: rows)
+    output = tmp_path / 'out'
+    output.mkdir()
+    maps = open_tutorial.export_maps(output)
+    assert len(maps) == 2
+    assert [r['name'] for r in maps] == ['복도 지도', '계단 지도']
+    assert maps[0]['image_available'] is True and maps[0]['image_quality'] == 'preview'
+    assert maps[1]['image_available'] is False and maps[1]['image_url'] is None
+    assert (output / maps[0]['image_url']).read_bytes() == (first / 'preview.png').read_bytes()
+    text = (output / 'maps_manifest.js').read_text('utf-8')
+    assert text.startswith('window.GO2_OFFLINE_MAPS = ')
+    assert '복도 지도' not in text and 'rtabmap.db' in text  # escaped JSON and local-only map ID
+    data = json.loads(text.partition('= ')[2].rstrip(';\n'))
+    assert len(data) == 2
+    assert (first / 'rtabmap.db').read_bytes() == first_db
+    assert (second / 'rtabmap.db').read_bytes() == second_db
+
+
+def test_full_resolution_preferred_and_refresh_on_change(tmp_path, monkeypatch):
+    folder, db_bytes = make_saved_map(tmp_path, 'c', True)
+    full = map_preview_capture.occupancy_png(4, 4, [0]*16, max_side=4)
     (folder / 'map.png').write_bytes(full)
-    (folder / 'preview.png').write_bytes(thumb)
-    monkeypatch.setenv('GO2_MAP_DIR', str(root))
-    monkeypatch.setattr(tutorial_server, 'REPO', tmp_path)
-    return folder, original_db, full, thumb
+    monkeypatch.setattr(open_tutorial, 'list_available_maps',
+                        lambda: [{'database': str(folder / 'rtabmap.db'), 'name': 'C', 'created_at': '2026-11-16'}])
+    target = tmp_path / 'output'
+    target.mkdir()
+    result = open_tutorial.export_maps(target)[0]
+    assert result['image_quality'] == 'full'
+    assert (target / result['image_url']).read_bytes() == full
+    changed = map_preview_capture.occupancy_png(5, 5, [100]*25, max_side=5)
+    (folder / 'map.png').write_bytes(changed)
+    open_tutorial.export_maps(target)
+    assert (target / result['image_url']).read_bytes() == changed
+    assert (folder / 'rtabmap.db').read_bytes() == db_bytes
 
 
-@pytest.fixture
-def live_http():
-    server = ThreadingHTTPServer(('127.0.0.1', 0), tutorial_server.Handler)
-    thread = threading.Thread(target=server.serve_forever, daemon=True)
-    thread.start()
-    yield f'http://127.0.0.1:{server.server_port}'
-    server.shutdown()
-    server.server_close()
-    thread.join(timeout=3)
+def test_launcher_only_opens_file_url_and_returns(monkeypatch, tmp_path, capsys):
+    html = tmp_path / 'slam_nav2_tutorial.html'
+    html.write_text('<!doctype html><title>Go2</title>', encoding='utf-8')
+    monkeypatch.setattr(open_tutorial, 'ROOT', tmp_path)
+    monkeypatch.setattr(open_tutorial, 'export_maps',
+                        lambda: [{'image_available': False, 'name': 'A'}])
+    opened = []
+    monkeypatch.setattr(open_tutorial.webbrowser, 'open', lambda url: opened.append(url))
+    open_tutorial.main()
+    assert opened == [html.resolve().as_uri()]
+    assert '서버 없이' in capsys.readouterr().out
 
 
-def test_public_map_list_only_name_date_image_no_db_paths(sample_maps):
-    folder, original, full, thumb = sample_maps
-    entries = tutorial_server.public_maps()
-    assert len(entries) == 1
-    entry = entries[0]
-    assert entry['id'] == 'local:' + folder.name
-    assert entry['name'] == '창학관 3층'
-    assert entry['created_at']
-    assert entry['image_available'] and entry['image_quality'] == 'full'
-    assert entry['image_url'].startswith('/api/tutorial/maps/')
-    assert 'database' not in entry and str(folder) not in json.dumps(entry)
-    assert (folder / 'rtabmap.db').read_bytes() == original
-
-
-def test_http_list_and_full_resolution_png_are_read_only(sample_maps, live_http):
-    folder, original, full, _ = sample_maps
-    with urlopen(live_http + '/api/tutorial/maps', timeout=3) as response:
-        payload = json.load(response)
-    row = payload['maps'][0]
-    with urlopen(live_http + row['image_url'], timeout=3) as response:
-        data = response.read()
-        assert response.headers.get('Content-Type') == 'image/png'
-    assert data == full
-    assert struct.unpack('!II', data[16:24]) == (8, 3)
-    assert (folder / 'rtabmap.db').read_bytes() == original
-    assert not (folder.parent / '.selected_map').exists()
-
-
-def test_thumbnail_fallback_and_missing_png(sample_maps):
-    folder, _, full, thumb = sample_maps
-    (folder / 'map.png').unlink()
-    first = tutorial_server.public_maps()[0]
-    assert first['image_quality'] == 'preview'
-    image, quality = tutorial_server.resolve_image(first['id'])
-    assert image.read_bytes() == thumb
-    (folder / 'preview.png').unlink()
-    last = tutorial_server.public_maps()[0]
-    assert not last['image_available'] and last['image_url'] is None
-
-
-def test_path_traversal_and_db_access_blocked(sample_maps, live_http):
-    bad = ['local:../other', 'local:../../etc/passwd', 'invalid:map_20261116_100000']
-    for token in bad:
-        with pytest.raises(map_catalog.MapCatalogError):
-            tutorial_server.resolve_image(token)
-    with pytest.raises(HTTPError) as error:
-        urlopen(live_http + '/api/tutorial/maps/local%3A..%2Fother/image', timeout=3)
-    assert error.value.code == 404
-    with pytest.raises(HTTPError) as error:
-        urlopen(live_http + '/rtabmap.db', timeout=3)
-    assert error.value.code == 404
-
-
-def test_video_range_is_supported(tmp_path, monkeypatch, live_http):
-    media = tmp_path / 'movie.mp4'
-    media.write_bytes(b'0123456789ABCDEFGH')
-    monkeypatch.setitem(tutorial_server.STATIC_FILES, '/docs/KakaoTalk_20261112_203846672_web.mp4', media)
-    request = Request(live_http + '/docs/KakaoTalk_20261112_203846672_web.mp4',
-                      headers={'Range': 'bytes=3-8'})
-    with urlopen(request, timeout=3) as response:
-        assert response.status == 206
-        assert response.read() == b'345678'
-        assert response.headers['Content-Range'] == 'bytes 3-8/18'
-
-
-def test_host_header_is_local_only(sample_maps, live_http):
-    request = Request(live_http + '/api/tutorial/maps', headers={'Host': 'example.com'})
-    with pytest.raises(HTTPError) as error:
-        urlopen(request, timeout=3)
-    assert error.value.code == 403
+def test_manifest_is_not_an_http_url(tmp_path, monkeypatch):
+    folder, _ = make_saved_map(tmp_path, 'd', True)
+    monkeypatch.setattr(open_tutorial, 'list_available_maps',
+                        lambda: [{'database': str(folder/'rtabmap.db'), 'name': 'D', 'created_at': '2026-11-16'}])
+    out = tmp_path / 'output'
+    out.mkdir()
+    row = open_tutorial.export_maps(out)[0]
+    assert row['image_url'].startswith('viewer_maps/')
+    assert '://' not in row['image_url']
