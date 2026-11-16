@@ -41,11 +41,13 @@ def main():
         assert result.returncode == 0, f'bash -n {file}: {result.stderr}'
     mapping = (ROOT / '02_create_map.sh').read_text(encoding='utf-8')
     navigation = (ROOT / '03_run_nav.sh').read_text(encoding='utf-8')
-    assert 'map_$(date +%Y%m%d_%H%M%S)_$/rtabmap.db' in mapping, 'missing mapping PID'
-    assert mapping.count('$pointer.$.tmp') == 2, 'non-unique pointer temp file'
+    assert 'map_$(date +%Y%m%d_%H%M%S)_$$/rtabmap.db' in mapping, 'missing mapping PID'
+    assert mapping.count('$pointer.$$.tmp') == 2, 'non-unique pointer temp file'
     assert 'restart_map:=false' in mapping and 'restart_map:=false' in navigation
     assert 'ENABLE_MOTION=false' in navigation and 'if [[ "$MODE" == drive ]]; then ENABLE_MOTION=true; fi' in navigation
     assert 'cp -p -- "$DB" "$SESSION_DB"' in navigation, 'navigation must copy original map'
+    assert 'MODE" == check' not in navigation, 'obsolete check mode must remain removed'
+    assert '|check|' not in navigation, 'obsolete check still exposed in usage/argument parsing'
     helper = (ROOT / 'scripts/_env.sh').read_text(encoding='utf-8')
     assert 'go2_auto_network_interface()' in helper, 'missing Go2 wired-network selection'
     assert 'conda activate go2_nav2' in helper, 'missing environment auto activation'
@@ -66,6 +68,11 @@ def main():
             assert 'map_manager.html' not in content and 'map_manager.py' not in content
             assert 'Map Manager' not in content, 'tutorial must not mention administrator app'
             assert 'class="media-results"' in content, 'video and results must be adjacent'
+            assert 'route-required-tag' in content and '클릭하여 선택' in content, 'A/B branch selection must be visibly required'
+            assert 'TF 캡처 이미지 공란' in content and 'Costmap 캡처 이미지 공란' in content, 'N2 screenshot slots missing'
+            assert '/local_costmap/costmap' in content and '/global_costmap/costmap' in content, 'screenshot capture topics missing'
+            assert 'bash ./03_run_nav.sh check' not in content, 'duplicated environment step present'
+            assert '실주행은 운영자 감독하에 진행합니다' not in content, 'redundant instruction present'
             assert '.steps>li>div{display:block' in content, 'Ctrl+C keyboard tokens must wrap inline'
             assert 'bash ./03_run_nav.sh</code>' in content, 'safe default command missing'
             assert 'bash ./03_run_nav.sh drive' in content, 'operator motion must be explicit'
