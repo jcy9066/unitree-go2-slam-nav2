@@ -63,7 +63,7 @@ bash ./01_setup_env.sh verify
 
 설치 동작 없이 목록만 확인하려면 `bash ./01_setup_env.sh plan`, 명세와 ROS 메타데이터를 대조하려면 `bash ./01_setup_env.sh validate`를 사용합니다. 설치 기록·해결된 패키지 목록·빌드 로그는 선택된 Conda 환경의 `.go2_nav2_setup/`에 저장됩니다. 기존 `go2_nav2`의 패키지·버전·모듈·설치 기록을 먼저 확인합니다. 구성이 일치하면 재설치를 생략하고 `[env] 기존 환경 검증 완료`를 출력합니다. 불일치 시 y/n으로 수정 동의를 받고, n 또는 비대화형 입력에서는 아무것도 수정하지 않습니다. 승인 후 수정·재검증에 성공하면 `[env] 기존 환경 수정 및 검증 완료`를 출력합니다.
 
-설치 후 `conda activate go2_nav2`와 `bash ./03_run_nav.sh check`로 노드를 시작하지 않고 패키지를 확인할 수 있습니다. 실시간 실행에는 운영자가 `GO2_NET_IFACE`를 지정합니다. 새 Conda 셸에 기존 시스템 ROS overlay를 섞어 사용하지 않습니다.
+설치 후 `bash ./03_run_nav.sh check`로 ROS 노드 시작 없이 패키지를 확인할 수 있습니다. 실행 스크립트는 `go2_nav2` 환경을 자동 활성화하고, Go2 전용 유선 네트워크를 자동 탐색합니다. 연결이 중복되거나 확인되지 않으면 시작하지 않습니다. 시스템 ROS overlay는 사용하지 않습니다.
 
 `rtabmap_viz`는 RViz2와 별도 GUI입니다. 2026-11-05/09의 실행 기록과 현재 Mapping 스크립트의 사용을 확인해 유지합니다. Conda 채널에 해당 바이너리가 없어 현재 PC와 같은 **0.23.13의 공식 소스 commit**으로 빌드합니다. Nav2 주행은 이 GUI를 끄고 RViz2를 사용합니다.
 
@@ -139,11 +139,9 @@ bash setup_maps.sh restore "창학관 3층"
 
 기존 `laptop_slam.sh`, `laptop_nav.sh`, `student_session.sh`, `nav_health.sh`, `localization_compare.sh`는 위 실행 파일로 통합했습니다. `go2_camera_session.sh`는 제거했습니다. 카메라는 별도 SSH 터미널에서 Go2 명령으로 실행하며, **Go2에 저장소를 clone하지 않습니다.**
 
-PC에서 환경을 활성화한 뒤 실제 로봇 연결 인터페이스를 지정합니다. 현재 PC에서는 `eno1`을 사용했으며 다른 PC에서는 해당 장치 이름을 사용합니다.
+실행 스크립트는 Conda와 Go2 유선 네트워크를 자동 탐색합니다. 수동 인터페이스·Domain ID 입력은 기본 절차에 포함되지 않습니다.
 
 ```bash
-conda activate go2_nav2
-export GO2_NET_IFACE=eno1  # 현재 PC 예시
 bash ./03_run_nav.sh check
 ```
 
@@ -155,10 +153,10 @@ bash ./02_create_map.sh
 # B. 제공된 기존 지도를 사용할 때만 목록에서 선택
 bash ./03_run_nav.sh select
 # A/B 모두: 원본 지도를 복사해 주행 비활성 상태로 Localization 확인
-bash ./03_run_nav.sh view
+bash ./03_run_nav.sh
 ```
 
-Mapping은 Ctrl+C로 종료하고 저장 검사가 완료될 때까지 기다립니다. 기본 새 지도 경로는 `~/maps/map_<날짜>_<PID>/rtabmap.db`입니다. 명시적 DB 경로와 `GO2_MAP_DIR` 재정의도 지원합니다. 저장 성공 후 `.last_map`과 `.selected_map`을 기록하므로 `bash ./03_run_nav.sh view`로 최근 작성 지도를 선택할 수도 있습니다. 복원한 기존 지도는 `bash ./03_run_nav.sh select`로 목록에서 고릅니다. 명시적 DB 경로도 지원합니다.
+Mapping은 Ctrl+C로 종료하고 저장 검사가 완료될 때까지 기다립니다. 기본 새 지도 경로는 `~/maps/map_<날짜>_<PID>/rtabmap.db`입니다. 명시적 DB 경로와 `GO2_MAP_DIR` 재정의도 지원합니다. 저장 성공 후 `.last_map`과 `.selected_map`을 기록하므로 `bash ./03_run_nav.sh`로 최근 작성 지도를 주행 비활성 상태에서 확인할 수 있습니다. 복원한 기존 지도는 `bash ./03_run_nav.sh select`로 목록에서 고릅니다. 명시적 DB 경로도 지원합니다.
 
 `bash ./02_create_map.sh plan`과 `bash ./03_run_nav.sh plan "maps/창학관 3층/rtabmap.db"`는 환경 로딩·빌드·노드 시작·파일 생성을 하지 않습니다. `check`는 환경만 확인합니다. `sensors`는 Mapping 시작 전 실시간 센서 수신을 확인합니다.
 
@@ -183,7 +181,7 @@ bash ./03_run_nav.sh view "maps/창학관 3층/rtabmap.db" --profile aligned_vis
 
 `python3 map_manager.py`로 로컬 관리 서버를 실행한 뒤 `http://127.0.0.1:8765`에 접속합니다. 이 도구는 **튜토리얼과 완전히 독립**이며 지도 이름·생성 날짜·실제 `/map`에서 캡처된 미리보기만 표시합니다. 이름 변경 시 `~/maps/<지도 ID>/metadata.json`만 바뀌고 원본 DB는 변경하지 않습니다. 미리보기 수신에 실패하면 임의의 이미지를 생성하지 않고 ‘미리보기 없음’을 표시합니다. 관리자 계정 인증 기능은 없으므로 서버는 로컬 루프백에서만 실행됩니다.
 
-기존 지도를 선택하려면 Map Manager가 아니라 `bash ./03_run_nav.sh select`를 실행합니다. `~/maps/` 및 저장소 `maps/`에 복원된 DB 중 유효한 파일을 목록으로 선택할 수 있습니다. 선택한 지도로 실제 주행하려면 `view`에서 Pose·TF·Costmap 확인 후 운영자가 별도 `drive`를 실행합니다.
+기존 지도를 선택하려면 Map Manager가 아니라 `bash ./03_run_nav.sh select`를 실행합니다. `~/maps/` 및 저장소 `maps/`에 복원된 DB 중 유효한 파일을 목록으로 선택할 수 있습니다. 선택한 지도로 실제 주행하려면 기본 실행에서 Pose·TF·Costmap 확인 후 운영자가 별도 `drive`를 실행합니다.
 
 오프라인 소스·회귀 검증 명령(로봇 움직임 없음):
 
