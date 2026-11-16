@@ -63,7 +63,7 @@ bash ./01_setup_env.sh verify
 
 설치 동작 없이 목록만 확인하려면 `bash ./01_setup_env.sh plan`, 명세와 ROS 메타데이터를 대조하려면 `bash ./01_setup_env.sh validate`를 사용합니다. 설치 기록·해결된 패키지 목록·빌드 로그는 선택된 Conda 환경의 `.go2_nav2_setup/`에 저장됩니다. 기존 `go2_nav2`의 패키지·버전·모듈·설치 기록을 먼저 확인합니다. 구성이 일치하면 재설치를 생략하고 `[env] 기존 환경 검증 완료`를 출력합니다. 불일치 시 y/n으로 수정 동의를 받고, n 또는 비대화형 입력에서는 아무것도 수정하지 않습니다. 승인 후 수정·재검증에 성공하면 `[env] 기존 환경 수정 및 검증 완료`를 출력합니다.
 
-설치 후 `bash ./03_run_nav.sh check`로 ROS 노드 시작 없이 패키지를 확인할 수 있습니다. 실행 스크립트는 `go2_nav2` 환경을 자동 활성화하고, Go2 전용 유선 네트워크를 자동 탐색합니다. 연결이 중복되거나 확인되지 않으면 시작하지 않습니다. 시스템 ROS overlay는 사용하지 않습니다.
+설치 후 `bash ./01_setup_env.sh verify`로 ROS 노드 시작 없이 패키지를 확인할 수 있습니다. 실행 스크립트는 `go2_nav2` 환경을 자동 활성화하고, Go2 전용 유선 네트워크를 자동 탐색합니다. 연결이 중복되거나 확인되지 않으면 시작하지 않습니다. 시스템 ROS overlay는 사용하지 않습니다.
 
 `rtabmap_viz`는 RViz2와 별도 GUI입니다. 2026-11-05/09의 실행 기록과 현재 Mapping 스크립트의 사용을 확인해 유지합니다. Conda 채널에 해당 바이너리가 없어 현재 PC와 같은 **0.23.13의 공식 소스 commit**으로 빌드합니다. Nav2 주행은 이 GUI를 끄고 RViz2를 사용합니다.
 
@@ -134,7 +134,7 @@ bash setup_maps.sh restore "창학관 3층"
 | `01_setup_env.sh` | Conda 환경 내부 검증·신규 설치·y/n 수정 |
 | `setup_maps.sh` | 지도 압축·복원·검증 |
 | `02_create_map.sh` | `start`, `check`, `plan`, `sensors`; 기본 ~/maps 자동 생성 |
-| `03_run_nav.sh` | `select`, `list`, `view`, `drive`, `check`, `plan`, `health`, `bridge`, `shell`, `aligned`, `reference` |
+| `03_run_nav.sh` | `select`, `list`, `view`, `drive`, `plan`, `health`, `bridge`, `shell`, `aligned`, `reference` |
 | `scripts/_env.sh` | 두 실행 파일이 사용하는 내부 공통 환경·프로세스 함수 |
 
 기존 `laptop_slam.sh`, `laptop_nav.sh`, `student_session.sh`, `nav_health.sh`, `localization_compare.sh`는 위 실행 파일로 통합했습니다. `go2_camera_session.sh`는 제거했습니다. 카메라는 별도 SSH 터미널에서 Go2 명령으로 실행하며, **Go2에 저장소를 clone하지 않습니다.**
@@ -142,7 +142,7 @@ bash setup_maps.sh restore "창학관 3층"
 실행 스크립트는 Conda와 Go2 유선 네트워크를 자동 탐색합니다. 수동 인터페이스·Domain ID 입력은 기본 절차에 포함되지 않습니다.
 
 ```bash
-bash ./03_run_nav.sh check
+bash ./01_setup_env.sh verify
 ```
 
 카메라를 아래 Go2 터미널에서 먼저 실행한 뒤 PC에서는 둘 중 하나를 선택합니다.
