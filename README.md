@@ -177,19 +177,20 @@ bash ./03_run_nav.sh view "maps/창학관 3층/rtabmap.db" --profile aligned_vis
 루트 통합 검증: 가짜 ROS·DB로 Mapping 13개, Nav2 11개, 설치 진입·공통 환경 9개, 지도 23개, 환경 13개, hook 보호 16개, **총 85개 PASS**. 실제 Conda 설치·카메라·센서·RViz2·물리 주행은 이번 정리에서 NOT TESTED입니다. 기존 주행 범위는 위 운영 기록을 참고합니다.
 
 
-## 튜토리얼 Interactive Map Viewer
+## 튜토리얼 Interactive Map Viewer — 서버 없음
 
-지도는 원본 RTAB-Map DB와 별개인 읽기 전용 2D Occupancy PNG로 표시합니다. **PC 터미널 A 하나에서** 다음 명령을 한 번 실행하면 웹 서버가 백그라운드로 시작되어 터미널 A를 계속 Mapping/Nav2에 사용할 수 있습니다.
+터미널이나 백그라운드에 상주하는 서버를 사용하지 않습니다. **다음 일회성 Python 명령**이 저장된 지도 전부를 검색하고 `slam_nav2_tutorial.html`을 기본 브라우저로 엽니다.
 
 ```bash
-python3 scripts/tutorial_server.py --background
+python3 scripts/open_tutorial.py
 ```
 
-이후 실행 PC의 브라우저에서 `http://127.0.0.1:8766/`를 엽니다. 주행 영상 우측에서 `~/maps/` 및 복원된 저장소 `maps/`의 지도를 선택하면 `metadata.json`에 기록된 **이름·생성 날짜**와 Occupancy Map을 표시합니다. 드래그 이동, 휠 또는 +/- 확대·축소, 전체 보기, 터치 제스처와 키보드 이동을 지원합니다. 결과 표는 영상과 지도 아래에 유지됩니다.
-
-- 신규 Mapping 종료 시 기존 `preview.png`(최대 900px)와 `map.png`(원본 /map 그리드 해상도, 최대 36MP)를 생성합니다. 구형 지도의 `map.png`가 없으면 `preview.png`로 표시하고 축소 이미지임을 알립니다. 둘 다 없으면 허위 지도 대신 '이미지 없음'을 표시합니다.
-- `scripts/tutorial_server.py`는 `127.0.0.1:8766`에서만 실행되고 지도 목록/PNG, HTML/영상 에셋만 제공합니다. 원본 `rtabmap.db`, Metadata, `.selected_map`을 **수정하지 않으며** DB 파일을 웹으로 제공하지 않습니다.
-- GitHub 또는 RawGitHack의 정적 HTML을 열 때는 로컬 PC 지도에 접근할 수 없습니다. 실제 지도 목록을 보려면 위 로컬 주소로 페이지를 열어야 합니다. 이 서버는 `map_manager.py`와 서로 독립적입니다.
+- `~/maps/`와 저장소 `maps/`의 모든 유효한 `rtabmap.db` 디렉터리를 탐색하여 지도 이름·생성 날짜 등 Metadata를 `maps_manifest.js`에 저장합니다.
+- `map.png`가 있으면 해당 이미지를 우선 복사하고, 없으면 `preview.png`를 사용합니다. 두 이미지가 모두 없다면 지도 목록에는 포함하되 **이미지 없음**이라고 표시합니다. DB로부터 Occupancy Grid를 재구성하는 기능은 포함하지 않습니다.
+- 표시용 복사본은 `viewer_maps/`에 보관합니다. 생성된 두 파일/폴더는 `.gitignore`에 등록되며 원본 DB·Metadata·선택 지도 파일은 수정하지 않습니다.
+- HTML은 `file://`로 열리며 지도 선택, 드래그 이동, 확대/축소와 전체 보기 모두 브라우저에서 실행됩니다. 기존 지도를 새로 복사했으면 위 명령을 다시 실행하면 됩니다.
+- 한 번 목록을 생성한 뒤에는 `slam_nav2_tutorial.html`을 직접 더블클릭해도 마지막 목록을 표시할 수 있습니다. 그 뒤에 추가·변경된 지도까지 읽으려면 실행기로 다시 갱신해야 합니다.
+- `map_manager.py`는 독립 도구이므로 실행할 필요가 없습니다. **HTTP 서버·데몬·백그라운드 프로세스 없음.**
 
 ## 독립 지도 관리 UI (실습에 불필요)
 
