@@ -277,6 +277,36 @@ body{margin:0;overflow-wrap:anywhere;word-break:keep-all}a{text-underline-offset
 .concept-disclosure-body{padding-top:14px}
 .concept-summary:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:3px}
 @media(prefers-reduced-motion:reduce){.concept-chevron{transition:none}}
+
+/* Navigation video beside a read-only occupancy map; evidence table remains below. */
+.media-top{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:stretch;gap:18px}
+.media-top>.video-panel{margin:0;min-width:0}
+.media-top>.video-panel .video-frame{height:100%;display:flex;align-items:center;justify-content:center}
+.media-top>.video-panel video{width:100%;height:100%;max-height:540px;object-fit:contain}
+.map-panel{min-width:0;border:1px solid var(--rule);border-radius:7px;background:var(--surface);padding:15px;display:flex;flex-direction:column;gap:10px}
+.map-panel-header{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.map-panel-header h3{font-size:16px;margin:0}
+.map-select-label{font-size:12px;font-weight:700;color:var(--ink-2)}
+.map-select{width:100%;font:inherit;font-size:13px;background:var(--surface-2);color:var(--ink);padding:10px;border:1px solid var(--rule-strong);border-radius:5px;min-width:0}
+.map-meta{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:5px 12px;font-size:12px;color:var(--ink-2)}
+.map-meta strong{font-size:13px;color:var(--ink);overflow-wrap:anywhere}
+.map-viewport{position:relative;min-width:0;height:370px;border:1px solid var(--rule);background:var(--surface-2);border-radius:5px;overflow:hidden;touch-action:none;cursor:grab;outline-offset:3px}
+.map-viewport.is-dragging{cursor:grabbing}
+.map-viewport img{position:absolute;left:0;top:0;max-width:none!important;max-height:none!important;width:auto;height:auto;transform-origin:0 0;user-select:none;pointer-events:none;will-change:transform}
+.map-empty{position:absolute;inset:0;display:grid;place-items:center;text-align:center;font-size:13px;color:var(--ink-2);padding:24px}
+.map-empty[hidden]{display:none}
+.map-controls{position:absolute;bottom:12px;right:12px;display:flex;gap:4px;z-index:2}
+.map-controls button,.map-secondary-action{font:inherit;font-size:12px;border:1px solid var(--rule-strong);background:var(--surface);color:var(--ink);border-radius:5px;cursor:pointer;padding:7px 10px}
+.map-controls button:hover,.map-secondary-action:hover{border-color:var(--accent)}
+.map-controls button:disabled{cursor:not-allowed;opacity:.5}
+.map-controls button:focus-visible,.map-select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.map-footer{display:flex;justify-content:space-between;color:var(--ink-2);font-size:11px}
+.map-status{font-size:12px;color:var(--ink-2);margin:0;min-height:16px}
+.map-local-hint{font-size:12px;color:var(--ink-2);border-top:1px solid var(--rule);padding-top:10px}
+.map-local-hint[hidden]{display:none}
+.map-local-hint .code{margin:10px 0}
+@media(max-width:920px){.media-top{grid-template-columns:1fr}.media-top>.video-panel .video-frame{height:auto}.media-top>.video-panel video{height:auto}.map-viewport{height:370px}}
+@media(max-width:560px){.map-viewport{height:310px}.map-panel{padding:10px}}
 </style></head>
 <body>
 <a class="skip-link" href="#main">본문으로 바로가기</a>
@@ -305,14 +335,31 @@ body{margin:0;overflow-wrap:anywhere;word-break:keep-all}a{text-underline-offset
 <h2 id="video-title">주행 영상 및 결과</h2>
 </div>
 </div>
-<div class="media-results"><figure>
+<div class="media-results"><div class="media-top"><figure class="video-panel">
 <div class="video-frame">
 <video aria-label="Go2 주행 영상" controls="" height="1280" id="go2-video" playsinline="" preload="metadata" width="720">
 <source src="docs/KakaoTalk_20261112_203846672_web.mp4" type="video/mp4"/>
             동영상 재생을 지원하지 않는 브라우저입니다.
           </video>
 </div>
-</figure><div class="outcome-panel"><h3 id="completed-title">현재 완료한 작업과 확인 근거</h3><div aria-label="주행 결과" class="table-scroll" id="revision-history" role="region" tabindex="0"><table><thead><tr><th scope="col">항목</th><th scope="col">결과</th></tr></thead><tbody><tr><th scope="row">창학관 3층 지도</th><td>기존 지도 기반 Localization 및 Nav2 실습</td></tr><tr><th scope="row">연구실 → 교수님 방 문앞</th><td>구간 목표 지정에 따른 주행</td></tr><tr><th scope="row">교수님 방 문앞 → 연구실</th><td>조종기로 방향 전환 후 구간별 복귀</td></tr><tr><th scope="row">전체 자동 왕복</th><td>일부 수동 조작 필요</td></tr></tbody></table></div></div></div></section>
+</figure><section class="map-panel" aria-labelledby="map-panel-title">
+<div class="map-panel-header"><h3 id="map-panel-title">Interactive Map</h3><button type="button" id="map-refresh" class="map-secondary-action" title="지도 목록 새로고침">새로고침</button></div>
+<label class="map-select-label" for="map-select">지도 선택</label>
+<select id="map-select" class="map-select" aria-label="표시할 지도 선택"><option value="">지도 목록 불러오는 중</option></select>
+<div class="map-meta"><strong id="map-display-name">선택된 지도 없음</strong><span id="map-created-at">지도 선택 후 이름·생성 날짜 표시</span></div>
+<div id="map-viewport" class="map-viewport" tabindex="0" aria-label="2D 지도: 드래그하여 이동, 휠 또는 더하기 빼기로 확대 및 축소" role="region">
+<img id="map-image" alt="선택한 Occupancy Map" draggable="false" hidden/>
+<div class="map-empty" id="map-empty">저장된 지도를 선택하세요.</div>
+<div class="map-controls" aria-label="지도 확대·축소">
+<button type="button" id="map-zoom-in" title="확대" aria-label="지도 확대">+</button>
+<button type="button" id="map-zoom-out" title="축소" aria-label="지도 축소">−</button>
+<button type="button" id="map-fit" title="전체 보기">전체</button>
+</div>
+</div>
+<div class="map-footer"><span id="map-quality">지도 보기</span><span id="map-zoom-label">—</span></div>
+<p class="map-status" id="map-status" role="status" aria-live="polite"></p>
+<div class="map-local-hint" id="map-local-hint" hidden><p>저장된 지도를 표시하려면 실행 PC에서 다음 명령을 실행한 뒤 로컬 페이지를 여세요.</p><div class="code"><div class="code-h"><span class="t">터미널 A · 실행 PC</span><button type="button" data-copy="map-server-command">복사</button></div><pre><code data-language="bash" id="map-server-command">python3 scripts/tutorial_server.py --background</code></pre></div><a href="http://127.0.0.1:8766/" id="map-local-url" target="_blank" rel="noopener">로컬 튜토리얼 열기</a></div>
+</section></div><div class="outcome-panel"><h3 id="completed-title">현재 완료한 작업과 확인 근거</h3><div aria-label="주행 결과" class="table-scroll" id="revision-history" role="region" tabindex="0"><table><thead><tr><th scope="col">항목</th><th scope="col">결과</th></tr></thead><tbody><tr><th scope="row">창학관 3층 지도</th><td>기존 지도 기반 Localization 및 Nav2 실습</td></tr><tr><th scope="row">연구실 → 교수님 방 문앞</th><td>구간 목표 지정에 따른 주행</td></tr><tr><th scope="row">교수님 방 문앞 → 연구실</th><td>조종기로 방향 전환 후 구간별 복귀</td></tr><tr><th scope="row">전체 자동 왕복</th><td>일부 수동 조작 필요</td></tr></tbody></table></div></div></div></section>
 <section aria-labelledby="concepts-title" class="section" id="concepts">
 <details class="concept-disclosure" id="concept-details">
 <summary class="section-heading concept-summary"><span aria-hidden="true" class="section-number">03</span><span class="concept-summary-title"><span class="concept-heading" id="concepts-title" role="heading" aria-level="2">SLAM·Nav2 핵심 개념</span><span class="concept-toggle-hint" aria-hidden="true">클릭하여 펼치기</span></span><span class="concept-chevron" aria-hidden="true"></span></summary>
@@ -493,5 +540,40 @@ body{margin:0;overflow-wrap:anywhere;word-break:keep-all}a{text-underline-offset
  function routeForHash(){var name=location.hash==='#step-map'?'new':location.hash==='#step-existing'?'existing':null;if(name){selectRoute(name);setTimeout(function(){var target=document.getElementById(location.hash.slice(1));if(target)target.scrollIntoView({block:'start'});},0);}return name;}
  controls.forEach(function(button){button.disabled=false;button.addEventListener('click',function(){selectRoute(button.dataset.route);});});panels.forEach(function(panel){panel.hidden=true;});routeForHash();window.addEventListener('hashchange',routeForHash);
 })();
+
+(function(){
+ 'use strict';
+ var viewport=document.getElementById('map-viewport'),image=document.getElementById('map-image');
+ var choice=document.getElementById('map-select'),empty=document.getElementById('map-empty');
+ var status=document.getElementById('map-status'),name=document.getElementById('map-display-name');
+ var date=document.getElementById('map-created-at'),quality=document.getElementById('map-quality');
+ var zoomLabel=document.getElementById('map-zoom-label');
+ var zoomIn=document.getElementById('map-zoom-in'),zoomOut=document.getElementById('map-zoom-out');
+ var fitButton=document.getElementById('map-fit'),hint=document.getElementById('map-local-hint');
+ var maps=[],scale=1,fitScale=1,tx=0,ty=0,ready=false,requestId=0;
+ var points=new Map(),lastDistance=null,lastTouch=null;
+ function dateText(value){var parsed=new Date(value);return Number.isNaN(parsed.getTime())?String(value||'—'):parsed.toLocaleString('ko-KR',{dateStyle:'medium',timeStyle:'short'});}
+ function update(){if(!ready)return;image.style.transform='translate('+tx+'px,'+ty+'px) scale('+scale+')';zoomLabel.textContent=Math.round(scale/fitScale*100)+'%';}
+ function fit(){if(!ready)return;var w=viewport.clientWidth,h=viewport.clientHeight;if(!w||!h)return;fitScale=Math.min(w/image.naturalWidth,h/image.naturalHeight);scale=fitScale;tx=(w-image.naturalWidth*scale)/2;ty=(h-image.naturalHeight*scale)/2;update();}
+ function zoomAt(mult,x,y){if(!ready)return;var next=Math.max(fitScale*0.25,Math.min(fitScale*16,scale*mult));var ratio=next/scale;tx=x-(x-tx)*ratio;ty=y-(y-ty)*ratio;scale=next;update();}
+ function setEmpty(message){ready=false;image.hidden=true;image.removeAttribute('src');empty.hidden=false;empty.textContent=message;zoomLabel.textContent='—';zoomIn.disabled=true;zoomOut.disabled=true;fitButton.disabled=true;points.clear();}
+ function showMap(item){requestId++;var current=requestId;name.textContent=item.name;date.textContent=dateText(item.created_at);quality.textContent=item.image_quality==='full'?'원본 해상도':item.image_quality==='preview'?'미리보기 해상도':'지도 이미지 없음';setEmpty('지도 이미지를 불러오는 중');if(!item.image_available||!item.image_url){setEmpty('이 지도에는 표시할 PNG가 없습니다.');return;}if(!item.image_url.startsWith('/api/tutorial/maps/')){setEmpty('잘못된 지도 경로');return;}var src=item.image_url;var loader=new Image();loader.onload=function(){if(current!==requestId)return;image.src=src;image.hidden=false;empty.hidden=true;ready=true;zoomIn.disabled=false;zoomOut.disabled=false;fitButton.disabled=false;image.onload=null;requestAnimationFrame(fit);};loader.onerror=function(){if(current!==requestId)return;setEmpty('지도 이미지를 읽지 못했습니다.');};loader.src=src;}
+ async function loadMaps(){if(!['localhost','127.0.0.1'].includes(location.hostname)){hint.hidden=false;choice.replaceChildren(new Option('로컬 지도 서버 연결 필요',''));choice.disabled=true;status.textContent='현재 미리보기에서는 연구실 PC의 지도를 직접 읽을 수 없습니다.';setEmpty('로컬 지도 서버에서 확인할 수 있습니다.');return;}try{status.textContent='지도 목록 확인 중';var response=await fetch('/api/tutorial/maps',{cache:'no-store'});if(!response.ok)throw Error('HTTP '+response.status);var result=await response.json();if(!Array.isArray(result.maps))throw Error('지도 목록 형식 오류');var current=choice.value;maps=result.maps;choice.replaceChildren(new Option(maps.length?'지도 선택':'저장된 지도 없음',''));for(var i=0;i<maps.length;i++){var item=maps[i];choice.add(new Option(item.name+' · '+dateText(item.created_at),item.id));}choice.disabled=!maps.length;hint.hidden=true;status.textContent=maps.length+'개 지도 확인';if(maps.length){var selected=maps.find(function(a){return a.id===current;})||maps[0];choice.value=selected.id;showMap(selected);}else{setEmpty('지도 목록이 비어 있습니다.');name.textContent='선택된 지도 없음';date.textContent='';}}catch(error){status.textContent='지도 서버를 확인할 수 없습니다.';hint.hidden=false;setEmpty('지도를 불러올 수 없습니다.');choice.disabled=true;}}
+ choice.addEventListener('change',function(){var selected=maps.find(function(m){return m.id===choice.value;});if(selected)showMap(selected);});
+ document.getElementById('map-refresh').addEventListener('click',loadMaps);
+ zoomIn.addEventListener('click',function(){zoomAt(1.25,viewport.clientWidth/2,viewport.clientHeight/2);});
+ zoomOut.addEventListener('click',function(){zoomAt(0.8,viewport.clientWidth/2,viewport.clientHeight/2);});
+ fitButton.addEventListener('click',fit);
+ viewport.addEventListener('wheel',function(event){if(!ready)return;event.preventDefault();var r=viewport.getBoundingClientRect();zoomAt(event.deltaY<0?1.15:1/1.15,event.clientX-r.left,event.clientY-r.top);},{passive:false});
+ function pinchDistance(){var a=Array.from(points.values());if(a.length<2)return 0;return Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);}
+ viewport.addEventListener('pointerdown',function(event){if(!ready||event.target.closest('.map-controls')||(event.pointerType==='mouse'&&event.button!==0))return;points.set(event.pointerId,{x:event.clientX,y:event.clientY});if(points.size===2)lastDistance=pinchDistance();if(points.size===1)lastTouch={x:event.clientX,y:event.clientY};viewport.setPointerCapture(event.pointerId);viewport.classList.add('is-dragging');event.preventDefault();});
+ viewport.addEventListener('pointermove',function(event){if(!points.has(event.pointerId)||!ready)return;points.set(event.pointerId,{x:event.clientX,y:event.clientY});if(points.size===2){var distance=pinchDistance();if(lastDistance&&distance){var r=viewport.getBoundingClientRect();var list=Array.from(points.values());zoomAt(distance/lastDistance,(list[0].x+list[1].x)/2-r.left,(list[0].y+list[1].y)/2-r.top);}lastDistance=distance;lastTouch=null;}else if(lastTouch){tx+=event.clientX-lastTouch.x;ty+=event.clientY-lastTouch.y;update();lastTouch={x:event.clientX,y:event.clientY};}});
+ function pointerEnd(event){points.delete(event.pointerId);if(points.size<2)lastDistance=null;lastTouch=points.size===1?Array.from(points.values())[0]:null;if(points.size===0)viewport.classList.remove('is-dragging');}
+ viewport.addEventListener('pointerup',pointerEnd);viewport.addEventListener('pointercancel',pointerEnd);viewport.addEventListener('lostpointercapture',pointerEnd);
+ viewport.addEventListener('keydown',function(event){if(!ready)return;var handled=true;if(event.key==='ArrowLeft')tx+=32;else if(event.key==='ArrowRight')tx-=32;else if(event.key==='ArrowUp')ty+=32;else if(event.key==='ArrowDown')ty-=32;else if(event.key==='+'||event.key==='=')zoomAt(1.25,viewport.clientWidth/2,viewport.clientHeight/2);else if(event.key==='-')zoomAt(0.8,viewport.clientWidth/2,viewport.clientHeight/2);else if(event.key==='Home')fit();else handled=false;if(handled){event.preventDefault();update();}});
+ window.addEventListener('resize',function(){if(ready)fit();});
+ setEmpty('저장된 지도를 선택하세요.');loadMaps();
+})();
+
 </script></body>
 </html>
