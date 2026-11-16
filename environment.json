@@ -32,8 +32,6 @@
       "pkg-config",
       "make",
       "git",
-      "git-lfs>=3.0,<4",
-      "zstd>=1.4.8,<2",
       "openssh",
       "numpy",
       "scipy",
@@ -77,7 +75,10 @@
       "ros-humble-cv-bridge",
       "ros-humble-rtabmap-sync",
       "ros-humble-tf2",
-      "ros-humble-std-msgs"
+      "ros-humble-std-msgs",
+      "qt6-main=6.11.3",
+      "vtk=9.7.0",
+      "viskores=1.1.1=cpu_hc82bd48_1"
     ],
     "pip": []
   },
@@ -102,6 +103,15 @@
       ]
     },
     {
+      "name": "rtabmap",
+      "url": "https://github.com/ros2-gbp/rtabmap-release.git",
+      "ref": "a67540c5e1c5ddfbc6ed6caca6da40bf5e028a90",
+      "source_subpath": ".",
+      "packages": [
+        "rtabmap"
+      ]
+    },
+    {
       "name": "rtabmap_ros",
       "url": "https://github.com/introlab/rtabmap_ros.git",
       "ref": "cb2117f1ed6674cf7cfc644d7bb4ffc0b567b364",
@@ -118,7 +128,10 @@
       "-DBUILD_TESTING=OFF",
       "-DCMAKE_BUILD_TYPE=Release",
       "-DPython_FIND_VIRTUALENV=ONLY",
-      "-DPython3_FIND_VIRTUALENV=ONLY"
+      "-DPython3_FIND_VIRTUALENV=ONLY",
+      "-DWITH_QT=ON",
+      "-DCMAKE_POLICY_DEFAULT_CMP0167=NEW",
+      "-DCMAKE_FIND_PACKAGE_PREFER_CONFIG=OFF"
     ]
   },
   "verification": {
@@ -171,19 +184,12 @@
     "python3-numpy": "numpy",
     "python3-pytest": "pytest"
   },
-  "completion_message": "[env] 환경 신규 구축 및 검증 완료",
+  "completion_message": "go2_nav2 \ud658\uacbd \uc124\uc815\uc774 \uc644\ub8cc\ub418\uc5c8\uc2b5\ub2c8\ub2e4.",
   "activation": {
     "environment": {
       "RMW_IMPLEMENTATION": "rmw_cyclonedds_cpp",
-      "PYTHONNOUSERSITE": "1"
+      "PYTHONNOUSERSITE": "1",
+      "ROS_DISTRO": "humble"
     }
-  },
-  "maps": {
-    "root": "maps",
-    "archive_suffix": ".zst",
-    "metadata_suffix": ".json",
-    "compression_level": 9,
-    "compression_threads": 2,
-    "lfs_pattern": "maps/**/*.db.zst"
   }
 }

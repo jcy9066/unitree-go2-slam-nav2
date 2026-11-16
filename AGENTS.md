@@ -5,8 +5,8 @@ Scope: this repository, its Codex agents, and all subagents. Read this file firs
 ## Goal and baseline
 - Platform: Unitree Go2, ROS 2 Humble laptop, internal L1 + D435i, native Go2 odometry, RTAB-Map, Nav2 (NavFn + DWB). Legacy RoboSense launches are not the default pipeline.
 - Target test: a 90 cm doorway. Preserve the original RTAB-Map database.
-- PR #2 (`fix/l1-rgbd-forward-only`) is merged; PR #1 is historical. Current task branch: `feat/slam-nav2-tutorial-map-manager`, based on `main`. Never edit main directly.
-- Canonical validation record: `slam_nav2_tutorial.html`.
+- Current integration Draft PR: #2, branch `fix/l1-rgbd-forward-only`, base `main`. PR #1 (`fix/nav2-narrow-passage`) is historical context.
+- Canonical validation record: `docs/go2_navigation_validation.html`.
 - Nav mode: `localize_only=true`, `Mem/IncrementalMemory=false`. RTAB-Map localizes while Nav2 updates its Costmaps. Do not describe this as continuous map extension.
 
 ## Discuss unknowns before deciding
@@ -19,27 +19,21 @@ Scope: this repository, its Codex agents, and all subagents. Read this file firs
 - The project Conda environment is named `go2_nav2`. Install ROS 2 Humble and the project runtime inside that environment. Select its Python ABI from the compatible RoboStack package set and record it in `environment.json`.
 - Create it with `conda create --name go2_nav2` in the existing Conda installation's default envs location. Do not place a Conda environment in the repository or invent a separate permanent installation prefix. Use temporary source-build directories and install their results into the selected Conda environment.
 - Retain `rtabmap_viz`: earlier logs confirm its use and the Mapping entry point starts it. Its source version and installation method belong in `environment.json`.
-- Keep root `01_setup_env.sh` as the setup entry point. Inspect the actual `go2_nav2` packages, versions, activation variables, modules, ROS packages and build record before deciding to install. Reuse a matching environment without rebuilding; if an existing environment differs, list the mismatch and require interactive y/n consent before changing anything (n/noninteractive = no mutation). For a missing environment create, install, build and verify. Print exactly one applicable final success line: `[env] 기존 환경 검증 완료`, `[env] 환경 신규 구축 및 검증 완료`, or `[env] 기존 환경 수정 및 검증 완료`. Keep explicit read-only `plan` and `verify` modes.
-- Build and run with the selected Conda interpreter and ROS environment. User-facing Mapping and Nav2 scripts automatically activate the verified `go2_nav2` environment if no Conda environment is active. Do not source `/opt/ros` or reuse system-built Unitree/project overlays in the Conda deployment; retain explicitly requested legacy system ROS mode only. A system Python bootstrap may read JSON before Conda activation.
+- Keep `scripts/install_student.sh` as the setup entry point. Its default command must create the Conda environment, install declared dependencies, build Unitree/project packages and verify the installation. Print `go2_nav2 환경 설정이 완료되었습니다.` only after every required step succeeds. Keep an explicit read-only `plan` mode.
+- Build and run with the selected Conda interpreter and ROS environment. Do not source `/opt/ros` or reuse system-built Unitree/project overlays in the Conda deployment. A system Python bootstrap may read JSON before Conda activation.
 - Preserve required ROS `package.xml` metadata and check its dependencies against the environment specification. Generated activation files, resolved package snapshots and compatibility exports derive from `environment.json`; do not maintain them as independent configuration sources.
 - Keep existing Conda environments, original maps and credentials intact. Runtime robot-network interface and data paths may be explicit installation overrides; do not silently reconfigure the host network.
 - Setup covers environment creation, dependency installation, builds and verification. Do not add robot SSH targets, NIC selection, map paths or motion/profile settings to the installer or its manifest unless the user explicitly requests them. Existing operator runtime settings stay separate.
 
-## Shell entry points and camera operation
-- Keep exactly four user-facing shell entry points at repository root: `01_setup_env.sh`, `02_create_map.sh`, `03_run_nav.sh`, `setup_maps.sh`. Keep `scripts/_env.sh` as the single internal shared shell helper; Python implementations remain under `scripts/`. Standalone administrator files `map_manager.py` and `map_manager.html` live at the repository root but are NOT tutorial entry points.
-- Tutorial commands must use root-relative `bash ./01_setup_env.sh`, `bash ./02_create_map.sh` and `bash ./03_run_nav.sh` paths. Mapping and Nav2 stay separate. Store all newly created Mapping DBs under `~/maps/<unique ID>/rtabmap.db`; preserve explicit DB paths only within that root. Preserve original DB protection, shutdown validation and owned-process cleanup. Keep repository `maps/` archive policy and `setup_maps.sh` unchanged until separately approved.
-- The camera is started with the existing ROS 2 RealSense command on Go2, independently of PC-side Mapping/Nav2. The final tutorial contains only that copy/paste camera command, not connection instructions, SSH terminal setup, or user-edited connection parameters. Do not deploy this repository to Go2 or introduce automatic camera SSH startup.
-- Keep used health diagnostics and localization-profile selection as internal Nav2 subcommands rather than separate sh files. Beginner-facing HTML uses `bash ./03_run_nav.sh` as the default, motion-disabled map/pose view; optional health command is not another tutorial step. Select saved maps via `03_run_nav.sh select` without invoking Map Manager. Explicit `drive` mode is retained solely for operator-authorized physical motion. The shared runtime helper auto-detects one linked physical Ethernet interface (prefer Go2's 192.168.123.x subnet) and defaults ROS_DOMAIN_ID to 0 without prompting; ambiguous network connectivity must fail closed, and host network settings are never changed. Map Manager is completely independent from tutorial and shows only name, date and real preview; no creator/owner tracking. The tutorial's separate read-only `scripts/tutorial_server.py` serves `slam_nav2_tutorial.html` plus saved map PNG/metadata over loopback 127.0.0.1:8766; it must not depend on `map_manager.py`, expose any RTAB-Map database, mutate metadata or Nav2 `.selected_map`, or start robot control. Run with `--background` to reuse PC terminal A. Mapping captures both a preview and (within safe size limits) full-resolution `map.png` without changing the original DB.
-
 ## Git and parallel Codex workflow
 1. Never commit to `main`. Do not merge or enable auto-merge without explicit user authorization.
 2. Do not create, edit, view, trigger, or use GitHub Actions. Use local checks only.
-3. For concurrent agents, allocate a separate task branch and Git worktree to each writer. Do not let two agents edit the same file concurrently. Share changes through review or separate PRs; assign one integrator to the current task Draft PR.
+3. For concurrent agents, allocate a separate task branch and Git worktree to each writer. Do not let two agents edit the same file concurrently. Share changes through review or separate PRs; assign one integrator to the current integration PR #2.
 4. Before editing, check `git status --short`, `git branch --show-current`, current PR/branch head and unmerged work. Do not overwrite another agent's changes.
 5. Keep independent code/config changes in separate commits. Use a short Korean/English commit subject with explicit before → after values. Put rationale, expected effects, limitations and verification evidence in commit body and Draft PR.
    **Mandatory immediate commit and push:** After every individual file edit or independently completed modification, create a dedicated commit and push it to the current task branch immediately, before starting the next edit. Do not batch multiple edits into a later commit, postpone a push, or leave completed modifications uncommitted/unpushed. Never push directly to `main`. This applies to code, configuration, scripts, documentation, and validation records.
 6. Do not force-push, rewrite shared history, or delete branches by default.
-7. After changing code, configuration, scripts or validation evidence, update the **single canonical** `slam_nav2_tutorial.html` with current commands, date and factual verification scope in a separate docs commit. Never create a competing tutorial HTML or reintroduce obsolete command examples.
+7. After changing code, configuration, scripts or validation evidence, update the **same** HTML file and its revision notes in a separate docs commit. Never create a second competing validation HTML.
 
 ## Safety and non-destructive operation
 - Do not initiate physical robot motion, `NavigateToPose` goals, `/cmd_vel` publication or Unitree Sport motion commands. The operator must perform live movement and safety checks.
@@ -54,7 +48,7 @@ Scope: this repository, its Codex agents, and all subagents. Read this file firs
 - Evidence statuses: `PASS`, `FAIL`, `BLOCKED`, `NOT TESTED`. Never report `PASS` without the command/log/observation proving it.
 - First perform read-only inspection, static checks, and no-motion tests. Only the user/operator runs supervised, low-speed motion tests.
 - Run `bash -n` on shell scripts; `python3 -m ast` or `ast.parse` on Python; build via `colcon` only when the local ROS environment is installed.
-- Verify in order: environment; sensor reception; Mapping DB and optional preview; existing map selection; TF/initial pose/Costmaps; view (no motion); operator-supervised drive. Record failed or unavailable steps instead of skipping. Do not fabricate old T00–T10 checklists.
+- Follow `T00–T10` in `docs/go2_navigation_validation.html`; record failed steps and reason without silently skipping.
 - Keep evidence separated by environment: GitHub source inspection, static checks, ROS 2 runtime, RViz evaluation, physical Go2 movement.
 - No GitHub Actions for verification.
 

@@ -1,13 +1,28 @@
+# Local environment
 .env
+/runtime/
+
+# Python
 __pycache__/
 *.py[cod]
 .pytest_cache/
 *.egg-info/
+
+# ROS 2 / Colcon
 build/
 install/
 log/
+/logs/
+
+# Database
 *.db
 *.db-journal
 *.db-shm
 *.db-wal
-!maps/**/*.db.zst
+
+# Maps
+maps/
+
+# OS
+.DS_Store
+Thumbs.db
