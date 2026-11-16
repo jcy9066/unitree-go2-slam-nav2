@@ -5,14 +5,14 @@ description: Keep the single Go2 navigation validation HTML and Draft PR synchro
 
 # Validation record and PR update
 
-Canonical file: `docs/go2_navigation_validation.html`. Do not create duplicates.
+Canonical file: `slam_nav2_tutorial.html`. Do not create duplicates.
 
 ## Required update
-1. Read the latest PR #1 and all new commits; preserve prior changes and test history.
+1. Read the current implementation Draft PR and all new commits; preserve prior changes and test history.
 2. Update the revision date and revision identifier (R1, R2, ...).
 3. List each implemented change with original → current value and specific technical reason.
 4. Add each relevant commit link. Never label an unrun ROS/Go2 test as PASS.
-5. Update T00–T10 test steps and PASS/FAIL/BLOCKED/NOT TESTED evidence.
+5. Update environment, sensors, Mapping DB, map selection, TF/Localization, view and operator-supervised drive steps and PASS/FAIL/BLOCKED/NOT TESTED evidence.
 6. Add failure observations, root-cause hypotheses and independent follow-up changes.
 7. Keep readable semantic HTML, CSS print support, accessible links and a compact table. Use short, direct technical sentences inspired by ASD-STE100; never claim formal ASD-STE100 certification.
 8. Keep every existing prior record traceable. Make a separate docs commit for updates.

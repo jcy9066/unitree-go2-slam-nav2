@@ -43,7 +43,7 @@ def test_latest_map_only_advances_after_successful_populated_db(runtime_project,
     pointer = folder / '.last_map'; pointer.write_text('previous-map.db\n')
     db = folder / 'new map' / 'rtabmap.db'
     f.env['FIXTURE_DB_KIND'] = kind
-    result = subprocess.run(['bash', str(f.root / 'run_mapping.sh'), str(db)],
+    result = subprocess.run(['bash', str(f.root / '02_create_map.sh'), str(db)],
                             env=f.env, capture_output=True, text=True, timeout=8)
     assert pointer.read_text() == (str(db) + '\n' if kind == 'valid' else 'previous-map.db\n')
     assert db.exists(), 'Partial databases must remain available for diagnosis'
@@ -53,7 +53,7 @@ def test_latest_map_only_advances_after_successful_populated_db(runtime_project,
 
 def test_plan_does_not_load_environment_connect_or_create_maps(runtime_project):
     f = runtime_project
-    result = subprocess.run(['bash', str(f.root / 'run_mapping.sh'), 'plan'],
+    result = subprocess.run(['bash', str(f.root / '02_create_map.sh'), 'plan'],
                             env=f.env, cwd=f.root.parent, capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
     assert 'No build, SSH, ROS nodes' in result.stdout
@@ -65,7 +65,7 @@ def test_startup_uses_manually_started_camera_and_blocks_conflicts(runtime_proje
     f = runtime_project
     if mode == 'idle-blocked': f.env['FIXTURE_IDLE'] = '2'
     if mode == 'camera-missing': f.env['FIXTURE_READY'] = '1'
-    result = subprocess.run(['bash', str(f.root / 'run_mapping.sh'),
+    result = subprocess.run(['bash', str(f.root / '02_create_map.sh'),
                              'check' if mode == 'check' else 'start'],
                             env=f.env, capture_output=True, text=True, timeout=5)
     assert 'UNEXPECTED_SSH' not in f.calls()
@@ -78,7 +78,7 @@ def test_ctrl_c_waits_for_db_flush_and_only_stops_owned_launch(runtime_project):
     f = runtime_project
     f.env['FIXTURE_WAIT'] = '1'
     unrelated = subprocess.Popen(['sleep', '30'])
-    process = subprocess.Popen(['bash', str(f.root / 'run_mapping.sh')], env=f.env,
+    process = subprocess.Popen(['bash', str(f.root / '02_create_map.sh')], env=f.env,
                                stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, start_new_session=True)
     try:
         deadline = time.monotonic() + 5

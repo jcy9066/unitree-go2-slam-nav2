@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Internal helpers for root run_mapping.sh and run_nav.sh; sourcing starts nothing.
+# Internal helpers for root 02_create_map.sh and 03_run_nav.sh; sourcing starts nothing.
 GO2_SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 GO2_REPO_ROOT="$(cd -- "$GO2_SCRIPT_DIR/.." && pwd)"
 
@@ -7,29 +7,65 @@ go2_map_directory() {
     if [[ -n ${GO2_MAP_DIR:-} ]]; then
         realpath -m -- "$GO2_MAP_DIR"
     else
-        env -u PYTHONHOME -u PYTHONPATH "${GO2_BOOTSTRAP_PYTHON:-/usr/bin/python3}" -c \
-            'import json,pathlib,sys; r=pathlib.Path(sys.argv[1]); print((r/json.load(open(r/"environment.json"))["maps"]["root"]).resolve())' \
-            "$GO2_REPO_ROOT"
+        # Runtime Mapping/Nav2 maps are local, independent of repository map archives.
+        realpath -m -- "$HOME/maps"
     fi
 }
 
+go2_auto_network_interface() {
+    # Prefer Go2's dedicated wired subnet, then a single active physical Ethernet interface.
+    local line iface matches=()
+    if command -v ip >/dev/null 2>&1; then
+        while IFS= read -r line; do
+            if [[ "$line" =~ ^[0-9]+:[[:space:]]+([[:alnum:]_.:-]+)[[:space:]]+inet[[:space:]]+192\.168\.123\.[0-9]+/ ]]; then
+                iface="${BASH_REMATCH[1]}"
+                [[ -d "/sys/class/net/$iface/device" && -r "/sys/class/net/$iface/carrier" ]] || continue
+                [[ "$(cat "/sys/class/net/$iface/carrier" 2>/dev/null || true)" == 1 ]] || continue
+                matches+=("$iface")
+            fi
+        done < <(ip -o -4 addr show 2>/dev/null)
+    fi
+    if (( ${#matches[@]} == 1 )); then
+        printf '%s\n' "${matches[0]}"
+        return 0
+    fi
+    if (( ${#matches[@]} > 1 )); then
+        echo 'ERROR: 여러 Go2 네트워크 연결 감지. 중복 연결을 확인하세요.' >&2
+        return 1
+    fi
+    for iface in /sys/class/net/*; do
+        [[ -d "$iface/device" && -r "$iface/carrier" ]] || continue
+        [[ "$(cat "$iface/type" 2>/dev/null || true)" == 1 ]] || continue
+        [[ "$(cat "$iface/carrier" 2>/dev/null || true)" == 1 ]] || continue
+        [[ "${iface##*/}" == wl* ]] && continue
+        matches+=("${iface##*/}")
+    done
+    if (( ${#matches[@]} != 1 )); then
+        echo 'ERROR: Go2 유선 네트워크를 하나로 확인할 수 없습니다.' >&2
+        return 1
+    fi
+    printf '%s\n' "${matches[0]}"
+}
+
 go2_require_network() {
-    local iface=${GO2_NET_IFACE:-}
+    local iface="${GO2_NET_IFACE:-}"
     if [[ -z "$iface" ]]; then
-        if [[ -n ${CONDA_PREFIX:-} ]]; then iface=lo; else iface=eno1; fi
+        iface="$(go2_auto_network_interface)" || return 1
+        export GO2_NET_IFACE="$iface"
+        printf '[go2] Ethernet 자동 선택: %s\n' "$iface"
     fi
     if [[ "$iface" == lo || ! "$iface" =~ ^[a-zA-Z0-9_.:-]+$ || ! -d "/sys/class/net/$iface" ]]; then
-        echo 'ERROR: Offline interface selected. Set GO2_NET_IFACE explicitly for live modes.' >&2
+        echo 'ERROR: 유효한 Go2 네트워크가 없습니다.' >&2
         return 1
     fi
     if [[ ! -r "/sys/class/net/$iface/carrier" ]] || [[ "$(cat "/sys/class/net/$iface/carrier" 2>/dev/null || true)" != 1 ]]; then
-        printf 'ERROR: %s has no Ethernet link. Connect Go2 first.\n' "$iface" >&2
+        printf 'ERROR: %s Ethernet 연결을 확인하세요.\n' "$iface" >&2
         return 1
     fi
     export RMW_IMPLEMENTATION="${RMW_IMPLEMENTATION:-rmw_cyclonedds_cpp}"
     export ROS_DOMAIN_ID="${ROS_DOMAIN_ID:-0}" ROS_LOCALHOST_ONLY=0
     [[ "$ROS_DOMAIN_ID" =~ ^[0-9]+$ ]] && (( ROS_DOMAIN_ID <= 232 )) || {
-        echo 'ERROR: ROS_DOMAIN_ID must be an integer from 0 to 232' >&2; return 1;
+        echo 'ERROR: ROS_DOMAIN_ID must be 0..232' >&2; return 1;
     }
     export CYCLONEDDS_URI="${CYCLONEDDS_URI:-<CycloneDDS><Domain><General><Interfaces><NetworkInterface name=\"$iface\"/></Interfaces></General></Domain></CycloneDDS>}"
 }
@@ -56,6 +92,38 @@ go2_launch() {
 }
 
 go2_load_environment() {
+if [[ -z ${CONDA_PREFIX:-} && ${GO2_USE_SYSTEM_ROS:-0} != 1 ]]; then
+    local hook='' base=''
+    if command -v conda >/dev/null 2>&1; then
+        base="$(conda info --base 2>/dev/null || true)"
+        [[ -f "$base/etc/profile.d/conda.sh" ]] && hook="$base/etc/profile.d/conda.sh"
+    fi
+    if [[ -z "$hook" && -n ${CONDA_EXE:-} ]]; then
+        base="$(dirname -- "$(dirname -- "$CONDA_EXE")")"
+        [[ -f "$base/etc/profile.d/conda.sh" ]] && hook="$base/etc/profile.d/conda.sh"
+    fi
+    if [[ -z "$hook" ]]; then
+        for base in "$HOME/anaconda3" "$HOME/miniconda3" "$HOME/miniforge3"; do
+            if [[ -f "$base/etc/profile.d/conda.sh" ]]; then
+                hook="$base/etc/profile.d/conda.sh"
+                break
+            fi
+        done
+    fi
+    if [[ -z "$hook" ]]; then
+        echo 'ERROR: Conda를 찾지 못했습니다. 01_setup_env.sh를 확인하세요.' >&2
+        return 1
+    fi
+    set +u
+    # shellcheck disable=SC1090
+    source "$hook"
+    if ! conda activate go2_nav2; then
+        set -u
+        echo 'ERROR: go2_nav2 환경 활성화 실패. 01_setup_env.sh를 확인하세요.' >&2
+        return 1
+    fi
+    set -u
+fi
 if [[ -n ${CONDA_PREFIX:-} ]]; then
     GO2_ENV_NAME=$(env -u PYTHONHOME -u PYTHONPATH /usr/bin/python3 -c \
         'import json,sys; print(json.load(open(sys.argv[1]))["conda"]["name"])' \

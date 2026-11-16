@@ -9,7 +9,7 @@ description: Inspect Go2 Nav2 config, footprint, inflation, costmap resolution, 
 - `AGENTS.md`
 - `go2_slam_nav/config/nav2_params.yaml`
 - `go2_slam_nav/launch/nav.launch.py`, `mapping.launch.py`, `rtab_lidar.launch.py`
-- `docs/go2_navigation_validation.html` sections 01–03
+- `slam_nav2_tutorial.html` sections 01–03
 
 ## Procedure
 1. Record the branch and before values. Confirm `main` remains unchanged.

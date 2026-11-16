@@ -171,7 +171,7 @@
     "python3-numpy": "numpy",
     "python3-pytest": "pytest"
   },
-  "completion_message": "go2_nav2 환경 설정이 완료되었습니다.",
+  "completion_message": "[env] 환경 신규 구축 및 검증 완료",
   "activation": {
     "environment": {
       "RMW_IMPLEMENTATION": "rmw_cyclonedds_cpp",

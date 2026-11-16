@@ -3,14 +3,15 @@
 set -Eeuo pipefail
 REPO_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 usage() {
-    echo 'Usage: bash run_nav.sh [view|drive|plan|check] [existing.db] [--profile legacy|aligned_visual|reference_visual]'
-    echo '       bash run_nav.sh health [--seconds 4] | bridge | shell'
-    echo '       bash run_nav.sh aligned|reference existing.db'
+    echo 'Usage: bash ./03_run_nav.sh [view|drive|plan|select|list] [existing.db] [--profile legacy|aligned_visual|reference_visual]'
+    echo '       bash ./03_run_nav.sh health [--seconds 4] | bridge | shell'
+    echo '       bash ./03_run_nav.sh aligned|reference existing.db'
     echo 'Default: view (motion disabled). Existing DB path alone is also supported.'
 }
 if [[ "${1:-}" == -h || "${1:-}" == --help ]]; then usage; exit 0; fi
+if [[ "${1:-}" == check ]]; then echo 'ERROR: 환경 검증은 bash ./01_setup_env.sh에서 수행합니다.' >&2; exit 2; fi
 MODE=view
-if [[ "${1:-}" =~ ^(view|drive|plan|check|health|bridge|shell|aligned|reference)$ ]]; then MODE=$1; shift; fi
+if [[ "${1:-}" =~ ^(view|drive|plan|health|bridge|shell|aligned|reference|select|list)$ ]]; then MODE=$1; shift; fi
 PROFILE=${GO2_LOCALIZATION_PROFILE:-legacy}
 COMPARISON=0
 if [[ "$MODE" == aligned || "$MODE" == reference ]]; then
@@ -36,9 +37,25 @@ if (( COMPARISON )) && [[ -z "$DB" ]]; then
 fi
 source "$REPO_ROOT/scripts/_env.sh"
 MAP_DIR="$(go2_map_directory)"
+if [[ "$MODE" == select || "$MODE" == list ]]; then
+    [[ -z "$DB" ]] || { usage >&2; exit 2; }
+    if [[ "$MODE" == select ]]; then
+        exec /usr/bin/python3 "$REPO_ROOT/scripts/map_catalog.py" choose
+    else
+        exec /usr/bin/python3 "$REPO_ROOT/scripts/map_catalog.py" list
+    fi
+fi
 if [[ "$MODE" =~ ^(view|drive|plan)$ ]]; then
-    if [[ -z "$DB" && -s "$MAP_DIR/.last_map" ]]; then IFS= read -r DB < "$MAP_DIR/.last_map"; fi
-    [[ -n "$DB" ]] || { echo 'ERROR: no map selected. Pass the existing .db path.' >&2; exit 1; }
+    if [[ -z "$DB" ]]; then
+        DB="$(/usr/bin/python3 "$REPO_ROOT/scripts/map_catalog.py" selected 2>/dev/null || true)"
+    fi
+    if [[ -z "$DB" && -t 0 && "$MODE" != plan ]]; then
+        DB="$(/usr/bin/python3 "$REPO_ROOT/scripts/map_catalog.py" choose)"
+    fi
+    [[ -n "$DB" ]] || {
+        echo 'ERROR: 선택된 지도가 없습니다. bash ./03_run_nav.sh select 로 지도를 선택하세요.' >&2
+        exit 1
+    }
 fi
 if [[ -n "$DB" ]]; then
     DB="$(realpath -m -- "$DB")"
@@ -52,10 +69,6 @@ fi
 export GO2_SKIP_BUILD=1
 go2_load_environment
 PYTHON_BIN=${GO2_PYTHON:-python3}
-if [[ "$MODE" == check ]]; then
-    echo '[go2] Environment ready; no ROS nodes or motion bridge started.'
-    exit 0
-fi
 if [[ "$MODE" == shell ]]; then exec /bin/bash --noprofile --norc -i; fi
 go2_require_network
 if [[ "$MODE" == health ]]; then exec "$PYTHON_BIN" "$REPO_ROOT/scripts/nav_health.py" "$@"; fi
@@ -70,6 +83,10 @@ fi
 [[ -n ${DISPLAY:-} ]] || { echo 'ERROR: RViz needs a desktop/X11 DISPLAY.' >&2; exit 1; }
 "$PYTHON_BIN" "$REPO_ROOT/scripts/mapping_preflight.py" idle --timeout 3
 "$PYTHON_BIN" "$REPO_ROOT/scripts/mapping_preflight.py" ready --timeout 20
+"$PYTHON_BIN" "$REPO_ROOT/scripts/mapping_preflight.py" validate-db "$DB" || {
+    echo 'ERROR: 유효하지 않은 지도로 Nav2를 시작할 수 없습니다.' >&2
+    exit 1
+}
 SESSION_PARENT="$MAP_DIR/nav_sessions"
 SESSION_DIR="$SESSION_PARENT/$(date +%Y%m%d_%H%M%S)_$$"
 mkdir -p -- "$SESSION_PARENT"

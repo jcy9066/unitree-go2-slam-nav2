@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One command: create go2_nav2, install dependencies, build and verify.
+# Validate go2_nav2 first; create or request consent before correcting an existing environment.
 # All installation configuration comes from environment.json.
 set -Eeuo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"

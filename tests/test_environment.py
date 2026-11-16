@@ -4,6 +4,7 @@ import importlib.util
 import json
 from pathlib import Path
 import subprocess
+from types import SimpleNamespace
 
 import pytest
 
@@ -103,7 +104,7 @@ def test_plan_makes_no_external_calls_or_files(monkeypatch, capsys, tmp_path):
     environment.main(['plan'])
     text = capsys.readouterr().out
     assert 'Conda default envs directory (--name)' in text
-    assert 'go2_nav2 환경 설정이 완료되었습니다.' not in text
+    assert environment.load_config(ROOT / 'environment.json')['completion_message'] not in text
     assert set(tmp_path.iterdir()) == before
 
 
@@ -152,13 +153,15 @@ def test_unmanaged_existing_environment_is_untouched(config, tmp_path):
     installer.target.mkdir(parents=True)
     sentinel = installer.target / 'keep.txt'
     sentinel.write_text('existing environment')
-    with pytest.raises(environment.SetupError, match='unmanaged'):
+    with pytest.raises(environment.SetupError, match='대화형'):
         installer.install()
     assert sentinel.read_text() == 'existing environment'
     assert not any(command[1] in {'install', 'create'} for command in installer.commands)
 
 
-def test_failed_managed_update_invalidates_old_completion(config, tmp_path):
+def test_failed_managed_update_invalidates_old_completion(config, tmp_path, monkeypatch):
+    monkeypatch.setattr(environment.sys, 'stdin', SimpleNamespace(isatty=lambda: True))
+    monkeypatch.setattr('builtins.input', lambda prompt: 'y')
     installer = FakeInstaller(config, tmp_path, 'create')
     installer.env_prefix = installer.target
     installer.record_dir.mkdir(parents=True)
@@ -166,3 +169,26 @@ def test_failed_managed_update_invalidates_old_completion(config, tmp_path):
     with pytest.raises(subprocess.CalledProcessError):
         installer.install()
     assert json.loads((installer.record_dir / 'installation.json').read_text())['complete'] is False
+
+def test_existing_environment_is_reused_only_after_validation(config, tmp_path, capsys):
+    installer = FakeInstaller(config, tmp_path)
+    installer.target.mkdir(parents=True)
+    installer.configuration_problems = lambda: []
+    installer.install()
+    assert capsys.readouterr().out.splitlines()[-1] == '[env] 기존 환경 검증 완료'
+    assert not any(command[1] in {'install', 'create'} for command in installer.commands)
+    assert installer.build_directories == []
+
+
+def test_existing_environment_declined_repair_is_unchanged(config, tmp_path, monkeypatch):
+    installer = FakeInstaller(config, tmp_path)
+    installer.target.mkdir(parents=True)
+    sentinel = installer.target / 'sentinel'
+    sentinel.write_text('keep existing environment')
+    monkeypatch.setattr(environment.sys, 'stdin', SimpleNamespace(isatty=lambda: True))
+    monkeypatch.setattr('builtins.input', lambda prompt: 'n')
+    with pytest.raises(environment.SetupError, match='수정하지 않고'):
+        installer.install()
+    assert sentinel.read_text() == 'keep existing environment'
+    assert not any(command[1] in {'install', 'create'} for command in installer.commands)
+
