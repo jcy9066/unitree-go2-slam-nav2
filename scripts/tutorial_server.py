@@ -7,14 +7,13 @@ It is independent of map_manager.py and uses only Python standard library.
 import argparse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
-import mimetypes
-import os
 from pathlib import Path
 import re
-import shutil
 import socket
 import subprocess
 import sys
+import time
+from urllib.request import urlopen
 from urllib.parse import quote, unquote, urlsplit
 
 from map_catalog import _safe_directory, list_maps, map_root, MapCatalogError
@@ -199,12 +198,23 @@ def main():
             if client.connect_ex(('127.0.0.1', args.port)) == 0:
                 print('[map] 포트가 이미 사용 중입니다: ' + address)
                 return
-        subprocess.Popen([sys.executable, str(Path(__file__).resolve()),
-                          '--port', str(args.port)],
-                         cwd=REPO, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                         stderr=subprocess.DEVNULL, start_new_session=True)
-        print('[map] 튜토리얼: ' + address)
-        return
+        child = subprocess.Popen([sys.executable, str(Path(__file__).resolve()),
+                                  '--port', str(args.port)],
+                                 cwd=REPO, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                                 stderr=subprocess.DEVNULL, start_new_session=True)
+        # Report success only after the read-only HTTP endpoint responds.
+        for _ in range(20):
+            if child.poll() is not None:
+                parser.exit(1, '[map] 튜토리얼 서버 실행 실패\n')
+            try:
+                with urlopen(address + '/api/tutorial/health', timeout=0.2) as response:
+                    result = json.load(response)
+                    if result.get('service') == 'go2-tutorial':
+                        print('[map] 튜토리얼: ' + address)
+                        return
+            except (OSError, ValueError):
+                time.sleep(0.05)
+        parser.exit(1, '[map] 튜토리얼 서버 준비 상태를 확인할 수 없습니다\n')
     server = ThreadingHTTPServer(('127.0.0.1', args.port), Handler)
     print('[map] 튜토리얼: ' + address, flush=True)
     try:
