@@ -75,7 +75,7 @@ def main():
             assert content.count('<li class="concept-item">') == 9, 'expected nine vertical concept bullets'
             assert '<ul class="concept-list"' in content and 'class="concepts"' not in content, 'old 3x3 concept cards remain'
             assert '.concept-list>li::marker' in content, 'list bullets must remain visible'
-            diagram = re.search(r'(<svg[^>]+viewBox="0 0 1280 540"[\s\S]*?</svg>)', content)
+            diagram = re.search(r'(<svg[^>]+viewBox="0 0 1680 750"[\s\S]*?</svg>)', content)
             assert diagram, 'native SVG architecture figure missing'
             svg = diagram.group(1)
             ElementTree.fromstring(svg)
@@ -85,9 +85,21 @@ def main():
                          'Localization', 'Map DB', 'TF Frames', 'Global Costmap',
                          'Local Costmap', 'NavFn Planner', 'DWB Controller',
                          'RViz2', 'Motion Bridge', 'Robot Motion',
-                         'live obstacle data', 'feedback'):
+                         'live obstacle observations', 'feedback'):
                 assert step in svg, f'architecture stage missing: {step}'
             assert '<image' not in svg and '<img' not in svg, 'architecture must be native vector elements'
+            assert 'class="arch-bus"' in svg, 'separate sensor bus must be present'
+            assert svg.count('height="80" rx="8" class="arch-box"') == 4, 'sensor labels need adequate card height'
+            assert 'Odometry / robot state feedback' in svg, 'feedback route label missing'
+            assert 'class="arch-feedback"' in svg, 'feedback arrow missing'
+            assert 'class="arch-link"' in svg, 'navigation connectors missing'
+            assert '실습 환경 및 터미널 구성' in content, 'terminal plan missing'
+            assert '터미널 A · 실행 PC (1개)' in content, 'PC terminal A must be identified'
+            assert '터미널 B · Go2 (1개)' in content, 'robot terminal B must be identified'
+            assert '같은 터미널 A를 재사용' in content, 'PC shell reuse must be explicit'
+            assert '운영자만 실행' not in content, 'role-only warning must not appear'
+            assert 'N1 RViz2 2D Pose Estimate 이미지 공란' in content, 'initial pose screenshot slot missing'
+            assert 'N3 RViz2 Nav2 Goal 이미지 공란' in content, 'goal and global path screenshot slot missing'
             assert 'route-required-tag' in content and '클릭하여 선택' in content, 'A/B branch selection must be visibly required'
             assert 'TF 캡처 이미지 공란' in content and 'Costmap 캡처 이미지 공란' in content, 'N2 screenshot slots missing'
             assert '/local_costmap/costmap' in content and '/global_costmap/costmap' in content, 'screenshot capture topics missing'
